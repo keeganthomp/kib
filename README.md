@@ -31,44 +31,43 @@ kib chat
 ## Architecture
 
 ```
-                            ┌─────────────────────────────────────┐
-                            │             kib CLI                  │
-                            │  init  ingest  compile  search      │
-                            │  query  chat  lint  skill  watch    │
-                            └──────────────┬──────────────────────┘
-                                           │
-                    ┌──────────────────────┼──────────────────────┐
-                    │                      │                      │
-            ┌───────▼───────┐    ┌─────────▼────────┐    ┌───────▼───────┐
-            │  Ingest Layer │    │  Compile Engine   │    │  Query Engine │
-            │               │    │                   │    │               │
-            │  Extractors:  │    │  LLM prompts      │    │  BM25 search  │
-            │  - Web        │    │  Response parser   │    │  RAG pipeline │
-            │  - PDF        │    │  INDEX.md gen      │    │  Article      │
-            │  - YouTube    │    │  GRAPH.md gen      │    │   retrieval   │
-            │  - GitHub     │    │  Backlink graph    │    │  Citation     │
-            │  - File       │    │  Manifest update   │    │   tracking    │
-            └───────┬───────┘    └─────────┬────────┘    └───────┬───────┘
-                    │                      │                      │
-                    ▼                      ▼                      ▼
-            ┌──────────────────────────────────────────────────────────┐
-            │                     Vault (filesystem)                   │
-            │                                                          │
-            │  .kb/                raw/                wiki/            │
-            │  ├── manifest.json   ├── articles/       ├── INDEX.md    │
-            │  ├── config.toml     ├── papers/         ├── GRAPH.md    │
-            │  ├── cache/          ├── transcripts/    ├── concepts/   │
-            │  └── skills/         └── repos/          ├── topics/     │
-            │                                          ├── references/ │
-            │                                          └── outputs/    │
-            └──────────────────────────┬───────────────────────────────┘
-                                       │
-                    ┌──────────────────┼──────────────────┐
-                    │                  │                   │
-            ┌───────▼──────┐  ┌────────▼───────┐  ┌──────▼──────┐
-            │  Anthropic   │  │    OpenAI      │  │   Ollama    │
-            │  Claude      │  │    GPT-4o      │  │   Local     │
-            └──────────────┘  └────────────────┘  └─────────────┘
+                         ┌───────────────────────────────────────┐
+                         │                kib CLI                │
+                         │  init · ingest · compile · search ·   │
+                         │  query · chat · lint · skill · watch  │
+                         └───────────────────┬───────────────────┘
+                                             │
+              ┌──────────────────────────────┼──────────────────────────────┐
+              │                              │                              │
+     ┌────────▼────────┐            ┌────────▼────────┐            ┌────────▼────────┐
+     │  Ingest Layer   │            │ Compile Engine  │            │  Query Engine   │
+     │                 │            │                 │            │                 │
+     │  Web, PDF,      │            │  LLM prompts,   │            │  BM25 search,   │
+     │  YouTube,       │            │  parser,        │            │  RAG, article   │
+     │  GitHub, File   │            │  INDEX/GRAPH,   │            │  retrieval,     │
+     │                 │            │  backlinks      │            │  citations      │
+     └────────┬────────┘            └────────┬────────┘            └────────┬────────┘
+              │                              │                              │
+              └──────────────────────────────┼──────────────────────────────┘
+                                             ▼
+              ┌──────────────────────────────────────────────────────────────┐
+              │                    Vault (filesystem)                        │
+              │                                                              │
+              │   .kb/               raw/               wiki/                 │
+              │   ├── manifest.json  ├── articles/      ├── INDEX.md        │
+              │   ├── config.toml    ├── papers/        ├── GRAPH.md        │
+              │   ├── cache/         ├── transcripts/   ├── concepts/       │
+              │   └── skills/        └── repos/         ├── topics/         │
+              │                                            ├── references/   │
+              │                                            └── outputs/      │
+              └──────────────────────────────┬───────────────────────────────┘
+                                             │
+              ┌──────────────────────────────┼──────────────────────────────┐
+              │                              │                              │
+     ┌────────▼────────┐            ┌────────▼────────┐            ┌────────▼────────┐
+     │    Anthropic    │            │     OpenAI      │            │     Ollama      │
+     │     Claude      │            │     GPT-4o      │            │     (local)     │
+     └─────────────────┘            └─────────────────┘            └─────────────────┘
 ```
 
 ### How it works
