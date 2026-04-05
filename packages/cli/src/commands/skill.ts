@@ -19,8 +19,7 @@ export async function skill(subcommand: string, name?: string, _opts?: unknown) 
 		throw err;
 	}
 
-	const { loadSkills, findSkill } = await import("@kib/core/src/skills/loader.js");
-	const { runSkill } = await import("@kib/core/src/skills/runner.js");
+	const { loadSkills, findSkill, runSkill } = await import("@kib/core");
 
 	switch (subcommand) {
 		case "list": {

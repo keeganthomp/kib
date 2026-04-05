@@ -31,7 +31,7 @@ export async function chat() {
 		process.exit(1);
 	}
 
-	const { queryVault } = await import("@kib/core/src/query/query.js");
+	const { queryVault } = await import("@kib/core");
 
 	log.header("interactive session (type /help for commands)");
 

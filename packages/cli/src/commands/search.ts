@@ -24,7 +24,7 @@ export async function search(term: string, opts: SearchOpts) {
 		throw err;
 	}
 
-	const { SearchIndex } = await import("@kib/core/src/search/engine.js");
+	const { SearchIndex } = await import("@kib/core");
 
 	const scope = opts.wiki ? "wiki" : opts.raw ? "raw" : "all";
 	const limit = opts.limit ?? 20;

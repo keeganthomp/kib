@@ -23,7 +23,7 @@ export async function lint(opts: LintOpts) {
 		throw err;
 	}
 
-	const { lintVault } = await import("@kib/core/src/lint/lint.js");
+	const { lintVault } = await import("@kib/core");
 
 	log.header("linting wiki");
 

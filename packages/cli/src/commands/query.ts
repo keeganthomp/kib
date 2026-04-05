@@ -36,7 +36,7 @@ export async function query(question: string, opts: QueryOpts) {
 		process.exit(1);
 	}
 
-	const { queryVault } = await import("@kib/core/src/query/query.js");
+	const { queryVault } = await import("@kib/core");
 
 	log.header("querying knowledge base");
 
