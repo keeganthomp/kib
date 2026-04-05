@@ -13,3 +13,5 @@ export { CompileCache } from "./compile/cache.js";
 export { parseCompileOutput, parseFrontmatter, extractWikilinks } from "./compile/diff.js";
 export { generateIndexMd, computeStats } from "./compile/index-manager.js";
 export { buildLinkGraph, generateGraphMd } from "./compile/backlinks.js";
+export { SearchIndex } from "./search/engine.js";
+export { queryVault } from "./query/query.js";

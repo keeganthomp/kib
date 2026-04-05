@@ -31,7 +31,35 @@ function tokenize(text: string): string[] {
 		.toLowerCase()
 		.replace(/[^a-z0-9\s-]/g, " ")
 		.split(/\s+/)
+		.map(stem)
 		.filter((t) => t.length > 1 && !STOP_WORDS.has(t));
+}
+
+/** Simple suffix stripping for English. Not a full Porter stemmer, but handles common cases. */
+function stem(word: string): string {
+	if (word.length < 4) return word;
+	// Order matters: try longest suffixes first
+	if (word.endsWith("ization")) return word.slice(0, -7) + "ize";
+	if (word.endsWith("ational")) return word.slice(0, -7) + "ate";
+	if (word.endsWith("iveness")) return word.slice(0, -7) + "ive";
+	if (word.endsWith("fulness")) return word.slice(0, -7) + "ful";
+	if (word.endsWith("ousli")) return word.slice(0, -5) + "ous";
+	if (word.endsWith("ation")) return word.slice(0, -5) + "ate";
+	if (word.endsWith("ness")) return word.slice(0, -4);
+	if (word.endsWith("ment")) return word.slice(0, -4);
+	if (word.endsWith("ting")) return word.slice(0, -3) + "e";
+	if (word.endsWith("ing") && word.length > 5) return word.slice(0, -3);
+	if (word.endsWith("ies") && word.length > 4) return word.slice(0, -3) + "y";
+	if (word.endsWith("ied")) return word.slice(0, -3) + "y";
+	if (word.endsWith("ous")) return word.slice(0, -3);
+	if (word.endsWith("ful")) return word.slice(0, -3);
+	if (word.endsWith("ers")) return word.slice(0, -3);
+	if (word.endsWith("ed") && word.length > 4) return word.slice(0, -2);
+	if (word.endsWith("ly") && word.length > 4) return word.slice(0, -2);
+	if (word.endsWith("es") && word.length > 4) return word.slice(0, -2);
+	if (word.endsWith("er") && word.length > 4) return word.slice(0, -2);
+	if (word.endsWith("s") && !word.endsWith("ss") && word.length > 3) return word.slice(0, -1);
+	return word;
 }
 
 // ─── BM25 Index ──────────────────────────────────────────────────
@@ -41,6 +69,7 @@ interface Document {
 	title: string;
 	content: string;
 	tokens: string[];
+	tokenCount: number;
 	termFreqs: Map<string, number>;
 }
 
@@ -101,6 +130,7 @@ export class SearchIndex {
 				title,
 				content: body,
 				tokens,
+				tokenCount: tokens.length,
 				termFreqs,
 			});
 		}
@@ -128,7 +158,7 @@ export class SearchIndex {
 		// Average document length
 		this.avgDl =
 			this.documents.length > 0
-				? this.documents.reduce((sum, d) => sum + d.tokens.length, 0) / this.documents.length
+				? this.documents.reduce((sum, d) => sum + d.tokenCount, 0) / this.documents.length
 				: 0;
 	}
 
@@ -148,7 +178,7 @@ export class SearchIndex {
 
 		for (const doc of this.documents) {
 			let score = 0;
-			const dl = doc.tokens.length;
+			const dl = doc.tokenCount;
 
 			for (const qt of queryTokens) {
 				const tf = doc.termFreqs.get(qt) ?? 0;
@@ -225,6 +255,7 @@ export class SearchIndex {
 				title: d.title,
 				content: d.snippet,
 				tokens: [], // Not needed for search — termFreqs is enough
+				tokenCount: d.tokenCount,
 				termFreqs: new Map(d.termFreqs),
 			}));
 			this.idf = new Map(data.idf);
