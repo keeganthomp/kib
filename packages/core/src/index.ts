@@ -17,3 +17,6 @@ export { SearchIndex } from "./search/engine.js";
 export { queryVault } from "./query/query.js";
 export { lintVault } from "./lint/lint.js";
 export { ALL_RULES } from "./lint/rules.js";
+export { loadSkills, findSkill } from "./skills/loader.js";
+export { runSkill } from "./skills/runner.js";
+export { SkillDefinitionSchema } from "./skills/schema.js";
