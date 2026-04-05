@@ -23,7 +23,7 @@ describe("file extractor", () => {
 		await writeFile(path, "# My Notes\n\nSome content here.");
 
 		const result = await extractor.extract(path);
-		expect(result.title).toBe("Notes");
+		expect(result.title).toBe("My Notes"); // Extracted from H1 heading
 		expect(result.content).toBe("# My Notes\n\nSome content here.");
 		expect(result.metadata.fileType).toBe(".md");
 	});

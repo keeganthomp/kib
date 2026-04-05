@@ -5,3 +5,6 @@ export * from "./errors.js";
 export * from "./hash.js";
 export * from "./vault.js";
 export { createProvider, detectProvider } from "./providers/router.js";
+export { ingestSource } from "./ingest/ingest.js";
+export { detectSourceType } from "./ingest/router.js";
+export { slugify, countWords } from "./ingest/normalize.js";

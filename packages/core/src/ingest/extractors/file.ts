@@ -78,7 +78,7 @@ export function createFileExtractor(): Extractor {
 			const content = await readFile(filePath, "utf-8");
 			const ext = extname(filePath).toLowerCase();
 			const name = basename(filePath, ext);
-			const title = options?.title ?? formatTitle(name);
+			const title = options?.title ?? extractMarkdownTitle(content) ?? formatTitle(name);
 
 			// Code files get wrapped in fenced code blocks
 			if (CODE_EXTENSIONS.has(ext)) {
@@ -122,4 +122,10 @@ function formatTitle(filename: string): string {
 	return filename
 		.replace(/[-_]/g, " ")
 		.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Extract the first H1 heading from markdown content. */
+function extractMarkdownTitle(content: string): string | null {
+	const match = content.match(/^#\s+(.+)$/m);
+	return match?.[1]?.trim() ?? null;
 }
