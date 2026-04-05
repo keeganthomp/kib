@@ -8,3 +8,8 @@ export { createProvider, detectProvider } from "./providers/router.js";
 export { ingestSource } from "./ingest/ingest.js";
 export { detectSourceType } from "./ingest/router.js";
 export { slugify, countWords } from "./ingest/normalize.js";
+export { compileVault } from "./compile/compiler.js";
+export { CompileCache } from "./compile/cache.js";
+export { parseCompileOutput, parseFrontmatter, extractWikilinks } from "./compile/diff.js";
+export { generateIndexMd, computeStats } from "./compile/index-manager.js";
+export { buildLinkGraph, generateGraphMd } from "./compile/backlinks.js";
