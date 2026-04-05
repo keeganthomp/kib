@@ -15,3 +15,5 @@ export { generateIndexMd, computeStats } from "./compile/index-manager.js";
 export { buildLinkGraph, generateGraphMd } from "./compile/backlinks.js";
 export { SearchIndex } from "./search/engine.js";
 export { queryVault } from "./query/query.js";
+export { lintVault } from "./lint/lint.js";
+export { ALL_RULES } from "./lint/rules.js";
