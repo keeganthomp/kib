@@ -53,11 +53,11 @@ kib chat
               ┌──────────────────────────────────────────────────────────────┐
               │                    Vault (filesystem)                        │
               │                                                              │
-              │   .kb/               raw/               wiki/                 │
-              │   ├── manifest.json  ├── articles/      ├── INDEX.md        │
-              │   ├── config.toml    ├── papers/        ├── GRAPH.md        │
-              │   ├── cache/         ├── transcripts/   ├── concepts/       │
-              │   └── skills/        └── repos/         ├── topics/         │
+              │   .kb/               raw/               wiki/                │
+              │   ├── manifest.json  ├── articles/     ├── INDEX.md          │
+              │   ├── config.toml    ├── papers/       ├── GRAPH.md          │
+              │   ├── cache/         ├── transcripts/  ├── concepts/         │
+              │   └── skills/        └── repos/        ├── topics/           │
               │                                            ├── references/   │
               │                                            └── outputs/      │
               └──────────────────────────────┬───────────────────────────────┘
