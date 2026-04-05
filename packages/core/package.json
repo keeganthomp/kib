@@ -13,6 +13,7 @@
     "@iarna/toml": "^2.2.5",
     "cheerio": "^1.2.0",
     "openai": "^6.33.0",
+    "pdf-parse": "^2.4.5",
     "turndown": "^7.2.4",
     "xxhash-wasm": "^1.1.0",
     "yaml": "^2.7.1",
