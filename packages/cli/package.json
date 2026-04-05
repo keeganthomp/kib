@@ -1,0 +1,22 @@
+{
+  "name": "kib",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "kib": "./bin/kib.ts"
+  },
+  "scripts": {
+    "dev": "bun run bin/kib.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@kib/core": "workspace:*",
+    "commander": "^14.0.0",
+    "chalk": "^5.4.1",
+    "ora": "^8.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.8.3"
+  }
+}
