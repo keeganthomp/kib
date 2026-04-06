@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/keeganthomp/kib/compare/v0.1.0...v0.1.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* add package READMEs and fix workspace:* dependency ([73dc0d5](https://github.com/keeganthomp/kib/commit/73dc0d5e7fba9599cca067d91636629c8cee839d))
+* add package READMEs and fix workspace:* dependency for npm ([0e89a57](https://github.com/keeganthomp/kib/commit/0e89a576e6be4617acccee459fe830fb0ece94c1))
+
 ## [0.1.0](https://github.com/keeganthomp/kib/compare/v0.1.0...v0.1.0) (2026-04-06)
 
 
