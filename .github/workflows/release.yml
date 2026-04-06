@@ -47,7 +47,7 @@ jobs:
         run: |
           VERSION="${{ steps.resolve.outputs.version }}"
           for f in package.json packages/core/package.json packages/cli/package.json; do
-            jq --arg v "$VERSION" '.version = $v' "$f" > tmp.json && mv tmp.json "$f"
+            jq --tab --arg v "$VERSION" '.version = $v' "$f" > tmp.json && mv tmp.json "$f"
           done
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
