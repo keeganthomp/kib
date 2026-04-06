@@ -1,6 +1,6 @@
 {
 	"name": "@kibhq/core",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"description": "Core engine for kib — vault operations, LLM providers, ingest, compile, search, and query",
 	"type": "module",
 	"exports": {
