@@ -115,6 +115,15 @@ program
 	});
 
 program
+	.command("serve")
+	.description("Start an MCP server for AI tool integration")
+	.option("--mcp", "expose vault as MCP tools over stdio")
+	.action(async (opts) => {
+		const { serve } = await import("./commands/serve.js");
+		await serve(opts);
+	});
+
+program
 	.command("export")
 	.description("Export wiki to other formats")
 	.option("--format <type>", "output format: markdown, html, pdf", "markdown")
