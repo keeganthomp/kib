@@ -269,24 +269,111 @@ Add to your MCP client config (Claude Desktop, Cursor, Claude Code):
 
 ## Development
 
+### Prerequisites
+
+- [Bun](https://bun.sh) (v1.1+)
+- An LLM API key (Anthropic, OpenAI, or local Ollama) for commands that call an LLM (`compile`, `query`, `chat`)
+
+### Setup
+
 ```bash
-# Install dependencies
+git clone https://github.com/keeganthomp/kib.git
+cd kib
 bun install
-
-# Run tests
-bun test
-
-# Lint & format
-bun run check
-bun run check:fix
-
-# Run CLI locally
-bun run packages/cli/bin/kib.ts --help
 ```
 
-Monorepo with two packages:
-- `packages/core` (`@kibhq/core`) — types, schemas, vault ops, providers, engines
-- `packages/cli` (`@kibhq/cli`) — CLI commands and terminal UI
+This is a Bun workspace monorepo with two packages:
+- `packages/core` (`@kibhq/core`) — vault ops, LLM providers, ingest extractors, compile engine, search, query, lint, skills
+- `packages/cli` (`@kibhq/cli`) — CLI commands, terminal UI, MCP server
+
+Bun resolves `@kibhq/core` to the local workspace copy automatically — no build step needed.
+
+### Running the CLI locally
+
+Use `bun run packages/cli/bin/kib.ts` anywhere you'd normally type `kib`:
+
+```bash
+# Show help
+bun run packages/cli/bin/kib.ts --help
+
+# Initialize a vault
+bun run packages/cli/bin/kib.ts init
+
+# Ingest a source
+bun run packages/cli/bin/kib.ts ingest https://example.com/article
+
+# Compile, search, query, lint, etc.
+bun run packages/cli/bin/kib.ts compile
+bun run packages/cli/bin/kib.ts search "attention"
+bun run packages/cli/bin/kib.ts lint
+```
+
+Or from the `packages/cli` directory:
+
+```bash
+cd packages/cli
+bun run dev -- --help
+bun run dev -- ingest ./some-file.pdf
+```
+
+### Testing
+
+```bash
+# Run all tests (core + cli)
+bun test
+
+# Run tests for a specific package
+bun test packages/core
+bun test packages/cli
+
+# Run a specific test file
+bun test packages/cli/src/mcp/server.test.ts
+```
+
+### Linting & formatting
+
+```bash
+# Check for lint/format issues
+bun run check
+
+# Auto-fix
+bun run check:fix
+```
+
+### Testing the MCP server locally
+
+The MCP server communicates over stdio. To test it against your local code:
+
+**With the MCP Inspector (interactive web UI):**
+
+```bash
+cd /path/to/your/vault
+npx @modelcontextprotocol/inspector bun run /path/to/kib/packages/cli/bin/kib.ts serve --mcp
+```
+
+**With Claude Code / Claude Desktop / Cursor:**
+
+Point your MCP client config at the local source instead of the published package:
+
+```json
+{
+  "mcpServers": {
+    "kib": {
+      "command": "bun",
+      "args": ["run", "/path/to/kib/packages/cli/bin/kib.ts", "serve", "--mcp"],
+      "cwd": "/path/to/your/vault"
+    }
+  }
+}
+```
+
+**Automated tests:**
+
+```bash
+bun test packages/cli/src/mcp/server.test.ts
+```
+
+The MCP tests use the SDK's `InMemoryTransport` to test all tools and resources in-process without spawning a subprocess.
 
 ## Roadmap
 

@@ -87,7 +87,7 @@ function json(data: unknown) {
 
 // ─── Server ─────────────────────────────────────────────────────
 
-export async function startMcpServer(root: string) {
+export function createMcpServer(root: string) {
 	const ctx = createContext(root);
 
 	const server = new McpServer({
@@ -239,8 +239,8 @@ export async function startMcpServer(root: string) {
 				ctx.invalidateSearch();
 				return json({
 					path: result.path,
-					title: result.metadata?.title,
-					wordCount: result.metadata?.wordCount,
+					title: result.title,
+					wordCount: result.wordCount,
 					skipped: result.skipped,
 					skipReason: result.skipReason,
 				});
@@ -325,8 +325,11 @@ export async function startMcpServer(root: string) {
 		};
 	});
 
-	// ── Start ─────────────────────────────────────────────────
+	return server;
+}
 
+export async function startMcpServer(root: string) {
+	const server = createMcpServer(root);
 	const transport = new StdioServerTransport();
 	await server.connect(transport);
 }
