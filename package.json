@@ -12,5 +12,6 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.10"
-	}
+	},
+	"version": "0.2.0"
 }
