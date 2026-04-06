@@ -142,9 +142,7 @@ async function fetchTranscript(videoId: string): Promise<string> {
 function parseTranscriptXml(xml: string): string {
 	const lines: string[] = [];
 	const textRegex = /<text[^>]*>([\s\S]*?)<\/text>/g;
-	let match: RegExpExecArray | null;
-
-	while ((match = textRegex.exec(xml)) !== null) {
+	for (let match = textRegex.exec(xml); match !== null; match = textRegex.exec(xml)) {
 		const text = match[1]!
 			.replace(/&amp;/g, "&")
 			.replace(/&lt;/g, "<")
