@@ -159,8 +159,17 @@ export async function compileVault(
 			manifest.sources[sourceId]!.lastCompiled = new Date().toISOString();
 			manifest.sources[sourceId]!.producedArticles = producedArticles;
 		} catch (err) {
-			options.onProgress?.(`Failed to compile ${sourcePath}: ${(err as Error).message}`);
-			// Continue with other sources
+			const msg = (err as Error).message ?? String(err);
+			// Auth and provider errors should not be silently swallowed
+			if (
+				msg.includes("401") ||
+				msg.includes("authentication") ||
+				msg.includes("No LLM provider")
+			) {
+				throw err;
+			}
+			options.onProgress?.(`Failed to compile ${sourcePath}: ${msg}`);
+			// Continue with other sources on non-fatal errors (e.g. parse failures)
 		}
 	}
 

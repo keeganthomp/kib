@@ -99,16 +99,21 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_status",
-		"Get vault status: source count, article count, provider, and config",
+		"Get vault status: source count, article count, provider config, and whether the LLM provider is ready. If providerConfigured is false, tell the user to run `kib config` or set an API key environment variable before compile/query will work.",
 		{},
 		async () => {
 			try {
 				const manifest = await ctx.getManifest();
 				const config = await ctx.getConfig();
+				const providerConfigured = await ctx
+					.getProvider()
+					.then(() => true)
+					.catch(() => false);
 				return json({
 					name: manifest.vault.name,
 					provider: config.provider.default,
 					model: config.provider.model,
+					providerConfigured,
 					totalSources: manifest.stats.totalSources,
 					totalArticles: manifest.stats.totalArticles,
 					totalWords: manifest.stats.totalWords,
@@ -221,7 +226,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_ingest",
-		"Ingest a source (URL or file path) into the knowledge base",
+		"Ingest a source (URL or file path) into the knowledge base. Auto-compiles after ingest if an LLM provider is configured. If compileError is returned, tell the user what's needed.",
 		{
 			source: z.string().describe("URL or file path to ingest"),
 			category: z
@@ -248,14 +253,19 @@ export function createMcpServer(root: string) {
 						});
 						ctx.invalidateSearch();
 					} catch (compileErr) {
-						// Ingest succeeded but compile failed — still return ingest result
+						// Ingest succeeded but compile failed — give actionable feedback
 						ctx.invalidateSearch();
+						const msg = (compileErr as Error).message;
+						const isProviderErr = msg.includes("No LLM provider");
 						return json({
 							path: result.path,
 							title: result.title,
 							wordCount: result.wordCount,
 							skipped: result.skipped,
-							compileError: (compileErr as Error).message,
+							compiled: null,
+							compileError: isProviderErr
+								? "No LLM provider configured. The source was saved but not compiled. Tell the user to set ANTHROPIC_API_KEY, OPENAI_API_KEY, or start Ollama, then run `kib compile`."
+								: msg,
 						});
 					}
 				}
