@@ -1,17 +1,11 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-permissions:
-  contents: write
-  pull-requests: write
 
 jobs:
   check:
@@ -32,95 +26,8 @@ jobs:
       - name: Test
         run: bun test
 
-  release-please:
-    needs: check
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-    steps:
-      - uses: googleapis/release-please-action@v4
-        id: release
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  publish-npm:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: "https://registry.npmjs.org"
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Publish @kibhq/core
-        working-directory: packages/core
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @kibhq/cli
-        working-directory: packages/cli
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  build-binaries:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: bun-linux-x64
-            artifact: kib-linux-x64
-          - os: ubuntu-latest
-            target: bun-linux-arm64
-            artifact: kib-linux-arm64
-          - os: macos-latest
-            target: bun-darwin-arm64
-            artifact: kib-darwin-arm64
-          - os: macos-latest
-            target: bun-darwin-x64
-            artifact: kib-darwin-x64
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build standalone binary
+      - name: Build binaries (smoke test)
         run: |
           bun build packages/cli/bin/kib.ts \
             --compile \
-            --target=${{ matrix.target }} \
-            --outfile=${{ matrix.artifact }}
-
-      - name: Upload binary to release
-        run: |
-          gh release upload ${{ needs.release-please.outputs.tag_name }} \
-            ${{ matrix.artifact }} \
-            --clobber
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            --outfile=kib-test-binary

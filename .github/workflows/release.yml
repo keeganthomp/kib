@@ -1,0 +1,159 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (skip publish & upload)"
+        type: boolean
+        default: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Read version
+        id: version
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Verify versions are in sync
+        run: |
+          ROOT=$(jq -r .version package.json)
+          CORE=$(jq -r .version packages/core/package.json)
+          CLI=$(jq -r .version packages/cli/package.json)
+          if [ "$ROOT" != "$CORE" ] || [ "$ROOT" != "$CLI" ]; then
+            echo "::error::Version mismatch — root=$ROOT core=$CORE cli=$CLI"
+            exit 1
+          fi
+          echo "All versions in sync: $ROOT"
+
+      - name: Check tag doesn't already exist
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG$"; then
+            echo "::error::Tag $TAG already exists. Bump the version before releasing."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint & format
+        run: bun run check
+
+      - name: Test
+        run: bun test
+
+  release:
+    needs: check
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    outputs:
+      tag: v${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create tag
+        run: |
+          git tag "v${{ needs.check.outputs.version }}"
+          git push origin "v${{ needs.check.outputs.version }}"
+
+      - name: Create GitHub release
+        run: |
+          gh release create "v${{ needs.check.outputs.version }}" \
+            --title "v${{ needs.check.outputs.version }}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    needs: [check, release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Publish @kibhq/core
+        working-directory: packages/core
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @kibhq/cli
+        working-directory: packages/cli
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  build-binaries:
+    needs: [check, release]
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: bun-linux-x64
+            artifact: kib-linux-x64
+          - os: ubuntu-latest
+            target: bun-linux-arm64
+            artifact: kib-linux-arm64
+          - os: macos-latest
+            target: bun-darwin-arm64
+            artifact: kib-darwin-arm64
+          - os: macos-latest
+            target: bun-darwin-x64
+            artifact: kib-darwin-x64
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build standalone binary
+        run: |
+          bun build packages/cli/bin/kib.ts \
+            --compile \
+            --target=${{ matrix.target }} \
+            --outfile=${{ matrix.artifact }}
+
+      - name: Upload binary to release
+        run: |
+          gh release upload "v${{ needs.check.outputs.version }}" \
+            ${{ matrix.artifact }} \
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

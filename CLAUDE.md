@@ -13,26 +13,26 @@ kib — The Headless Knowledge Compiler. Bun + TypeScript monorepo.
 
 ## Release Pipeline
 
-Release Please manages versioning. **Critical rules:**
+Manual workflow dispatch via GitHub Actions (`release.yml`). **Critical rules:**
 
 1. **All three version numbers must stay in sync:**
-   - `.release-please-manifest.json` (`.` key)
+   - `package.json` root (`version` field)
    - `packages/core/package.json` (`version` field)
    - `packages/cli/package.json` (`version` field)
-   - `package.json` root (`version` field)
+   - The release workflow verifies this and fails if they're out of sync.
 
-2. **`release-please-config.json` has `extra-files`** that tells Release Please to bump `packages/core/package.json` and `packages/cli/package.json` alongside the root. Never remove these.
+2. **Bump versions before releasing.** Update all three `package.json` files, commit, merge to main, then trigger the release workflow.
 
-3. **npm won't let you republish the same version.** If versions are out of sync and publish fails, you must bump to a new version — you cannot fix it by re-publishing the same number.
+3. **npm won't let you republish the same version.** If publish fails, you must bump to a new version — you cannot fix it by re-publishing the same number.
 
 4. **`workspace:*` must not appear in published packages.** The CLI depends on core using `^x.y.z` (not `workspace:*`) because npm doesn't understand the workspace protocol. Bun resolves `^x.y.z` to the local workspace copy during development.
 
-## Git Workflow
+## CI / Git Workflow
 
 - Never push directly to `main` — always branch + PR
 - Conventional Commits: `feat:`, `fix:`, `chore:`, `ci:`, `docs:`
-- Release Please auto-creates release PRs from conventional commits
-- Merging a release PR triggers: npm publish + binary builds
+- `ci.yml`: runs lint + tests on branch pushes and PRs to main
+- `release.yml`: manual workflow dispatch from main — creates tag, GitHub release, publishes to npm, builds binaries
 
 ## Commands
 
