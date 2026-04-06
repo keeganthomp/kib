@@ -6,13 +6,13 @@ const program = new Command()
 	.version("0.1.0");
 
 program
-	.command("init")
-	.description("Create a new vault in the current directory")
+	.command("init [dir]")
+	.description("Create a new vault (defaults to ~/.kib)")
 	.option("--name <name>", "vault name (default: directory name)")
 	.option("--provider <provider>", "force LLM provider instead of auto-detect")
-	.action(async (opts) => {
+	.action(async (dir, opts) => {
 		const { init } = await import("./commands/init.js");
-		await init(opts);
+		await init(dir, opts);
 	});
 
 program

@@ -19,10 +19,14 @@ Standalone binaries for macOS and Linux are available on the [releases page](htt
 ## Quick Start
 
 ```bash
-# Initialize a vault
+# Initialize a vault (creates ~/.kib by default)
 kib init
 
-# Ingest sources (URLs, files, PDFs, YouTube, GitHub repos)
+# Or init in a specific directory
+kib init ./my-vault
+kib init .   # current directory
+
+# Ingest sources (URLs, files, PDFs, YouTube, GitHub repos) — works from anywhere
 kib ingest https://arxiv.org/abs/1706.03762
 kib ingest ./papers/*.pdf
 kib ingest https://www.youtube.com/watch?v=...
@@ -105,7 +109,7 @@ USAGE
   kib <command> [options]
 
 CORE COMMANDS
-  init                Create a new vault in the current directory
+  init [dir]          Create a new vault (defaults to ~/.kib)
   ingest <source>     Ingest sources into raw/ (URLs, files, PDFs, etc.)
   compile             Compile raw sources into wiki articles via LLM
   query <question>    Ask a question against the knowledge base (RAG)

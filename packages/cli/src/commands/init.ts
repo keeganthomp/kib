@@ -1,6 +1,9 @@
-import { resolve } from "node:path";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
 import { detectProvider, initVault, VaultExistsError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
+
+const DEFAULT_VAULT = join(homedir(), ".kib");
 
 interface InitOpts {
 	name?: string;
@@ -8,8 +11,8 @@ interface InitOpts {
 	force?: boolean;
 }
 
-export async function init(opts: InitOpts) {
-	const cwd = resolve(process.cwd());
+export async function init(dir: string | undefined, opts: InitOpts) {
+	const target = resolve(dir ?? DEFAULT_VAULT);
 
 	log.header("initializing vault");
 
@@ -19,13 +22,14 @@ export async function init(opts: InitOpts) {
 		const provider = opts.provider ?? detected.name;
 		const model = detected.model;
 
-		await initVault(cwd, {
+		await initVault(target, {
 			name: opts.name,
 			provider,
 			model,
 			force: opts.force,
 		});
 
+		log.success(`Vault created at ${target}`);
 		log.success("Created .kb/manifest.json");
 		log.success("Created .kb/config.toml");
 		log.success("Created raw/");
