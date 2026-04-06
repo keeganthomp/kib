@@ -9,12 +9,12 @@
     },
     "packages/cli": {
       "name": "@kibhq/cli",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "bin": {
         "kib": "./bin/kib.ts",
       },
       "dependencies": {
-        "@kibhq/core": "workspace:*",
+        "@kibhq/core": "^0.1.0",
         "chalk": "^5.4.1",
         "commander": "^14.0.0",
         "ora": "^8.2.0",
@@ -26,7 +26,7 @@
     },
     "packages/core": {
       "name": "@kibhq/core",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.82.0",
         "@iarna/toml": "^2.2.5",
@@ -205,6 +205,8 @@
     "yaml": ["yaml@2.8.3", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-AvbaCLOO2Otw/lW5bmh9d/WEdcDFdQp2Z2ZUH3pX9U2ihyUY0nvLv7J6TrWowklRGPYbB/IuIMfYgxaCPg5Bpg=="],
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+
+    "@kibhq/cli/@kibhq/core": ["@kibhq/core@0.1.0", "", { "dependencies": { "@anthropic-ai/sdk": "^0.82.0", "@iarna/toml": "^2.2.5", "cheerio": "^1.2.0", "openai": "^6.33.0", "pdf-parse": "^2.4.5", "turndown": "^7.2.4", "xxhash-wasm": "^1.1.0", "yaml": "^2.7.1", "zod": "^3.24.4" } }, "sha512-TDzzbtA//2TKrBmHk+1b/+U86nt5htkTp1EY+fOBMBilXSDlbJVfqW8j7OlcMURFfz3Lztu7A6zWG3TkyZ2CUQ=="],
 
     "htmlparser2/entities": ["entities@7.0.1", "", {}, "sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA=="],
 
