@@ -1,48 +1,48 @@
 {
-  "name": "@kibhq/cli",
-  "version": "0.4.1",
-  "description": "The Headless Knowledge Compiler — turn raw sources into a structured, queryable wiki with AI",
-  "type": "module",
-  "bin": {
-    "kib": "./bin/kib.ts"
-  },
-  "files": [
-    "bin",
-    "src",
-    "README.md",
-    "package.json"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/keeganthomp/kib.git",
-    "directory": "packages/cli"
-  },
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
-  "keywords": [
-    "knowledge-base",
-    "wiki",
-    "llm",
-    "compiler",
-    "cli",
-    "rag",
-    "ai"
-  ],
-  "scripts": {
-    "dev": "bun run bin/kib.ts",
-    "test": "bun test"
-  },
-  "dependencies": {
-    "@kibhq/core": "^0.1.0",
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "chalk": "^5.4.1",
-    "commander": "^14.0.0",
-    "ora": "^8.2.0"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.8.3"
-  }
+	"name": "@kibhq/cli",
+	"version": "0.4.1",
+	"description": "The Headless Knowledge Compiler — turn raw sources into a structured, queryable wiki with AI",
+	"type": "module",
+	"bin": {
+		"kib": "./bin/kib.ts"
+	},
+	"files": [
+		"bin",
+		"src",
+		"README.md",
+		"package.json"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/keeganthomp/kib.git",
+		"directory": "packages/cli"
+	},
+	"license": "MIT",
+	"publishConfig": {
+		"access": "public"
+	},
+	"keywords": [
+		"knowledge-base",
+		"wiki",
+		"llm",
+		"compiler",
+		"cli",
+		"rag",
+		"ai"
+	],
+	"scripts": {
+		"dev": "bun run bin/kib.ts",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@kibhq/core": "^0.1.0",
+		"@modelcontextprotocol/sdk": "^1.29.0",
+		"chalk": "^5.4.1",
+		"commander": "^14.0.0",
+		"ora": "^8.2.0"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"typescript": "^5.8.3"
+	}
 }
