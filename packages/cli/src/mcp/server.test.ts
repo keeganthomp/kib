@@ -78,9 +78,7 @@ describe("MCP server", () => {
 			const result = await client.callTool({ name: "kib_list", arguments: { scope: "wiki" } });
 			expect(result.isError).toBeFalsy();
 
-			const files: string[] = JSON.parse(
-				textOf(result),
-			);
+			const files: string[] = JSON.parse(textOf(result));
 			expect(files.length).toBe(2);
 			expect(files.some((f) => f.includes("concepts/attention.md"))).toBe(true);
 			expect(files.some((f) => f.includes("topics/llms.md"))).toBe(true);
@@ -94,9 +92,7 @@ describe("MCP server", () => {
 			const result = await client.callTool({ name: "kib_list", arguments: { scope: "raw" } });
 			expect(result.isError).toBeFalsy();
 
-			const files: string[] = JSON.parse(
-				textOf(result),
-			);
+			const files: string[] = JSON.parse(textOf(result));
 			expect(files.length).toBe(1);
 			expect(files[0]).toContain("raw/");
 		});
