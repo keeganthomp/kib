@@ -5,6 +5,7 @@ dist/
 .env
 .env.*
 !.env.example
+.npmrc
 .DS_Store
 *.log
 coverage/

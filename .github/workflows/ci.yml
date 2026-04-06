@@ -59,23 +59,24 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Setup .npmrc
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+      - name: Setup npm auth
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          cp .npmrc packages/core/.npmrc
+          cp .npmrc packages/cli/.npmrc
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Publish @kibhq/core
         if: needs.release-please.outputs.core-release_created == 'true'
-        run: |
-          cd packages/core
-          bun publish --access public
+        working-directory: packages/core
+        run: bun publish --access public
 
       - name: Publish @kibhq/cli
         if: needs.release-please.outputs.cli-release_created == 'true'
-        run: |
-          cd packages/cli
-          bun publish --access public
+        working-directory: packages/cli
+        run: bun publish --access public
 
   build-binaries:
     needs: release-please
