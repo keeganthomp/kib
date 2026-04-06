@@ -119,7 +119,8 @@ CORE COMMANDS
   status              Vault health dashboard
 
 INTEGRATION
-  serve --mcp         Start MCP server for AI tool integration
+  serve               Start MCP server for AI tool integration
+  mcp                 Configure MCP in AI clients (auto-runs on init)
   watch               Watch inbox/ and auto-ingest new files
 
 MANAGEMENT
@@ -236,13 +237,15 @@ kib config provider.model gpt-4o
 
 ## MCP Server
 
-Give your AI assistant direct access to your knowledge base. One command auto-configures Claude Code, Claude Desktop, and Cursor:
+Give your AI assistant direct access to your knowledge base. `kib init` auto-configures Claude Code, Claude Desktop, and Cursor:
 
 ```bash
-npm i -g @kibhq/cli && kib init && kib mcp setup
+npm i -g @kibhq/cli && kib init
 ```
 
 That's it. Restart your AI client and it can search, query, ingest, and compile your vault.
+
+Already have a vault? Run `kib mcp` to configure MCP clients without re-initializing.
 
 **8 tools:** `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
 
@@ -258,14 +261,14 @@ Add this to your MCP client config:
   "mcpServers": {
     "kib": {
       "command": "kib",
-      "args": ["serve", "--mcp"],
+      "args": ["serve"],
       "cwd": "/path/to/your/vault"
     }
   }
 }
 ```
 
-Or run `kib mcp setup` from your vault to auto-detect and configure supported clients.
+Or run `kib mcp` to auto-detect and configure supported clients.
 
 </details>
 
@@ -361,7 +364,7 @@ The MCP server communicates over stdio. To test it against your local code:
 
 ```bash
 cd /path/to/your/vault
-npx @modelcontextprotocol/inspector bun run /path/to/kib/packages/cli/bin/kib.ts serve --mcp
+npx @modelcontextprotocol/inspector bun run /path/to/kib/packages/cli/bin/kib.ts serve
 ```
 
 **With Claude Code / Claude Desktop / Cursor:**
@@ -373,7 +376,7 @@ Point your MCP client config at the local source instead of the published packag
   "mcpServers": {
     "kib": {
       "command": "bun",
-      "args": ["run", "/path/to/kib/packages/cli/bin/kib.ts", "serve", "--mcp"],
+      "args": ["run", "/path/to/kib/packages/cli/bin/kib.ts", "serve"],
       "cwd": "/path/to/your/vault"
     }
   }

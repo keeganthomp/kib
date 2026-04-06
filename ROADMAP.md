@@ -33,10 +33,11 @@ What's built, what's next, and what's deferred.
 - CI: Biome lint + 412 tests on every push
 
 ### MCP Server
-- `kib serve --mcp` — expose vault as MCP tools over stdio
+- `kib serve` — expose vault as MCP tools over stdio
+- `kib init` auto-configures MCP in Claude Code, Claude Desktop, and Cursor
+- `kib mcp` to re-configure MCP clients independently
 - 8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
 - 2 resources: `wiki://index`, `wiki://graph`
-- Works with Claude Desktop, Cursor, Claude Code
 
 ---
 

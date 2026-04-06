@@ -54,7 +54,8 @@ CORE
   status              Vault health dashboard
 
 INTEGRATION
-  serve --mcp         Start MCP server for AI tool integration
+  serve               Start MCP server for AI tool integration
+  mcp                 Configure MCP in AI clients (auto-runs on init)
   watch               Watch inbox/ and auto-ingest new files
 
 MANAGEMENT
@@ -97,13 +98,11 @@ The vault is just files. View it in any editor. Version it with git. No lock-in.
 
 ## MCP Server
 
-Give your AI assistant direct access to your knowledge base:
+Give your AI assistant direct access to your knowledge base. `kib init` auto-configures Claude Code, Claude Desktop, and Cursor — no extra step needed.
 
-```bash
-kib mcp setup
-```
+Already have a vault? Run `kib mcp` to configure MCP clients without re-initializing.
 
-Auto-detects and configures Claude Code, Claude Desktop, and Cursor. Restart your AI client and it can search, query, ingest, and compile your vault.
+Restart your AI client and it can search, query, ingest, and compile your vault.
 
 8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
 
@@ -115,7 +114,7 @@ Auto-detects and configures Claude Code, Claude Desktop, and Cursor. Restart you
   "mcpServers": {
     "kib": {
       "command": "kib",
-      "args": ["serve", "--mcp"],
+      "args": ["serve"],
       "cwd": "/path/to/your/vault"
     }
   }
