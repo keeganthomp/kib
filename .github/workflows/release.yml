@@ -32,6 +32,9 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
       - name: Resolve version
         id: resolve
         run: |
@@ -74,9 +77,6 @@ jobs:
             echo "::error::Tag $TAG already exists. Bump the version before releasing."
             exit 1
           fi
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
 
       - name: Lint & format
         run: bun run check
