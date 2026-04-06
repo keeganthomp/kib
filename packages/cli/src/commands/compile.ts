@@ -1,3 +1,4 @@
+import type { LLMProvider } from "@kibhq/core";
 import {
 	createProvider,
 	loadConfig,
@@ -33,7 +34,7 @@ export async function compile(opts: CompileOpts) {
 	log.header("compiling wiki");
 
 	// Create LLM provider
-	let provider;
+	let provider: LLMProvider;
 	const providerSpinner = createSpinner("Connecting to LLM provider...");
 	providerSpinner.start();
 	try {

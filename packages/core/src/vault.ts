@@ -152,7 +152,7 @@ export async function loadConfig(root: string): Promise<VaultConfig> {
 export async function saveConfig(root: string, config: VaultConfig): Promise<void> {
 	const path = join(root, VAULT_DIR, CONFIG_FILE);
 	const tmp = `${path}.tmp`;
-	await writeFile(tmp, TOML.stringify(config as any), "utf-8");
+	await writeFile(tmp, TOML.stringify(config as unknown as TOML.JsonMap), "utf-8");
 	await rename(tmp, path);
 }
 

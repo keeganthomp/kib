@@ -82,7 +82,10 @@ async function fetchVideoPage(videoId: string): Promise<VideoPageData> {
 			`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
 		);
 		if (response.ok) {
-			const data = (await response.json()) as any;
+			const data = (await response.json()) as {
+				title?: string;
+				author_name?: string;
+			};
 			return {
 				title: data.title ?? null,
 				description: null, // oembed doesn't include description

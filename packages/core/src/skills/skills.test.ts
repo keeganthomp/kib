@@ -2,7 +2,14 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
+import type {
+	CompletionParams,
+	CompletionResult,
+	LLMProvider,
+	SkillContext,
+	SkillDefinition,
+	StreamChunk,
+} from "../types.js";
 import { initVault, writeWiki } from "../vault.js";
 import { findSkill, loadSkills } from "./loader.js";
 import { runSkill } from "./runner.js";
@@ -119,16 +126,16 @@ describe("skill runner", () => {
 			description: "Test skill context",
 			input: "wiki" as const,
 			output: "report" as const,
-			async run(ctx: any) {
+			async run(ctx: SkillContext) {
 				const articles = await ctx.vault.readWiki();
 				const index = await ctx.vault.readIndex();
 				return {
 					content: `Found ${articles.length} articles. Index length: ${index.length}`,
 				};
 			},
-		};
+		} satisfies SkillDefinition;
 
-		const result = await runSkill(root, testSkill as any);
+		const result = await runSkill(root, testSkill);
 		expect(result.content).toContain("Found 2 articles");
 	});
 });

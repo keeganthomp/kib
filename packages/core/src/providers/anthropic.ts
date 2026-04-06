@@ -1,12 +1,32 @@
 import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
 
-// Lazy-loaded SDK
-let AnthropicClass: any = null;
+interface ContentBlock {
+	type: string;
+	text?: string;
+}
 
-async function getClient() {
+// Lazy-loaded SDK
+let AnthropicClass: (new () => AnthropicClient) | null = null;
+
+interface AnthropicClient {
+	messages: {
+		create(params: Record<string, unknown>): Promise<{
+			content: ContentBlock[];
+			usage: { input_tokens: number; output_tokens: number };
+			stop_reason: string;
+		}>;
+		stream(params: Record<string, unknown>): AsyncIterable<{
+			type: string;
+			delta: { type: string; text: string };
+			usage?: { input_tokens: number; output_tokens: number };
+		}>;
+	};
+}
+
+async function getClient(): Promise<AnthropicClient> {
 	if (!AnthropicClass) {
 		const mod = await import("@anthropic-ai/sdk");
-		AnthropicClass = mod.default;
+		AnthropicClass = mod.default as unknown as new () => AnthropicClient;
 	}
 	return new AnthropicClass();
 }
@@ -29,8 +49,8 @@ export function createAnthropicProvider(model: string): LLMProvider {
 			});
 
 			const content = response.content
-				.filter((b: any) => b.type === "text")
-				.map((b: any) => b.text)
+				.filter((b) => b.type === "text")
+				.map((b) => b.text ?? "")
 				.join("");
 
 			return {
@@ -99,8 +119,8 @@ export function createAnthropicProvider(model: string): LLMProvider {
 			});
 
 			return response.content
-				.filter((b: any) => b.type === "text")
-				.map((b: any) => b.text)
+				.filter((b) => b.type === "text")
+				.map((b) => b.text ?? "")
 				.join("");
 		},
 	};

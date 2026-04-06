@@ -1,6 +1,5 @@
 import {
 	compileVault,
-	computeStats,
 	createProvider,
 	ingestSource,
 	type LLMProvider,
@@ -106,14 +105,13 @@ export async function startMcpServer(root: string) {
 			try {
 				const manifest = await ctx.getManifest();
 				const config = await ctx.getConfig();
-				const stats = computeStats(manifest);
 				return json({
 					name: manifest.vault.name,
 					provider: config.provider.default,
 					model: config.provider.model,
-					totalSources: stats.totalSources,
-					totalArticles: stats.totalArticles,
-					totalWords: stats.totalWords,
+					totalSources: manifest.stats.totalSources,
+					totalArticles: manifest.stats.totalArticles,
+					totalWords: manifest.stats.totalWords,
 					lastCompiled: manifest.vault.lastCompiled,
 					lastLint: manifest.stats.lastLintAt,
 				});

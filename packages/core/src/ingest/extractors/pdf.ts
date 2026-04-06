@@ -2,14 +2,20 @@ import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import type { ExtractOptions, Extractor, ExtractResult } from "./interface.js";
 
-// Lazy-load pdf-parse (it's heavy)
-let pdfParse: any = null;
+type PdfParseFn = (buffer: Buffer) => Promise<{
+	text: string;
+	numpages: number;
+	info?: { Title?: string; Author?: string };
+}>;
 
-async function getPdfParse() {
+// Lazy-load pdf-parse (it's heavy)
+let pdfParse: PdfParseFn | null = null;
+
+async function getPdfParse(): Promise<PdfParseFn> {
 	if (!pdfParse) {
 		const mod = await import("pdf-parse");
 		// pdf-parse exports default as the function in some builds
-		pdfParse = mod.default ?? mod;
+		pdfParse = (mod.default ?? mod) as PdfParseFn;
 	}
 	return pdfParse;
 }

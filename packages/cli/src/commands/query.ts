@@ -1,3 +1,4 @@
+import type { LLMProvider } from "@kibhq/core";
 import {
 	createProvider,
 	loadConfig,
@@ -30,7 +31,7 @@ export async function query(question: string, opts: QueryOpts) {
 	const config = await loadConfig(root);
 
 	// Create provider
-	let provider;
+	let provider: LLMProvider;
 	try {
 		provider = await createProvider(config.provider.default, config.provider.model);
 	} catch (err) {

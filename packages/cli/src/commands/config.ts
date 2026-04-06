@@ -45,28 +45,32 @@ export async function config(key?: string, value?: string, opts?: { list?: boole
 	}
 }
 
-function getNestedValue(obj: any, path: string): unknown {
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 	const parts = path.split(".");
-	let current = obj;
+	let current: unknown = obj;
 	for (const part of parts) {
 		if (current == null || typeof current !== "object") return undefined;
-		current = current[part];
+		current = (current as Record<string, unknown>)[part];
 	}
 	return current;
 }
 
-function setNestedValue(obj: any, path: string, value: unknown): boolean {
+function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): boolean {
 	const parts = path.split(".");
-	let current = obj;
+	let current: unknown = obj;
 	for (let i = 0; i < parts.length - 1; i++) {
 		if (current == null || typeof current !== "object") return false;
-		current = current[parts[i]!];
+		current = (current as Record<string, unknown>)[parts[i]!];
 	}
 	const lastKey = parts[parts.length - 1]!;
-	if (current == null || typeof current !== "object" || !(lastKey in current)) {
+	if (
+		current == null ||
+		typeof current !== "object" ||
+		!(lastKey in (current as Record<string, unknown>))
+	) {
 		return false;
 	}
-	current[lastKey] = value;
+	(current as Record<string, unknown>)[lastKey] = value;
 	return true;
 }
 
@@ -78,7 +82,7 @@ function parseValue(val: string): unknown {
 	return val;
 }
 
-function printConfig(obj: any, prefix: string) {
+function printConfig(obj: Record<string, unknown>, prefix: string) {
 	for (const [key, val] of Object.entries(obj)) {
 		const fullKey = prefix ? `${prefix}.${key}` : key;
 		if (val != null && typeof val === "object" && !Array.isArray(val)) {

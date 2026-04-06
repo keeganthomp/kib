@@ -19,7 +19,7 @@ export async function init(opts: InitOpts) {
 		const provider = opts.provider ?? detected.name;
 		const model = detected.model;
 
-		const { root, manifest } = await initVault(cwd, {
+		await initVault(cwd, {
 			name: opts.name,
 			provider,
 			model,

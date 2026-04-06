@@ -1,3 +1,4 @@
+import type { LLMProvider } from "@kibhq/core";
 import {
 	createProvider,
 	loadConfig,
@@ -52,7 +53,7 @@ export async function skill(subcommand: string, name?: string, _opts?: unknown) 
 
 			log.header(`running skill: ${s.name}`);
 
-			let provider;
+			let provider: LLMProvider | undefined;
 			if (s.llm?.required) {
 				const config = await loadConfig(root);
 				const modelKey = s.llm.model === "fast" ? "fast_model" : "model";

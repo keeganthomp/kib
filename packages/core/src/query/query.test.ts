@@ -3,7 +3,13 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SearchIndex } from "../search/engine.js";
-import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
+import type {
+	CompletionParams,
+	CompletionResult,
+	LLMProvider,
+	Message,
+	StreamChunk,
+} from "../types.js";
 import { initVault, writeWiki } from "../vault.js";
 import { queryVault } from "./query.js";
 
@@ -133,7 +139,7 @@ describe("queryVault", () => {
 		await index.save(root);
 
 		// Track what gets sent to the provider
-		let receivedMessages: any[] = [];
+		let receivedMessages: Message[] = [];
 		const provider: LLMProvider = {
 			name: "mock",
 			async complete(params: CompletionParams): Promise<CompletionResult> {
