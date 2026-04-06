@@ -1,6 +1,9 @@
 node_modules/
 dist/
 .kb/
+raw/
+wiki/
+inbox/
 *.tgz
 .env
 .env.*
