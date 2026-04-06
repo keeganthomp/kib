@@ -7,7 +7,7 @@ The Headless Knowledge Compiler. A CLI-first, LLM-powered tool that turns raw so
 ## Install
 
 ```bash
-# npm / bun
+# Requires Bun (https://bun.sh)
 npm i -g @kibhq/cli
 
 # or run without installing
@@ -53,10 +53,13 @@ CORE
   lint                Run health checks on the wiki
   status              Vault health dashboard
 
+INTEGRATION
+  serve --mcp         Start MCP server for AI tool integration
+  watch               Watch inbox/ and auto-ingest new files
+
 MANAGEMENT
   config [key] [val]  Get or set configuration
   skill <sub> [name]  Manage skills (list, run)
-  watch               Watch inbox/ and auto-ingest new files
   export              Export wiki to markdown or HTML
 ```
 
@@ -91,6 +94,30 @@ my-vault/
 ```
 
 The vault is just files. View it in any editor. Version it with git. No lock-in.
+
+## MCP Server
+
+Expose your vault as MCP tools for AI tool integration:
+
+```bash
+kib serve --mcp
+```
+
+8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
+
+Add to your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "kib": {
+      "command": "kib",
+      "args": ["serve", "--mcp"],
+      "cwd": "/path/to/your/vault"
+    }
+  }
+}
+```
 
 ## Links
 
