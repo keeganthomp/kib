@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseFrontmatter } from "../compile/diff.js";
-import { CACHE_DIR, VAULT_DIR, WIKI_DIR } from "../constants.js";
+import { CACHE_DIR, VAULT_DIR } from "../constants.js";
 import type { SearchResult } from "../types.js";
 import { listRaw, listWiki } from "../vault.js";
 
@@ -133,18 +133,18 @@ function tokenize(text: string): string[] {
 function stem(word: string): string {
 	if (word.length < 4) return word;
 	// Order matters: try longest suffixes first
-	if (word.endsWith("ization")) return word.slice(0, -7) + "ize";
-	if (word.endsWith("ational")) return word.slice(0, -7) + "ate";
-	if (word.endsWith("iveness")) return word.slice(0, -7) + "ive";
-	if (word.endsWith("fulness")) return word.slice(0, -7) + "ful";
-	if (word.endsWith("ousli")) return word.slice(0, -5) + "ous";
-	if (word.endsWith("ation")) return word.slice(0, -5) + "ate";
+	if (word.endsWith("ization")) return `${word.slice(0, -7)}ize`;
+	if (word.endsWith("ational")) return `${word.slice(0, -7)}ate`;
+	if (word.endsWith("iveness")) return `${word.slice(0, -7)}ive`;
+	if (word.endsWith("fulness")) return `${word.slice(0, -7)}ful`;
+	if (word.endsWith("ousli")) return `${word.slice(0, -5)}ous`;
+	if (word.endsWith("ation")) return `${word.slice(0, -5)}ate`;
 	if (word.endsWith("ness")) return word.slice(0, -4);
 	if (word.endsWith("ment")) return word.slice(0, -4);
-	if (word.endsWith("ting")) return word.slice(0, -3) + "e";
+	if (word.endsWith("ting")) return `${word.slice(0, -3)}e`;
 	if (word.endsWith("ing") && word.length > 5) return word.slice(0, -3);
-	if (word.endsWith("ies") && word.length > 4) return word.slice(0, -3) + "y";
-	if (word.endsWith("ied")) return word.slice(0, -3) + "y";
+	if (word.endsWith("ies") && word.length > 4) return `${word.slice(0, -3)}y`;
+	if (word.endsWith("ied")) return `${word.slice(0, -3)}y`;
 	if (word.endsWith("ous")) return word.slice(0, -3);
 	if (word.endsWith("ful")) return word.slice(0, -3);
 	if (word.endsWith("ers")) return word.slice(0, -3);

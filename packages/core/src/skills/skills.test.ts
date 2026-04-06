@@ -3,7 +3,6 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
-	CompletionParams,
 	CompletionResult,
 	LLMProvider,
 	SkillContext,

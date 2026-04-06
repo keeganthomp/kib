@@ -1,7 +1,7 @@
 import { watch as fsWatch } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { INBOX_DIR, loadConfig, resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
+import { loadConfig, resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 
 export async function watch() {
@@ -40,7 +40,7 @@ export async function watch() {
 	const server = startHttpServer(root, ingestSource);
 
 	// Watch for new files
-	const watcher = fsWatch(inboxPath, { recursive: false }, async (event, filename) => {
+	const watcher = fsWatch(inboxPath, { recursive: false }, async (_event, filename) => {
 		if (!filename || processed.has(filename)) return;
 		if (filename.startsWith(".")) return; // skip dotfiles
 

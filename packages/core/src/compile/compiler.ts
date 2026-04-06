@@ -1,12 +1,10 @@
-import { readFile } from "node:fs/promises";
-import { join, relative } from "node:path";
-import { GRAPH_FILE, INDEX_FILE, WIKI_DIR } from "../constants.js";
+import { join } from "node:path";
+import { GRAPH_FILE, INDEX_FILE } from "../constants.js";
 import { hash } from "../hash.js";
 import { countWords } from "../ingest/normalize.js";
 import type { CompileResult, LLMProvider, Manifest, VaultConfig } from "../types.js";
 import {
 	deleteFile,
-	listWiki,
 	loadManifest,
 	readIndex,
 	readRaw,

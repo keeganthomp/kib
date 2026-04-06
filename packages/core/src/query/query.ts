@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { parseFrontmatter } from "../compile/diff.js";
 import { SearchIndex } from "../search/engine.js";
 import type { CompletionResult, LLMProvider, Message } from "../types.js";
-import { listWiki, readIndex } from "../vault.js";
+import { readIndex } from "../vault.js";
 
 export interface QueryOptions {
 	/** Maximum articles to include as context */

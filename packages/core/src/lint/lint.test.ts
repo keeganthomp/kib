@@ -3,7 +3,6 @@ import { writeFile as fsWriteFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ingestSource } from "../ingest/ingest.js";
-import type { Manifest } from "../types.js";
 import { initVault, loadManifest, saveManifest, writeWiki } from "../vault.js";
 import { lintVault } from "./lint.js";
 
@@ -61,7 +60,7 @@ describe("lint engine", () => {
 
 		// Update manifest to include articles with backlinks
 		const manifest = await loadManifest(root);
-		manifest.articles["alpha"] = {
+		manifest.articles.alpha = {
 			hash: "a",
 			createdAt: new Date().toISOString(),
 			lastUpdated: new Date().toISOString(),
@@ -73,7 +72,7 @@ describe("lint engine", () => {
 			wordCount: 10,
 			category: "concept",
 		};
-		manifest.articles["beta"] = {
+		manifest.articles.beta = {
 			hash: "b",
 			createdAt: new Date().toISOString(),
 			lastUpdated: new Date().toISOString(),
@@ -103,7 +102,7 @@ describe("lint engine", () => {
 
 		// Add to manifest with no backlinks
 		const manifest = await loadManifest(root);
-		manifest.articles["orphan"] = {
+		manifest.articles.orphan = {
 			hash: "o",
 			createdAt: new Date().toISOString(),
 			lastUpdated: new Date().toISOString(),
@@ -137,7 +136,7 @@ describe("lint engine", () => {
 		);
 
 		const manifest = await loadManifest(root);
-		manifest.articles["test"] = {
+		manifest.articles.test = {
 			hash: "t",
 			createdAt: new Date().toISOString(),
 			lastUpdated: new Date().toISOString(),

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEFAULT_CATEGORIES, DEFAULTS, MANIFEST_VERSION, RAW_CATEGORIES } from "./constants.js";
+import { DEFAULT_CATEGORIES, DEFAULTS, MANIFEST_VERSION } from "./constants.js";
 
 // ─── Source Types ────────────────────────────────────────────────
 

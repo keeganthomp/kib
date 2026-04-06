@@ -155,7 +155,7 @@ export async function startMcpServer(root: string) {
 			try {
 				const content = scope === "wiki" ? await readWiki(root, path) : await readRaw(root, path);
 				return ok(content);
-			} catch (e) {
+			} catch (_e) {
 				return err(`File not found: ${path}`);
 			}
 		},

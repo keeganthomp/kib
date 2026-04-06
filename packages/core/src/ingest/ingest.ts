@@ -1,4 +1,3 @@
-import { basename, extname, resolve } from "node:path";
 import { hash } from "../hash.js";
 import type { IngestResult, Manifest, SourceEntry, SourceType } from "../types.js";
 import { loadManifest, saveManifest, writeRaw } from "../vault.js";
@@ -161,7 +160,7 @@ function categoryForType(sourceType: SourceType): string {
 
 function findExistingSource(
 	manifest: Manifest,
-	uri: string,
+	_uri: string,
 	contentHash: string,
 ): { id: string; path: string } | null {
 	for (const [id, source] of Object.entries(manifest.sources)) {
