@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -24,3 +28,98 @@ jobs:
 
       - name: Test
         run: bun test
+
+  release-please:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      core-release_created: ${{ steps.release.outputs['packages/core--release_created'] }}
+      cli-release_created: ${{ steps.release.outputs['packages/cli--release_created'] }}
+      core-tag_name: ${{ steps.release.outputs['packages/core--tag_name'] }}
+      cli-tag_name: ${{ steps.release.outputs['packages/cli--tag_name'] }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Publish @kibhq/core
+        if: needs.release-please.outputs.core-release_created == 'true'
+        run: |
+          cd packages/core
+          bun publish --access public
+        env:
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @kibhq/cli
+        if: needs.release-please.outputs.cli-release_created == 'true'
+        run: |
+          cd packages/cli
+          bun publish --access public
+        env:
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  build-binaries:
+    needs: release-please
+    if: needs.release-please.outputs.cli-release_created == 'true'
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: bun-linux-x64
+            artifact: kib-linux-x64
+          - os: ubuntu-latest
+            target: bun-linux-arm64
+            artifact: kib-linux-arm64
+          - os: macos-latest
+            target: bun-darwin-arm64
+            artifact: kib-darwin-arm64
+          - os: macos-latest
+            target: bun-darwin-x64
+            artifact: kib-darwin-x64
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build standalone binary
+        run: |
+          bun build packages/cli/bin/kib.ts \
+            --compile \
+            --target=${{ matrix.target }} \
+            --outfile=${{ matrix.artifact }}
+
+      - name: Upload binary to release
+        run: |
+          gh release upload ${{ needs.release-please.outputs.cli-tag_name }} \
+            ${{ matrix.artifact }} \
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
