@@ -4,8 +4,9 @@ What's built, what's next, and what's deferred.
 
 ---
 
-## Shipped (v0.1.0)
+## Shipped (v0.2.0)
 
+### Core
 - `kib init` — vault creation with auto-detected LLM provider
 - `kib ingest` — web, file, PDF, YouTube, GitHub extractors with dedup
 - `kib compile` — LLM-powered compilation with incremental builds, INDEX.md, GRAPH.md
@@ -18,26 +19,31 @@ What's built, what's next, and what's deferred.
 - `kib export` — markdown and HTML static site export
 - `kib status` — vault health dashboard
 - `kib config` — get/set/list vault configuration
-- LLM providers: Anthropic, OpenAI, Ollama
+
+### LLM & Providers
+- Anthropic, OpenAI, Ollama providers with lazy-loading
+- Interactive provider setup flow (select provider, enter API key, auto-save)
+- Credentials stored at `~/.config/kib/credentials`, auto-loaded on startup
 - LLM response cache with TTL
-- 206 tests across 18 test files
+
+### Distribution
+- Published to npm as `@kibhq/core` and `@kibhq/cli`
+- Standalone binaries for macOS/Linux via `bun build --compile`
+- Release Please: auto-versioning, changelogs, npm publish, binary builds
+- CI: Biome lint + 412 tests on every push
+
+### MCP Server
+- `kib serve --mcp` — expose vault as MCP tools over stdio
+- 8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
+- 2 resources: `wiki://index`, `wiki://graph`
+- Works with Claude Desktop, Cursor, Claude Code
 
 ---
 
-## v0.2.0 — Distribution & Polish
+## v0.3.0 — Polish & Packaging
 
-### npm + Binary Distribution
-- [x] Publish to npm as `@kibhq/core` and `@kibhq/cli`
-- [x] `bun build --compile` for standalone macOS/Linux binaries
-- [x] GitHub Actions release workflow via Release Please: auto-PR → merge → npm publish + binary upload
+### Remaining Distribution
 - [ ] Homebrew formula for `brew install kib`
-- [x] Add `"files"` field to package.json to exclude test files from npm package
-
-### MCP Server Mode
-- [x] `kib serve --mcp` — expose vault as MCP tools over stdio
-- [x] MCP tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
-- [x] MCP resources: `wiki://index`, `wiki://graph`
-- [x] Documentation for Claude Desktop / Cursor / Claude Code integration
 - [ ] Auto-generate a `CLAUDE.md` in vault root on `kib init` for agent discovery
 
 ### CLI Polish
@@ -51,7 +57,7 @@ What's built, what's next, and what's deferred.
 
 ---
 
-## v0.3.0 — Smarter Compilation
+## v0.4.0 — Smarter Compilation
 
 ### Token Budget Management
 - [ ] Track token usage per compile pass and per source
@@ -64,18 +70,18 @@ What's built, what's next, and what's deferred.
 - [ ] Article merging: detect when two sources produce articles about the same topic
 - [ ] Compile cache integration: skip LLM call when cache hit matches
 - [ ] Retry with adjusted prompt when LLM returns malformed output (max 2 retries)
-- [ ] `kib compile --source <path>` to recompile a specific source
+- [x] `kib compile --source <path>` to recompile a specific source
 - [ ] Streaming compile output: show article titles as they're generated
 - [ ] Parallel compilation: compile independent sources concurrently
 
 ### Multi-Model Support
 - [ ] Config-based model selection per operation: `compile.model`, `query.model`, `lint.model`
-- [ ] `fast_model` used for lightweight ops (search relevance, classification)
-- [ ] `default` model used for heavy ops (compile, query)
+- [x] `fast_model` used for lightweight ops (skills with `model: "fast"`)
+- [x] `default` model used for heavy ops (compile, query)
 
 ---
 
-## v0.4.0 — Image + Vision Support
+## v0.5.0 — Image + Vision Support
 
 ### Image Extractor
 - [ ] `kib ingest photo.png` — send to vision model, get markdown description
@@ -93,7 +99,7 @@ What's built, what's next, and what's deferred.
 
 ---
 
-## v0.5.0 — Browser Extension
+## v0.6.0 — Browser Extension
 
 ### Chrome Extension (MV3)
 - [ ] `packages/extension/` — Chrome Manifest V3 extension
@@ -110,7 +116,7 @@ What's built, what's next, and what's deferred.
 
 ---
 
-## v0.6.0 — Advanced Search
+## v0.7.0 — Advanced Search
 
 ### Vector/Semantic Search
 - [ ] Optional embedding-based search alongside BM25
@@ -128,7 +134,7 @@ What's built, what's next, and what's deferred.
 
 ---
 
-## v0.7.0 — Skill Ecosystem
+## v0.8.0 — Skill Ecosystem
 
 ### Remote Skill Registry
 - [ ] `kib skill install github:user/skill-name` — install from GitHub repo
