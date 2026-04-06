@@ -236,6 +236,30 @@ export function createMcpServer(root: string) {
 					category,
 					tags: tags?.split(",").map((t) => t.trim()),
 				});
+
+				// Auto-compile after ingest so content is immediately queryable
+				let compiled = null;
+				if (!result.skipped) {
+					try {
+						const provider = await ctx.getProvider();
+						const config = await ctx.getConfig();
+						compiled = await compileVault(root, provider, config, {
+							sourceFilter: result.path,
+						});
+						ctx.invalidateSearch();
+					} catch (compileErr) {
+						// Ingest succeeded but compile failed — still return ingest result
+						ctx.invalidateSearch();
+						return json({
+							path: result.path,
+							title: result.title,
+							wordCount: result.wordCount,
+							skipped: result.skipped,
+							compileError: (compileErr as Error).message,
+						});
+					}
+				}
+
 				ctx.invalidateSearch();
 				return json({
 					path: result.path,
@@ -243,6 +267,12 @@ export function createMcpServer(root: string) {
 					wordCount: result.wordCount,
 					skipped: result.skipped,
 					skipReason: result.skipReason,
+					compiled: compiled
+						? {
+								articlesCreated: compiled.articlesCreated,
+								articlesUpdated: compiled.articlesUpdated,
+							}
+						: null,
 				});
 			} catch (e) {
 				return err((e as Error).message);

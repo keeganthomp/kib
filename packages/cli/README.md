@@ -97,15 +97,18 @@ The vault is just files. View it in any editor. Version it with git. No lock-in.
 
 ## MCP Server
 
-Expose your vault as MCP tools for AI tool integration:
+Give your AI assistant direct access to your knowledge base:
 
 ```bash
-kib serve --mcp
+kib mcp setup
 ```
+
+Auto-detects and configures Claude Code, Claude Desktop, and Cursor. Restart your AI client and it can search, query, ingest, and compile your vault.
 
 8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
 
-Add to your MCP client config:
+<details>
+<summary>Manual setup (other clients)</summary>
 
 ```json
 {
@@ -118,6 +121,8 @@ Add to your MCP client config:
   }
 }
 ```
+
+</details>
 
 ## Links
 
