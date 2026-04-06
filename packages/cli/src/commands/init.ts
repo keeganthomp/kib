@@ -2,6 +2,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { detectProvider, initVault, VaultExistsError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
+import { setupMcp } from "./mcp.js";
 
 const DEFAULT_VAULT = join(homedir(), ".kib");
 
@@ -45,6 +46,12 @@ export async function init(dir: string | undefined, opts: InitOpts) {
 
 		log.success(`Detected provider: ${providerLabel}`);
 		log.success(`Model: ${model}`);
+
+		// Auto-configure MCP in all detected AI clients
+		log.blank();
+		log.header("configuring MCP clients");
+		await setupMcp(target);
+
 		log.blank();
 		log.dim(`vault ready — start with kib ingest <source>`);
 		log.blank();

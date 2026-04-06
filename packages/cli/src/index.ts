@@ -116,16 +116,16 @@ program
 
 program
 	.command("serve")
-	.description("Start an MCP server for AI tool integration")
-	.option("--mcp", "expose vault as MCP tools over stdio")
-	.action(async (opts) => {
+	.description("Start the MCP server over stdio")
+	.option("--mcp", "(accepted for backwards compat, no-op)")
+	.action(async () => {
 		const { serve } = await import("./commands/serve.js");
-		await serve(opts);
+		await serve();
 	});
 
 program
-	.command("mcp <subcommand>")
-	.description("MCP server management (setup)")
+	.command("mcp [subcommand]")
+	.description("Configure MCP in AI clients (default: setup)")
 	.action(async (subcommand) => {
 		const { mcp } = await import("./commands/mcp.js");
 		await mcp(subcommand);
