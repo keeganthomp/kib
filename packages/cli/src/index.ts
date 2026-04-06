@@ -124,6 +124,14 @@ program
 	});
 
 program
+	.command("mcp <subcommand>")
+	.description("MCP server management (setup)")
+	.action(async (subcommand) => {
+		const { mcp } = await import("./commands/mcp.js");
+		await mcp(subcommand);
+	});
+
+program
 	.command("export")
 	.description("Export wiki to other formats")
 	.option("--format <type>", "output format: markdown, html, pdf", "markdown")

@@ -232,17 +232,22 @@ kib config provider.model gpt-4o
 
 ## MCP Server
 
-kib exposes your vault as MCP tools, so Claude Desktop, Cursor, Claude Code, and other AI tools can search, query, and ingest into your knowledge base directly.
+Give your AI assistant direct access to your knowledge base. One command auto-configures Claude Code, Claude Desktop, and Cursor:
 
 ```bash
-kib serve --mcp
+npm i -g @kibhq/cli && kib init && kib mcp setup
 ```
+
+That's it. Restart your AI client and it can search, query, ingest, and compile your vault.
 
 **8 tools:** `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
 
 **2 resources:** `wiki://index`, `wiki://graph`
 
-Add to your MCP client config (Claude Desktop, Cursor, Claude Code):
+<details>
+<summary>Manual setup (other clients)</summary>
+
+Add this to your MCP client config:
 
 ```json
 {
@@ -255,6 +260,10 @@ Add to your MCP client config (Claude Desktop, Cursor, Claude Code):
   }
 }
 ```
+
+Or run `kib mcp setup` from your vault to auto-detect and configure supported clients.
+
+</details>
 
 ## Tech Stack
 

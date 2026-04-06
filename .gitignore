@@ -1,6 +1,9 @@
 node_modules/
 dist/
 .kb/
+raw/
+wiki/
+inbox/
 *.tgz
 .env
 .env.*
@@ -10,3 +13,5 @@ dist/
 *.log
 coverage/
 *.tsbuildinfo
+.mcp.json
+
