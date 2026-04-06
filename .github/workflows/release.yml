@@ -3,6 +3,10 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: "Release version (e.g. 0.4.0). Leave blank to use current package.json version."
+        type: string
+        default: ""
       dry_run:
         description: "Dry run (skip publish & upload)"
         type: boolean
@@ -18,17 +22,38 @@ jobs:
   check:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ steps.resolve.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Read version
-        id: version
-        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+      - name: Resolve version
+        id: resolve
+        run: |
+          INPUT_VERSION="${{ inputs.version }}"
+          if [ -n "$INPUT_VERSION" ]; then
+            echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump versions if input provided
+        if: inputs.version != ''
+        run: |
+          VERSION="${{ steps.resolve.outputs.version }}"
+          for f in package.json packages/core/package.json packages/cli/package.json; do
+            jq --arg v "$VERSION" '.version = $v' "$f" > tmp.json && mv tmp.json "$f"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json packages/core/package.json packages/cli/package.json
+          git commit -m "chore: bump version to $VERSION"
+          git push
 
       - name: Verify versions are in sync
         run: |
@@ -43,7 +68,7 @@ jobs:
 
       - name: Check tag doesn't already exist
         run: |
-          TAG="v${{ steps.version.outputs.version }}"
+          TAG="v${{ steps.resolve.outputs.version }}"
           if git ls-remote --tags origin | grep -q "refs/tags/$TAG$"; then
             echo "::error::Tag $TAG already exists. Bump the version before releasing."
             exit 1
@@ -66,6 +91,11 @@ jobs:
       tag: v${{ needs.check.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Pull latest (in case version was bumped)
+        run: git pull
 
       - name: Create tag
         run: |
@@ -88,6 +118,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - run: git pull
 
       - uses: actions/setup-node@v4
         with:
@@ -135,6 +169,10 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - run: git pull
 
       - uses: oven-sh/setup-bun@v2
         with:
