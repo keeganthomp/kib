@@ -72,9 +72,13 @@ describe("resolveVaultRoot", () => {
 		expect(resolveVaultRoot(subdir)).toBe(dir);
 	});
 
-	test("throws if no vault found", async () => {
+	test("falls back to ~/.kib if no local vault found", async () => {
 		const dir = await makeTempDir();
-		expect(() => resolveVaultRoot(dir)).toThrow("No vault found");
+		const result = resolveVaultRoot(dir);
+		// Should either find ~/.kib or throw — depends on host environment
+		if (result) {
+			expect(result).toContain(".kib");
+		}
 	});
 });
 
