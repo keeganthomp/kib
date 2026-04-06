@@ -4,7 +4,8 @@
 		".": {
 			"package-name": "kib",
 			"changelog-path": "CHANGELOG.md",
-			"include-component-in-tag": false
+			"include-component-in-tag": false,
+			"extra-files": ["packages/core/package.json", "packages/cli/package.json"]
 		}
 	}
 }
