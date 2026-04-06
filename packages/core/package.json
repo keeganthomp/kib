@@ -1,52 +1,52 @@
 {
-	"name": "@kibhq/core",
-	"version": "0.4.0",
-	"description": "Core engine for kib — vault operations, LLM providers, ingest, compile, search, and query",
-	"type": "module",
-	"exports": {
-		".": "./src/index.ts"
-	},
-	"files": [
-		"src",
-		"README.md",
-		"package.json"
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/keeganthomp/kib.git",
-		"directory": "packages/core"
-	},
-	"license": "MIT",
-	"keywords": [
-		"knowledge-base",
-		"wiki",
-		"llm",
-		"compiler",
-		"rag",
-		"ai",
-		"search",
-		"bm25"
-	],
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"test": "bun test"
-	},
-	"dependencies": {
-		"@anthropic-ai/sdk": "^0.82.0",
-		"@iarna/toml": "^2.2.5",
-		"cheerio": "^1.2.0",
-		"openai": "^6.33.0",
-		"pdf-parse": "^2.4.5",
-		"turndown": "^7.2.4",
-		"xxhash-wasm": "^1.1.0",
-		"yaml": "^2.7.1",
-		"zod": "^3.24.4"
-	},
-	"devDependencies": {
-		"@types/bun": "latest",
-		"@types/turndown": "^5.0.6",
-		"typescript": "^5.8.3"
-	}
+  "name": "@kibhq/core",
+  "version": "0.4.1",
+  "description": "Core engine for kib — vault operations, LLM providers, ingest, compile, search, and query",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keeganthomp/kib.git",
+    "directory": "packages/core"
+  },
+  "license": "MIT",
+  "keywords": [
+    "knowledge-base",
+    "wiki",
+    "llm",
+    "compiler",
+    "rag",
+    "ai",
+    "search",
+    "bm25"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
+    "@iarna/toml": "^2.2.5",
+    "cheerio": "^1.2.0",
+    "openai": "^6.33.0",
+    "pdf-parse": "^2.4.5",
+    "turndown": "^7.2.4",
+    "xxhash-wasm": "^1.1.0",
+    "yaml": "^2.7.1",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/turndown": "^5.0.6",
+    "typescript": "^5.8.3"
+  }
 }

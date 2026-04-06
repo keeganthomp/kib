@@ -1,17 +1,17 @@
 {
-	"name": "kib-monorepo",
-	"private": true,
-	"workspaces": [
-		"packages/*"
-	],
-	"scripts": {
-		"check": "biome check .",
-		"check:fix": "biome check --write .",
-		"test": "bun test",
-		"build": "bun run --filter '*' build"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.4.10"
-	},
-	"version": "0.4.0"
+  "name": "kib-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "test": "bun test",
+    "build": "bun run --filter '*' build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.10"
+  },
+  "version": "0.4.1"
 }
