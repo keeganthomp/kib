@@ -61,7 +61,7 @@ export function countWords(text: string): number {
 		.replace(/```[\s\S]*?```/g, "") // strip code blocks
 		.replace(/`[^`]*`/g, "") // strip inline code
 		.replace(/---[\s\S]*?---/g, "") // strip frontmatter
-		.replace(/[#*_\[\]()>|]/g, " ") // strip markdown syntax
+		.replace(/[#*_[\]()>|]/g, " ") // strip markdown syntax
 		.split(/\s+/)
 		.filter((w) => w.length > 0).length;
 }

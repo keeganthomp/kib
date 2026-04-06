@@ -160,7 +160,10 @@ describe("SearchIndex", () => {
 		await writeWiki(
 			root,
 			"concepts/ai.md",
-			articleMd("Artificial Intelligence", "AI is the simulation of human intelligence by machines."),
+			articleMd(
+				"Artificial Intelligence",
+				"AI is the simulation of human intelligence by machines.",
+			),
 		);
 
 		const index1 = new SearchIndex();
@@ -210,7 +213,10 @@ describe("SearchIndex", () => {
 		await writeWiki(
 			root,
 			"concepts/overview.md",
-			articleMd("Deep Learning Overview", "Various architectures include the transformer and others."),
+			articleMd(
+				"Deep Learning Overview",
+				"Various architectures include the transformer and others.",
+			),
 		);
 
 		const index = new SearchIndex();

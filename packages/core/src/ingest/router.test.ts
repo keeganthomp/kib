@@ -38,9 +38,9 @@ describe("detectSourceType", () => {
 		});
 
 		test("youtube playlist → youtube", () => {
-			expect(
-				detectSourceType("https://www.youtube.com/playlist?list=PLrAXtmErZgOe"),
-			).toBe("youtube");
+			expect(detectSourceType("https://www.youtube.com/playlist?list=PLrAXtmErZgOe")).toBe(
+				"youtube",
+			);
 		});
 	});
 
@@ -50,9 +50,9 @@ describe("detectSourceType", () => {
 		});
 
 		test("github.com repo with path → github", () => {
-			expect(
-				detectSourceType("https://github.com/anthropics/claude-code/tree/main/src"),
-			).toBe("github");
+			expect(detectSourceType("https://github.com/anthropics/claude-code/tree/main/src")).toBe(
+				"github",
+			);
 		});
 
 		test("github.com profile only (1 part) → web", () => {

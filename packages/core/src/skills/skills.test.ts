@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
 import { initVault, writeWiki } from "../vault.js";
-import { loadSkills, findSkill } from "./loader.js";
+import { findSkill, loadSkills } from "./loader.js";
 import { runSkill } from "./runner.js";
 
 let tempDir: string;
@@ -109,16 +109,8 @@ describe("skill runner", () => {
 
 	test("skill context has access to vault data", async () => {
 		const root = await makeTempVault();
-		await writeWiki(
-			root,
-			"concepts/a.md",
-			articleMd("Article A", "article-a", "Content A."),
-		);
-		await writeWiki(
-			root,
-			"concepts/b.md",
-			articleMd("Article B", "article-b", "Content B."),
-		);
+		await writeWiki(root, "concepts/a.md", articleMd("Article A", "article-a", "Content A."));
+		await writeWiki(root, "concepts/b.md", articleMd("Article B", "article-b", "Content B."));
 
 		// Custom skill that tests context access
 		const testSkill = {

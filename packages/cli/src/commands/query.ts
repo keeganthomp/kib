@@ -1,10 +1,12 @@
 import {
-	VaultNotFoundError,
 	createProvider,
 	loadConfig,
+	NoProviderError,
 	resolveVaultRoot,
-} from "@kib/core";
+	VaultNotFoundError,
+} from "@kibhq/core";
 import * as log from "../ui/logger.js";
+import { setupProvider } from "../ui/setup-provider.js";
 import { createSpinner } from "../ui/spinner.js";
 
 interface QueryOpts {
@@ -32,11 +34,15 @@ export async function query(question: string, opts: QueryOpts) {
 	try {
 		provider = await createProvider(config.provider.default, config.provider.model);
 	} catch (err) {
-		log.error((err as Error).message);
-		process.exit(1);
+		if (err instanceof NoProviderError) {
+			provider = await setupProvider(root);
+		} else {
+			log.error((err as Error).message);
+			process.exit(1);
+		}
 	}
 
-	const { queryVault } = await import("@kib/core");
+	const { queryVault } = await import("@kibhq/core");
 
 	log.header("querying knowledge base");
 

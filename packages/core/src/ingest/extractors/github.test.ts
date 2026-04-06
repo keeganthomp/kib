@@ -9,9 +9,7 @@ describe("github extractor", () => {
 		});
 
 		test("parses URL with tree/branch", () => {
-			const result = parseGithubUrl(
-				"https://github.com/anthropics/claude-code/tree/main/src",
-			);
+			const result = parseGithubUrl("https://github.com/anthropics/claude-code/tree/main/src");
 			expect(result).toEqual({ owner: "anthropics", repo: "claude-code", branch: "main" });
 		});
 

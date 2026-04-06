@@ -2,9 +2,9 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { SearchIndex } from "../search/engine.js";
 import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
 import { initVault, writeWiki } from "../vault.js";
-import { SearchIndex } from "../search/engine.js";
 import { queryVault } from "./query.js";
 
 let tempDir: string;
@@ -94,9 +94,7 @@ describe("queryVault", () => {
 	test("returns answer even with empty wiki", async () => {
 		const root = await makeTempVault();
 
-		const provider = mockProvider(
-			"No relevant articles found in the knowledge base.",
-		);
+		const provider = mockProvider("No relevant articles found in the knowledge base.");
 
 		const result = await queryVault(root, "What is a transformer?", provider);
 		expect(result.answer).toBeTruthy();
@@ -128,11 +126,7 @@ describe("queryVault", () => {
 
 	test("supports conversation history", async () => {
 		const root = await makeTempVault();
-		await writeWiki(
-			root,
-			"concepts/test.md",
-			articleMd("Test", "test", "Test content."),
-		);
+		await writeWiki(root, "concepts/test.md", articleMd("Test", "test", "Test content."));
 
 		const index = new SearchIndex();
 		await index.build(root, "wiki");

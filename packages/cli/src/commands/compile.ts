@@ -1,10 +1,12 @@
 import {
-	VaultNotFoundError,
 	createProvider,
 	loadConfig,
+	NoProviderError,
 	resolveVaultRoot,
-} from "@kib/core";
+	VaultNotFoundError,
+} from "@kibhq/core";
 import * as log from "../ui/logger.js";
+import { setupProvider } from "../ui/setup-provider.js";
 import { createSpinner } from "../ui/spinner.js";
 
 interface CompileOpts {
@@ -38,13 +40,17 @@ export async function compile(opts: CompileOpts) {
 		provider = await createProvider(config.provider.default, config.provider.model);
 		providerSpinner.succeed(`Connected to ${provider.name}`);
 	} catch (err) {
-		providerSpinner.fail("Failed to connect to LLM provider");
-		log.error((err as Error).message);
-		process.exit(1);
+		providerSpinner.stop();
+		if (err instanceof NoProviderError) {
+			provider = await setupProvider(root);
+		} else {
+			log.error((err as Error).message);
+			process.exit(1);
+		}
 	}
 
 	// Lazy import compile engine
-	const { compileVault } = await import("@kib/core");
+	const { compileVault } = await import("@kibhq/core");
 
 	const compileSpinner = createSpinner("Compiling sources...");
 	compileSpinner.start();
@@ -96,8 +102,7 @@ export async function compile(opts: CompileOpts) {
 			if (result.operations.length > 0) {
 				log.blank();
 				for (const op of result.operations) {
-					const symbol =
-						op.op === "create" ? "+" : op.op === "update" ? "~" : "-";
+					const symbol = op.op === "create" ? "+" : op.op === "update" ? "~" : "-";
 					log.info(`${symbol} ${op.path}`);
 				}
 			}

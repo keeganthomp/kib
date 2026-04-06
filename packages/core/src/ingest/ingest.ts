@@ -1,10 +1,10 @@
 import { basename, extname, resolve } from "node:path";
-import type { IngestResult, Manifest, SourceEntry, SourceType } from "../types.js";
 import { hash } from "../hash.js";
+import type { IngestResult, Manifest, SourceEntry, SourceType } from "../types.js";
 import { loadManifest, saveManifest, writeRaw } from "../vault.js";
+import type { Extractor } from "./extractors/interface.js";
 import { countWords, normalizeSource, slugify } from "./normalize.js";
 import { detectSourceType } from "./router.js";
-import type { Extractor } from "./extractors/interface.js";
 
 interface IngestOptions {
 	/** Override the detected source type */

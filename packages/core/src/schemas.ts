@@ -3,14 +3,7 @@ import { DEFAULT_CATEGORIES, DEFAULTS, MANIFEST_VERSION, RAW_CATEGORIES } from "
 
 // ─── Source Types ────────────────────────────────────────────────
 
-export const SourceTypeSchema = z.enum([
-	"web",
-	"pdf",
-	"youtube",
-	"github",
-	"image",
-	"file",
-]);
+export const SourceTypeSchema = z.enum(["web", "pdf", "youtube", "github", "image", "file"]);
 
 // ─── Article Categories ──────────────────────────────────────────
 
@@ -189,13 +182,7 @@ export const CompileResultSchema = z.object({
 // ─── Lint Diagnostic ─────────────────────────────────────────────
 
 export const LintSeveritySchema = z.enum(["error", "warning", "info"]);
-export const LintRuleSchema = z.enum([
-	"orphan",
-	"stale",
-	"missing",
-	"broken-link",
-	"frontmatter",
-]);
+export const LintRuleSchema = z.enum(["orphan", "stale", "missing", "broken-link", "frontmatter"]);
 
 export const LintDiagnosticSchema = z.object({
 	rule: LintRuleSchema,

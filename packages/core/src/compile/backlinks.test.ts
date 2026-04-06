@@ -74,11 +74,7 @@ describe("buildLinkGraph", () => {
 describe("generateGraphMd", () => {
 	test("generates adjacency list", async () => {
 		const root = await makeTempVault();
-		await writeWiki(
-			root,
-			"concepts/a.md",
-			"---\nslug: alpha\n---\n\n[[beta]] and [[gamma]].",
-		);
+		await writeWiki(root, "concepts/a.md", "---\nslug: alpha\n---\n\n[[beta]] and [[gamma]].");
 		await writeWiki(root, "concepts/b.md", "---\nslug: beta\n---\n\n[[alpha]].");
 
 		const graph = await buildLinkGraph(root);

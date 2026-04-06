@@ -1,10 +1,12 @@
 import {
-	VaultNotFoundError,
 	createProvider,
 	loadConfig,
+	NoProviderError,
 	resolveVaultRoot,
-} from "@kib/core";
+	VaultNotFoundError,
+} from "@kibhq/core";
 import * as log from "../ui/logger.js";
+import { setupProvider } from "../ui/setup-provider.js";
 import { createSpinner } from "../ui/spinner.js";
 
 export async function skill(subcommand: string, name?: string, _opts?: unknown) {
@@ -19,7 +21,7 @@ export async function skill(subcommand: string, name?: string, _opts?: unknown) 
 		throw err;
 	}
 
-	const { loadSkills, findSkill, runSkill } = await import("@kib/core");
+	const { loadSkills, findSkill, runSkill } = await import("@kibhq/core");
 
 	switch (subcommand) {
 		case "list": {
@@ -58,8 +60,12 @@ export async function skill(subcommand: string, name?: string, _opts?: unknown) 
 				try {
 					provider = await createProvider(config.provider.default, model);
 				} catch (err) {
-					log.error((err as Error).message);
-					process.exit(1);
+					if (err instanceof NoProviderError) {
+						provider = await setupProvider(root);
+					} else {
+						log.error((err as Error).message);
+						process.exit(1);
+					}
 				}
 			}
 

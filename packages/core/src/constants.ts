@@ -19,13 +19,7 @@ export const GRAPH_FILE = "GRAPH.md";
 export const DEFAULT_CATEGORIES = ["concepts", "topics", "references", "outputs"] as const;
 
 /** Raw source categories (subdirectories of raw/) */
-export const RAW_CATEGORIES = [
-	"articles",
-	"papers",
-	"repos",
-	"images",
-	"transcripts",
-] as const;
+export const RAW_CATEGORIES = ["articles", "papers", "repos", "images", "transcripts"] as const;
 
 /** Default config values */
 export const DEFAULTS = {

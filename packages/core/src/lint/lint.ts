@@ -19,10 +19,7 @@ export interface LintResult {
 /**
  * Run lint checks on the wiki.
  */
-export async function lintVault(
-	root: string,
-	options: LintOptions = {},
-): Promise<LintResult> {
+export async function lintVault(root: string, options: LintOptions = {}): Promise<LintResult> {
 	const manifest = await loadManifest(root);
 
 	const rules = options.ruleFilter

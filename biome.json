@@ -1,33 +1,38 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "correctness": {
-        "noUnusedImports": "warn",
-        "noUnusedVariables": "warn"
-      },
-      "style": {
-        "noNonNullAssertion": "off"
-      }
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "tab",
-    "lineWidth": 100
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double",
-      "semicolons": "always"
-    }
-  },
-  "files": {
-    "ignore": ["node_modules", "dist", ".kb", "bun.lock"]
-  }
+	"$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
+	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"correctness": {
+				"noUnusedImports": "warn",
+				"noUnusedVariables": "warn",
+				"noUnusedFunctionParameters": "warn"
+			},
+			"suspicious": {
+				"noExplicitAny": "warn",
+				"noImplicitAnyLet": "warn",
+				"noAssignInExpressions": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "off",
+				"useTemplate": "warn"
+			}
+		}
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 100
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"semicolons": "always"
+		}
+	},
+	"files": {
+		"includes": ["**", "!**/node_modules", "!**/dist", "!**/.kb", "!**/bun.lock"]
+	}
 }

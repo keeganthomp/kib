@@ -3,9 +3,9 @@ import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
-import { initVault, loadManifest, readWiki, listWiki } from "../vault.js";
 import { ingestSource } from "../ingest/ingest.js";
+import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
+import { initVault, listWiki, loadManifest, readWiki } from "../vault.js";
 import { compileVault } from "./compiler.js";
 
 let tempDir: string;

@@ -5,14 +5,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	initVault,
+	listWiki,
 	loadConfig,
 	loadManifest,
 	readRaw,
+	readWiki,
 	resolveVaultRoot,
 	writeRaw,
 	writeWiki,
-	listWiki,
-	readWiki,
 } from "./vault.js";
 
 let tempDir: string;

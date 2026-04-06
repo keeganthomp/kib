@@ -1,9 +1,4 @@
-import {
-	VaultNotFoundError,
-	loadConfig,
-	loadManifest,
-	resolveVaultRoot,
-} from "@kib/core";
+import { loadConfig, loadManifest, resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 
 export async function status() {
@@ -34,8 +29,14 @@ export async function status() {
 		(s) => !s.lastCompiled || s.lastCompiled < s.ingestedAt,
 	).length;
 
-	log.keyValue("SOURCES", `${sourceCount} total${pendingCount > 0 ? ` | ${pendingCount} pending compilation` : ""}`);
-	log.keyValue("ARTICLES", `${articleCount} total | ${manifest.stats.totalWords.toLocaleString()} words`);
+	log.keyValue(
+		"SOURCES",
+		`${sourceCount} total${pendingCount > 0 ? ` | ${pendingCount} pending compilation` : ""}`,
+	);
+	log.keyValue(
+		"ARTICLES",
+		`${articleCount} total | ${manifest.stats.totalWords.toLocaleString()} words`,
+	);
 
 	if (manifest.vault.lastCompiled) {
 		const ago = timeAgo(new Date(manifest.vault.lastCompiled));

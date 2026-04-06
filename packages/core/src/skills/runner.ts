@@ -1,18 +1,24 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { parseFrontmatter } from "../compile/diff.js";
 import { WIKI_DIR } from "../constants.js";
-import type { LLMProvider, Manifest, SkillContext, SkillDefinition, VaultConfig } from "../types.js";
+import { SearchIndex } from "../search/engine.js";
+import type {
+	LLMProvider,
+	Manifest,
+	SkillContext,
+	SkillDefinition,
+	VaultConfig,
+} from "../types.js";
 import {
-	listWiki,
 	listRaw,
-	loadManifest,
+	listWiki,
 	loadConfig,
+	loadManifest,
 	readIndex,
 	readWiki,
 	writeWiki,
 } from "../vault.js";
-import { parseFrontmatter } from "../compile/diff.js";
-import { SearchIndex } from "../search/engine.js";
 
 export interface RunSkillOptions {
 	/** Additional CLI args */

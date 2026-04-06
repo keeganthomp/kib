@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { relative } from "node:path";
+import { extractWikilinks, parseFrontmatter } from "../compile/diff.js";
 import { WIKI_DIR } from "../constants.js";
 import type { LintDiagnostic, Manifest } from "../types.js";
 import { listWiki } from "../vault.js";
-import { extractWikilinks, parseFrontmatter } from "../compile/diff.js";
 
 type LintRuleFn = (root: string, manifest: Manifest) => Promise<LintDiagnostic[]>;
 
@@ -35,9 +35,7 @@ export const brokenLinkRule: LintRuleFn = async (root, manifest) => {
 	const diagnostics: LintDiagnostic[] = [];
 	const wikiDir = `${root}/${WIKI_DIR}`;
 	const files = await listWiki(root);
-	const articleFiles = files.filter(
-		(f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"),
-	);
+	const articleFiles = files.filter((f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"));
 
 	// Build set of known slugs
 	const knownSlugs = new Set(Object.keys(manifest.articles));
@@ -91,9 +89,7 @@ export const frontmatterRule: LintRuleFn = async (root) => {
 	const diagnostics: LintDiagnostic[] = [];
 	const wikiDir = `${root}/${WIKI_DIR}`;
 	const files = await listWiki(root);
-	const articleFiles = files.filter(
-		(f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"),
-	);
+	const articleFiles = files.filter((f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"));
 
 	const requiredFields = ["title", "slug", "category"];
 
@@ -138,9 +134,7 @@ export const missingRule: LintRuleFn = async (root, manifest) => {
 	const diagnostics: LintDiagnostic[] = [];
 	const wikiDir = `${root}/${WIKI_DIR}`;
 	const files = await listWiki(root);
-	const articleFiles = files.filter(
-		(f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"),
-	);
+	const articleFiles = files.filter((f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"));
 
 	// Collect all wikilinks across all articles
 	const linkCounts = new Map<string, number>();

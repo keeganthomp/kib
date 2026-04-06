@@ -41,7 +41,7 @@ describe("file extractor", () => {
 	test("wraps code files in fenced code blocks", async () => {
 		const dir = await makeTempDir();
 		const path = join(dir, "index.ts");
-		await writeFile(path, 'const x = 1;\nconsole.log(x);');
+		await writeFile(path, "const x = 1;\nconsole.log(x);");
 
 		const result = await extractor.extract(path);
 		expect(result.title).toBe("Index");
@@ -120,7 +120,7 @@ describe("file extractor", () => {
 	test("handles Go files", async () => {
 		const dir = await makeTempDir();
 		const path = join(dir, "main.go");
-		await writeFile(path, 'package main\n\nfunc main() {}');
+		await writeFile(path, "package main\n\nfunc main() {}");
 
 		const result = await extractor.extract(path);
 		expect(result.content).toContain("```go");

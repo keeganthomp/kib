@@ -17,10 +17,7 @@ export async function loadSkills(root: string): Promise<SkillDefinition[]> {
 /**
  * Find a skill by name.
  */
-export async function findSkill(
-	root: string,
-	name: string,
-): Promise<SkillDefinition | null> {
+export async function findSkill(root: string, name: string): Promise<SkillDefinition | null> {
 	const skills = await loadSkills(root);
 	return skills.find((s) => s.name === name) ?? null;
 }

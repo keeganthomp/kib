@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
-import type { ExtractOptions, ExtractResult, Extractor } from "./interface.js";
+import type { ExtractOptions, Extractor, ExtractResult } from "./interface.js";
 
 // Lazy-load pdf-parse (it's heavy)
 let pdfParse: any = null;
@@ -50,9 +50,7 @@ export function createPdfExtractor(): Extractor {
 				formatFilename(input);
 
 			const author = data.info?.Author ?? undefined;
-			const date = data.info?.CreationDate
-				? parsePdfDate(data.info.CreationDate)
-				: undefined;
+			const date = data.info?.CreationDate ? parsePdfDate(data.info.CreationDate) : undefined;
 
 			// Clean up the extracted text into readable markdown
 			const content = formatPdfText(data.text, title);
@@ -76,7 +74,10 @@ export function createPdfExtractor(): Extractor {
  * Academic papers often have the title as the first prominent line.
  */
 function extractTitleFromText(text: string): string | undefined {
-	const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+	const lines = text
+		.split("\n")
+		.map((l) => l.trim())
+		.filter(Boolean);
 	// First non-empty line that's between 10-200 chars and doesn't look like metadata
 	for (const line of lines.slice(0, 5)) {
 		if (

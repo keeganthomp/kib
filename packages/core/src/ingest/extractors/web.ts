@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import TurndownService from "turndown";
-import type { ExtractOptions, ExtractResult, Extractor } from "./interface.js";
+import type { ExtractOptions, Extractor, ExtractResult } from "./interface.js";
 
 const REMOVE_SELECTORS = [
 	"script",
@@ -52,8 +52,7 @@ export function createWebExtractor(): Extractor {
 		async extract(url: string, options?: ExtractOptions): Promise<ExtractResult> {
 			const response = await fetch(url, {
 				headers: {
-					"User-Agent":
-						"Mozilla/5.0 (compatible; kib/0.1; +https://github.com/kib-cli/kib)",
+					"User-Agent": "Mozilla/5.0 (compatible; kib/0.1; +https://github.com/kib-cli/kib)",
 					Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 				},
 				redirect: "follow",

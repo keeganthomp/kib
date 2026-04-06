@@ -1,7 +1,4 @@
-import {
-	VaultNotFoundError,
-	resolveVaultRoot,
-} from "@kib/core";
+import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
 
@@ -24,7 +21,7 @@ export async function ingest(sources: string[], opts: IngestOpts) {
 	}
 
 	// Lazy import — don't load ingest machinery for other commands
-	const { ingestSource } = await import("@kib/core");
+	const { ingestSource } = await import("@kibhq/core");
 
 	log.header("ingesting sources");
 
@@ -59,7 +56,9 @@ export async function ingest(sources: string[], opts: IngestOpts) {
 
 	log.blank();
 	if (ingested > 0) {
-		log.success(`Ingested ${ingested} source${ingested === 1 ? "" : "s"}${skipped > 0 ? `, skipped ${skipped}` : ""}`);
+		log.success(
+			`Ingested ${ingested} source${ingested === 1 ? "" : "s"}${skipped > 0 ? `, skipped ${skipped}` : ""}`,
+		);
 		log.blank();
 		log.dim("run kib compile to update the wiki");
 	} else if (skipped > 0) {

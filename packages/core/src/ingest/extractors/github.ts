@@ -1,4 +1,4 @@
-import type { ExtractOptions, ExtractResult, Extractor } from "./interface.js";
+import type { ExtractOptions, Extractor, ExtractResult } from "./interface.js";
 
 export function createGithubExtractor(): Extractor {
 	return {

@@ -1,27 +1,121 @@
-import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { parseFrontmatter } from "../compile/diff.js";
 import { CACHE_DIR, VAULT_DIR, WIKI_DIR } from "../constants.js";
 import type { SearchResult } from "../types.js";
-import { listWiki, listRaw } from "../vault.js";
-import { parseFrontmatter } from "../compile/diff.js";
+import { listRaw, listWiki } from "../vault.js";
 
 // ─── Stop Words ──────────────────────────────────────────────────
 
 const STOP_WORDS = new Set([
-	"a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
-	"has", "he", "in", "is", "it", "its", "of", "on", "or", "she",
-	"that", "the", "to", "was", "were", "will", "with", "this",
-	"but", "they", "have", "had", "not", "been", "can", "do", "does",
-	"did", "would", "could", "should", "may", "might", "shall",
-	"which", "who", "whom", "what", "when", "where", "how", "why",
-	"all", "each", "every", "both", "few", "more", "most", "other",
-	"some", "such", "no", "nor", "only", "own", "same", "so", "than",
-	"too", "very", "just", "about", "above", "after", "again",
-	"also", "am", "any", "because", "before", "being", "between",
-	"during", "here", "if", "into", "itself", "me", "my", "myself",
-	"once", "our", "out", "over", "then", "there", "these", "those",
-	"through", "under", "until", "up", "we", "while", "you", "your",
+	"a",
+	"an",
+	"and",
+	"are",
+	"as",
+	"at",
+	"be",
+	"by",
+	"for",
+	"from",
+	"has",
+	"he",
+	"in",
+	"is",
+	"it",
+	"its",
+	"of",
+	"on",
+	"or",
+	"she",
+	"that",
+	"the",
+	"to",
+	"was",
+	"were",
+	"will",
+	"with",
+	"this",
+	"but",
+	"they",
+	"have",
+	"had",
+	"not",
+	"been",
+	"can",
+	"do",
+	"does",
+	"did",
+	"would",
+	"could",
+	"should",
+	"may",
+	"might",
+	"shall",
+	"which",
+	"who",
+	"whom",
+	"what",
+	"when",
+	"where",
+	"how",
+	"why",
+	"all",
+	"each",
+	"every",
+	"both",
+	"few",
+	"more",
+	"most",
+	"other",
+	"some",
+	"such",
+	"no",
+	"nor",
+	"only",
+	"own",
+	"same",
+	"so",
+	"than",
+	"too",
+	"very",
+	"just",
+	"about",
+	"above",
+	"after",
+	"again",
+	"also",
+	"am",
+	"any",
+	"because",
+	"before",
+	"being",
+	"between",
+	"during",
+	"here",
+	"if",
+	"into",
+	"itself",
+	"me",
+	"my",
+	"myself",
+	"once",
+	"our",
+	"out",
+	"over",
+	"then",
+	"there",
+	"these",
+	"those",
+	"through",
+	"under",
+	"until",
+	"up",
+	"we",
+	"while",
+	"you",
+	"your",
 ]);
 
 // ─── Tokenizer ───────────────────────────────────────────────────
@@ -104,11 +198,7 @@ export class SearchIndex {
 		const files: string[] = [];
 		if (scope === "wiki" || scope === "all") {
 			const wikiFiles = await listWiki(root);
-			files.push(
-				...wikiFiles.filter(
-					(f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"),
-				),
-			);
+			files.push(...wikiFiles.filter((f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md")));
 		}
 		if (scope === "raw" || scope === "all") {
 			files.push(...(await listRaw(root)));
@@ -117,7 +207,8 @@ export class SearchIndex {
 		for (const filePath of files) {
 			const content = await readFile(filePath, "utf-8");
 			const { frontmatter, body } = parseFrontmatter(content);
-			const title = (frontmatter.title as string) ?? filePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
+			const title =
+				(frontmatter.title as string) ?? filePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
 
 			const tokens = tokenize(`${title} ${title} ${body}`); // title gets extra weight
 			const termFreqs = new Map<string, number>();
@@ -186,8 +277,7 @@ export class SearchIndex {
 
 				const idfVal = this.idf.get(qt) ?? 0;
 				const tfNorm =
-					(tf * (this.k1 + 1)) /
-					(tf + this.k1 * (1 - this.b + this.b * (dl / this.avgDl)));
+					(tf * (this.k1 + 1)) / (tf + this.k1 * (1 - this.b + this.b * (dl / this.avgDl)));
 
 				score += idfVal * tfNorm;
 			}

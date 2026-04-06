@@ -1,21 +1,8 @@
 import { z } from "zod";
 
-export const SkillInputSchema = z.enum([
-	"wiki",
-	"raw",
-	"vault",
-	"selection",
-	"index",
-	"none",
-]);
+export const SkillInputSchema = z.enum(["wiki", "raw", "vault", "selection", "index", "none"]);
 
-export const SkillOutputSchema = z.enum([
-	"articles",
-	"report",
-	"mutations",
-	"stdout",
-	"none",
-]);
+export const SkillOutputSchema = z.enum(["articles", "report", "mutations", "stdout", "none"]);
 
 export const SkillDefinitionSchema = z.object({
 	name: z.string().min(1),

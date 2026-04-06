@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { FileOperation } from "../types.js";
 import { FileOperationSchema } from "../schemas.js";
+import type { FileOperation } from "../types.js";
 
 const FileOperationsArraySchema = z.array(FileOperationSchema);
 
@@ -95,11 +95,7 @@ export function parseFrontmatter(markdown: string): {
 		else if (value === "true") value = true;
 		else if (value === "false") value = false;
 		// Remove quotes
-		else if (
-			typeof value === "string" &&
-			value.startsWith('"') &&
-			value.endsWith('"')
-		) {
+		else if (typeof value === "string" && value.startsWith('"') && value.endsWith('"')) {
 			value = value.slice(1, -1);
 		}
 

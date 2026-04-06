@@ -27,11 +27,11 @@ What's built, what's next, and what's deferred.
 ## v0.2.0 — Distribution & Polish
 
 ### npm + Binary Distribution
-- [ ] Publish `kib` to npm (`npx kib init` works out of the box)
-- [ ] `bun build --compile` for standalone macOS/Linux/Windows binaries
-- [ ] GitHub Actions release workflow: on git tag → build binaries → npm publish → GitHub release
+- [x] Publish to npm as `@kibhq/core` and `@kibhq/cli`
+- [x] `bun build --compile` for standalone macOS/Linux binaries
+- [x] GitHub Actions release workflow via Release Please: auto-PR → merge → npm publish + binary upload
 - [ ] Homebrew formula for `brew install kib`
-- [ ] Add `"files"` field to package.json to exclude test files from npm package
+- [x] Add `"files"` field to package.json to exclude test files from npm package
 
 ### MCP Server Mode
 - [ ] `kib serve --mcp` — expose vault as MCP tools over stdio

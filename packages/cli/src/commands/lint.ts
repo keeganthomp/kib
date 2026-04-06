@@ -1,7 +1,4 @@
-import {
-	VaultNotFoundError,
-	resolveVaultRoot,
-} from "@kib/core";
+import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
 
@@ -23,7 +20,7 @@ export async function lint(opts: LintOpts) {
 		throw err;
 	}
 
-	const { lintVault } = await import("@kib/core");
+	const { lintVault } = await import("@kibhq/core");
 
 	log.header("linting wiki");
 
@@ -83,7 +80,8 @@ export async function lint(opts: LintOpts) {
 	// Summary
 	const parts: string[] = [];
 	if (result.errors > 0) parts.push(`${result.errors} error${result.errors === 1 ? "" : "s"}`);
-	if (result.warnings > 0) parts.push(`${result.warnings} warning${result.warnings === 1 ? "" : "s"}`);
+	if (result.warnings > 0)
+		parts.push(`${result.warnings} warning${result.warnings === 1 ? "" : "s"}`);
 	if (result.infos > 0) parts.push(`${result.infos} info${result.infos === 1 ? "" : "s"}`);
 	log.dim(parts.join(", "));
 

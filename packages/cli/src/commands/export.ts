@@ -1,12 +1,6 @@
-import { readFile } from "node:fs/promises";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import {
-	WIKI_DIR,
-	VaultNotFoundError,
-	resolveVaultRoot,
-	listWiki,
-} from "@kib/core";
+import { listWiki, resolveVaultRoot, VaultNotFoundError, WIKI_DIR } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
 
@@ -90,7 +84,7 @@ async function exportMarkdown(root: string, outputDir: string) {
 async function exportHtml(root: string, outputDir: string) {
 	const wikiDir = join(root, WIKI_DIR);
 	const files = await listWiki(root);
-	const { parseFrontmatter } = await import("@kib/core");
+	const { parseFrontmatter } = await import("@kibhq/core");
 
 	await mkdir(outputDir, { recursive: true });
 
@@ -197,5 +191,9 @@ function simpleMarkdownToHtml(md: string): string {
 }
 
 function escapeHtml(str: string): string {
-	return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+	return str
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;");
 }

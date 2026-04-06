@@ -1,22 +1,22 @@
 import { readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { WIKI_DIR, INDEX_FILE, GRAPH_FILE } from "../constants.js";
-import type { CompileResult, LLMProvider, Manifest, VaultConfig } from "../types.js";
+import { GRAPH_FILE, INDEX_FILE, WIKI_DIR } from "../constants.js";
 import { hash } from "../hash.js";
+import { countWords } from "../ingest/normalize.js";
+import type { CompileResult, LLMProvider, Manifest, VaultConfig } from "../types.js";
 import {
 	deleteFile,
+	listWiki,
 	loadManifest,
 	readIndex,
 	readRaw,
 	readWiki,
 	saveManifest,
 	writeWiki,
-	listWiki,
 } from "../vault.js";
-import { countWords } from "../ingest/normalize.js";
 import { buildLinkGraph, generateGraphMd } from "./backlinks.js";
 import { extractWikilinks, parseCompileOutput, parseFrontmatter } from "./diff.js";
-import { generateIndexMd, computeStats } from "./index-manager.js";
+import { computeStats, generateIndexMd } from "./index-manager.js";
 import { compileSystemPrompt, compileUserPrompt } from "./prompts.js";
 
 export interface CompileOptions {
@@ -77,11 +77,7 @@ export async function compileVault(
 			const sourceContent = await readRaw(root, sourcePath);
 
 			// Read existing articles this source produced (for context)
-			const existingArticles = await loadExistingArticles(
-				root,
-				manifest,
-				sourceId,
-			);
+			const existingArticles = await loadExistingArticles(root, manifest, sourceId);
 
 			// Build the compile prompt
 			const today = new Date().toISOString().split("T")[0]!;
@@ -127,22 +123,20 @@ export async function compileVault(
 
 					// Update article entry in manifest
 					const { frontmatter, body } = parseFrontmatter(op.content);
-					const articleSlug =
-						(frontmatter.slug as string) ?? wikiRelPath.replace(/\.md$/, "");
+					const articleSlug = (frontmatter.slug as string) ?? wikiRelPath.replace(/\.md$/, "");
 					const contentHash = await hash(op.content);
 					const wikilinks = extractWikilinks(op.content);
 					const now = new Date().toISOString();
 
 					manifest.articles[articleSlug] = {
 						hash: contentHash,
-						createdAt: op.op === "create" ? now : (manifest.articles[articleSlug]?.createdAt ?? now),
+						createdAt:
+							op.op === "create" ? now : (manifest.articles[articleSlug]?.createdAt ?? now),
 						lastUpdated: now,
 						derivedFrom: [`raw/${sourcePath}`],
 						backlinks: [], // will be computed after all sources are compiled
 						forwardLinks: wikilinks,
-						tags: Array.isArray(frontmatter.tags)
-							? (frontmatter.tags as string[])
-							: [],
+						tags: Array.isArray(frontmatter.tags) ? (frontmatter.tags as string[]) : [],
 						summary: (frontmatter.summary as string) ?? "",
 						wordCount: countWords(body),
 						category: (frontmatter.category as string) ?? "topic",
@@ -225,19 +219,14 @@ export async function compileVault(
 /**
  * Find sources that need compilation.
  */
-function findPendingSources(
-	manifest: Manifest,
-	options: CompileOptions,
-): [string, string][] {
+function findPendingSources(manifest: Manifest, options: CompileOptions): [string, string][] {
 	const pending: [string, string][] = [];
 
 	for (const [sourceId, source] of Object.entries(manifest.sources)) {
 		// If filtering to a specific source
 		if (options.sourceFilter) {
 			const matchesId = sourceId === options.sourceFilter;
-			const matchesPath = source.producedArticles.some((p) =>
-				p.includes(options.sourceFilter!),
-			);
+			const matchesPath = source.producedArticles.some((p) => p.includes(options.sourceFilter!));
 			if (!matchesId && !matchesPath) continue;
 		}
 

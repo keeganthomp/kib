@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import TOML from "@iarna/toml";
 import {

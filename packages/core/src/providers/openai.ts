@@ -36,8 +36,7 @@ export function createOpenAIProvider(model: string): LLMProvider {
 					inputTokens: response.usage?.prompt_tokens ?? 0,
 					outputTokens: response.usage?.completion_tokens ?? 0,
 				},
-				stopReason:
-					response.choices[0]?.finish_reason === "stop" ? "end_turn" : "max_tokens",
+				stopReason: response.choices[0]?.finish_reason === "stop" ? "end_turn" : "max_tokens",
 			};
 		},
 

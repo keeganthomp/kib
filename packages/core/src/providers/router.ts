@@ -1,6 +1,6 @@
+import { DEFAULTS } from "../constants.js";
 import { NoProviderError } from "../errors.js";
 import type { LLMProvider } from "../types.js";
-import { DEFAULTS } from "../constants.js";
 
 interface DetectedProvider {
 	name: string;
@@ -25,10 +25,7 @@ export function detectProvider(): DetectedProvider {
  * Create an LLM provider instance.
  * Lazy-loads the SDK for the selected provider.
  */
-export async function createProvider(
-	providerName?: string,
-	model?: string,
-): Promise<LLMProvider> {
+export async function createProvider(providerName?: string, model?: string): Promise<LLMProvider> {
 	const detected = detectProvider();
 	const name = providerName ?? detected.name;
 	const selectedModel = model ?? detected.model;

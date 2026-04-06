@@ -57,10 +57,7 @@ export function createAnthropicProvider(model: string): LLMProvider {
 			});
 
 			for await (const event of stream) {
-				if (
-					event.type === "content_block_delta" &&
-					event.delta.type === "text_delta"
-				) {
+				if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
 					yield { type: "text", text: event.delta.text };
 				}
 				if (event.type === "message_delta" && event.usage) {

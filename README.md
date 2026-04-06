@@ -4,6 +4,18 @@ The Headless Knowledge Compiler. A CLI-first, LLM-powered tool that turns raw so
 
 `git` for knowledge — ingest, compile, query, lint, all from the terminal.
 
+## Install
+
+```bash
+# npm / bun
+bun add -g @kibhq/cli
+
+# or run without installing
+npx @kibhq/cli init
+```
+
+Standalone binaries for macOS and Linux are available on the [releases page](https://github.com/keeganthomp/kib/releases).
+
 ## Quick Start
 
 ```bash
@@ -198,7 +210,9 @@ The vault is just files. View it in any editor. Version it with git. No lock-in.
 
 ## LLM Providers
 
-kib auto-detects your provider from environment variables:
+On first use, kib walks you through provider setup interactively — pick a provider, paste your API key, done. Credentials are saved to `~/.config/kib/credentials`.
+
+You can also set provider via environment variables:
 
 | Provider | Env Variable | Default Model |
 |---|---|---|
@@ -209,8 +223,8 @@ kib auto-detects your provider from environment variables:
 Override via config:
 
 ```bash
-kib config set provider.default openai
-kib config set provider.model gpt-4o
+kib config provider.default openai
+kib config provider.model gpt-4o
 ```
 
 ## Tech Stack
@@ -230,7 +244,7 @@ kib config set provider.model gpt-4o
 # Install dependencies
 bun install
 
-# Run tests (206 tests)
+# Run tests
 bun test
 
 # Lint & format
@@ -242,8 +256,8 @@ bun run packages/cli/bin/kib.ts --help
 ```
 
 Monorepo with two packages:
-- `packages/core` (`@kib/core`) — types, schemas, vault ops, providers, engines
-- `packages/cli` (`kib`) — CLI commands and terminal UI
+- `packages/core` (`@kibhq/core`) — types, schemas, vault ops, providers, engines
+- `packages/cli` (`@kibhq/cli`) — CLI commands and terminal UI
 
 ## Roadmap
 

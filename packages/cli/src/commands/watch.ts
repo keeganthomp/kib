@@ -1,12 +1,7 @@
 import { watch as fsWatch } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import {
-	INBOX_DIR,
-	VaultNotFoundError,
-	loadConfig,
-	resolveVaultRoot,
-} from "@kib/core";
+import { INBOX_DIR, loadConfig, resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 
 export async function watch() {
@@ -23,7 +18,7 @@ export async function watch() {
 
 	const config = await loadConfig(root);
 	const inboxPath = resolve(root, config.watch.inbox_path);
-	const { ingestSource } = await import("@kib/core");
+	const { ingestSource } = await import("@kibhq/core");
 
 	log.header(`watching ${config.watch.inbox_path}/`);
 	log.dim(`Drop files into ${inboxPath} to auto-ingest.`);
@@ -91,10 +86,7 @@ export async function watch() {
 	});
 }
 
-function startHttpServer(
-	root: string,
-	ingestSource: typeof import("@kib/core").ingestSource,
-) {
+function startHttpServer(root: string, ingestSource: typeof import("@kibhq/core").ingestSource) {
 	try {
 		const server = Bun.serve({
 			port: 4747,
@@ -123,10 +115,10 @@ function startHttpServer(
 							headers: { "Content-Type": "application/json" },
 						});
 					} catch (err) {
-						return new Response(
-							JSON.stringify({ error: (err as Error).message }),
-							{ status: 500, headers: { "Content-Type": "application/json" } },
-						);
+						return new Response(JSON.stringify({ error: (err as Error).message }), {
+							status: 500,
+							headers: { "Content-Type": "application/json" },
+						});
 					}
 				}
 

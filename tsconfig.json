@@ -1,21 +1,18 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "noUncheckedIndexedAccess": true,
-    "noEmit": true
-  },
-  "references": [
-    { "path": "packages/core" },
-    { "path": "packages/cli" }
-  ]
+	"compilerOptions": {
+		"strict": true,
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"noUncheckedIndexedAccess": true,
+		"noEmit": true
+	},
+	"references": [{ "path": "packages/core" }, { "path": "packages/cli" }]
 }

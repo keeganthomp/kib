@@ -1,4 +1,4 @@
-import type { ExtractOptions, ExtractResult, Extractor } from "./interface.js";
+import type { ExtractOptions, Extractor, ExtractResult } from "./interface.js";
 
 export function createYoutubeExtractor(): Extractor {
 	return {
@@ -100,8 +100,7 @@ async function fetchTranscript(videoId: string): Promise<string> {
 	// Fetch the video page to get the captions track URL
 	const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
 		headers: {
-			"User-Agent":
-				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+			"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
 			"Accept-Language": "en-US,en;q=0.9",
 		},
 	});

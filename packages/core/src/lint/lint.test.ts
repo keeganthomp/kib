@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile as fsWriteFile } from "node:fs/promises";
+import { writeFile as fsWriteFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { initVault, loadManifest, saveManifest, writeWiki } from "../vault.js";
 import { ingestSource } from "../ingest/ingest.js";
-import { lintVault } from "./lint.js";
 import type { Manifest } from "../types.js";
+import { initVault, loadManifest, saveManifest, writeWiki } from "../vault.js";
+import { lintVault } from "./lint.js";
 
 let tempDir: string;
 
@@ -19,12 +19,7 @@ async function makeTempVault() {
 	return tempDir;
 }
 
-function articleMd(opts: {
-	title: string;
-	slug: string;
-	category: string;
-	body?: string;
-}) {
+function articleMd(opts: { title: string; slug: string; category: string; body?: string }) {
 	return `---
 title: ${opts.title}
 slug: ${opts.slug}
@@ -202,9 +197,7 @@ describe("lint engine", () => {
 		const result = await lintVault(root, { ruleFilter: "frontmatter" });
 		expect(result.errors).toBeGreaterThan(0);
 		expect(
-			result.diagnostics.some(
-				(d) => d.rule === "frontmatter" && d.message.includes("slug"),
-			),
+			result.diagnostics.some((d) => d.rule === "frontmatter" && d.message.includes("slug")),
 		).toBe(true);
 	});
 

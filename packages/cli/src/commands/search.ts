@@ -1,7 +1,4 @@
-import {
-	VaultNotFoundError,
-	resolveVaultRoot,
-} from "@kib/core";
+import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
 
@@ -24,7 +21,7 @@ export async function search(term: string, opts: SearchOpts) {
 		throw err;
 	}
 
-	const { SearchIndex } = await import("@kib/core");
+	const { SearchIndex } = await import("@kibhq/core");
 
 	const scope = opts.wiki ? "wiki" : opts.raw ? "raw" : "all";
 	const limit = opts.limit ?? 20;

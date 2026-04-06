@@ -1,9 +1,5 @@
 import { resolve } from "node:path";
-import {
-	VaultExistsError,
-	detectProvider,
-	initVault,
-} from "@kib/core";
+import { detectProvider, initVault, VaultExistsError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 
 interface InitOpts {

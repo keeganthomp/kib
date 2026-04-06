@@ -1,9 +1,4 @@
-import {
-	VaultNotFoundError,
-	loadConfig,
-	resolveVaultRoot,
-	saveConfig,
-} from "@kib/core";
+import { loadConfig, resolveVaultRoot, saveConfig, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 
 export async function config(key?: string, value?: string, opts?: { list?: boolean }) {

@@ -1,12 +1,14 @@
+import * as readline from "node:readline";
+import type { Message } from "@kibhq/core";
 import {
-	VaultNotFoundError,
 	createProvider,
 	loadConfig,
+	NoProviderError,
 	resolveVaultRoot,
-} from "@kib/core";
-import type { Message } from "@kib/core";
+	VaultNotFoundError,
+} from "@kibhq/core";
 import * as log from "../ui/logger.js";
-import * as readline from "node:readline";
+import { setupProvider } from "../ui/setup-provider.js";
 
 export async function chat() {
 	let root: string;
@@ -27,11 +29,15 @@ export async function chat() {
 	try {
 		provider = await createProvider(config.provider.default, config.provider.model);
 	} catch (err) {
-		log.error((err as Error).message);
-		process.exit(1);
+		if (err instanceof NoProviderError) {
+			provider = await setupProvider(root);
+		} else {
+			log.error((err as Error).message);
+			process.exit(1);
+		}
 	}
 
-	const { queryVault } = await import("@kib/core");
+	const { queryVault } = await import("@kibhq/core");
 
 	log.header("interactive session (type /help for commands)");
 

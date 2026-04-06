@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
-import type { CompletionResult, LLMProvider, Message } from "../types.js";
-import { readIndex, listWiki } from "../vault.js";
 import { parseFrontmatter } from "../compile/diff.js";
 import { SearchIndex } from "../search/engine.js";
+import type { CompletionResult, LLMProvider, Message } from "../types.js";
+import { listWiki, readIndex } from "../vault.js";
 
 export interface QueryOptions {
 	/** Maximum articles to include as context */
@@ -84,21 +84,16 @@ export async function queryVault(
 
 	// Build context from articles
 	const articleContext = articles
-		.map(
-			(a) =>
-				`--- ${a.title} (${a.path}) ---\n${a.content}`,
-		)
+		.map((a) => `--- ${a.title} (${a.path}) ---\n${a.content}`)
 		.join("\n\n");
 
-	const userMessage = articles.length > 0
-		? `RELEVANT ARTICLES:\n\n${articleContext}\n\n---\n\nQUESTION: ${question}`
-		: `No relevant articles found in the knowledge base.\n\nQUESTION: ${question}`;
+	const userMessage =
+		articles.length > 0
+			? `RELEVANT ARTICLES:\n\n${articleContext}\n\n---\n\nQUESTION: ${question}`
+			: `No relevant articles found in the knowledge base.\n\nQUESTION: ${question}`;
 
 	// Build message history
-	const messages: Message[] = [
-		...(options.history ?? []),
-		{ role: "user", content: userMessage },
-	];
+	const messages: Message[] = [...(options.history ?? []), { role: "user", content: userMessage }];
 
 	// Call LLM
 	let result: CompletionResult;

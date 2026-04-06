@@ -1,22 +1,42 @@
 {
-  "name": "kib",
-  "version": "0.1.0",
-  "type": "module",
-  "bin": {
-    "kib": "./bin/kib.ts"
-  },
-  "scripts": {
-    "dev": "bun run bin/kib.ts",
-    "test": "bun test"
-  },
-  "dependencies": {
-    "@kib/core": "workspace:*",
-    "commander": "^14.0.0",
-    "chalk": "^5.4.1",
-    "ora": "^8.2.0"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.8.3"
-  }
+	"name": "@kibhq/cli",
+	"version": "0.1.0",
+	"type": "module",
+	"bin": {
+		"kib": "./bin/kib.ts"
+	},
+	"files": [
+		"bin",
+		"src",
+		"package.json"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/keeganthomp/kib.git",
+		"directory": "packages/cli"
+	},
+	"license": "MIT",
+	"keywords": [
+		"knowledge-base",
+		"wiki",
+		"llm",
+		"compiler",
+		"cli",
+		"rag",
+		"ai"
+	],
+	"scripts": {
+		"dev": "bun run bin/kib.ts",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@kibhq/core": "workspace:*",
+		"commander": "^14.0.0",
+		"chalk": "^5.4.1",
+		"ora": "^8.2.0"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"typescript": "^5.8.3"
+	}
 }

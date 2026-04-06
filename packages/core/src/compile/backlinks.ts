@@ -2,8 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { WIKI_DIR } from "../constants.js";
 import { listWiki } from "../vault.js";
-import { extractWikilinks } from "./diff.js";
-import { parseFrontmatter } from "./diff.js";
+import { extractWikilinks, parseFrontmatter } from "./diff.js";
 
 export interface LinkGraph {
 	/** slug → set of slugs this article links to */

@@ -63,14 +63,11 @@ describe("parseCompileOutput", () => {
 	});
 
 	test("throws on invalid operation type", () => {
-		expect(() =>
-			parseCompileOutput('[{"op":"rename","path":"x","content":"y"}]'),
-		).toThrow();
+		expect(() => parseCompileOutput('[{"op":"rename","path":"x","content":"y"}]')).toThrow();
 	});
 
 	test("handles whitespace around JSON", () => {
-		const input =
-			'  \n\n  [{"op":"create","path":"wiki/test.md","content":"x"}]  \n\n  ';
+		const input = '  \n\n  [{"op":"create","path":"wiki/test.md","content":"x"}]  \n\n  ';
 		const result = parseCompileOutput(input);
 		expect(result).toHaveLength(1);
 	});
@@ -142,17 +139,12 @@ describe("extractWikilinks", () => {
 	});
 
 	test("extracts multiple wikilinks", () => {
-		const content =
-			"See [[attention-mechanisms]] and [[positional-encoding]] for details.";
-		expect(extractWikilinks(content)).toEqual([
-			"attention-mechanisms",
-			"positional-encoding",
-		]);
+		const content = "See [[attention-mechanisms]] and [[positional-encoding]] for details.";
+		expect(extractWikilinks(content)).toEqual(["attention-mechanisms", "positional-encoding"]);
 	});
 
 	test("deduplicates wikilinks", () => {
-		const content =
-			"The [[transformer]] is great. More about [[transformer]] here.";
+		const content = "The [[transformer]] is great. More about [[transformer]] here.";
 		expect(extractWikilinks(content)).toEqual(["transformer"]);
 	});
 

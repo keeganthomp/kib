@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
-import type { ExtractOptions, ExtractResult, Extractor } from "./interface.js";
+import type { ExtractOptions, Extractor, ExtractResult } from "./interface.js";
 
 const CODE_EXTENSIONS = new Set([
 	".ts",
@@ -98,7 +98,14 @@ export function createFileExtractor(): Extractor {
 			}
 
 			// JSON/YAML/TOML get wrapped in code blocks
-			if (ext === ".json" || ext === ".yaml" || ext === ".yml" || ext === ".toml" || ext === ".xml" || ext === ".csv") {
+			if (
+				ext === ".json" ||
+				ext === ".yaml" ||
+				ext === ".yml" ||
+				ext === ".toml" ||
+				ext === ".xml" ||
+				ext === ".csv"
+			) {
 				const lang = ext.replace(".", "");
 				const wrappedContent = `# ${title}\n\nSource: \`${basename(filePath)}\`\n\n\`\`\`${lang}\n${content}\n\`\`\``;
 				return {
@@ -119,9 +126,7 @@ export function createFileExtractor(): Extractor {
 }
 
 function formatTitle(filename: string): string {
-	return filename
-		.replace(/[-_]/g, " ")
-		.replace(/\b\w/g, (c) => c.toUpperCase());
+	return filename.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /** Extract the first H1 heading from markdown content. */
