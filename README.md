@@ -7,8 +7,8 @@ The Headless Knowledge Compiler. A CLI-first, LLM-powered tool that turns raw so
 ## Install
 
 ```bash
-# npm / bun
-bun add -g @kibhq/cli
+# Requires Bun (https://bun.sh)
+npm i -g @kibhq/cli
 
 # or run without installing
 npx @kibhq/cli init
@@ -46,7 +46,7 @@ kib chat
                          ┌───────────────────────────────────────┐
                          │                kib CLI                │
                          │  init · ingest · compile · search ·   │
-                         │  query · chat · lint · skill · watch  │
+                         │  query · chat · lint · serve · watch  │
                          └───────────────────┬───────────────────┘
                                              │
               ┌──────────────────────────────┼──────────────────────────────┐
@@ -114,10 +114,13 @@ CORE COMMANDS
   lint                Run health checks on the wiki
   status              Vault health dashboard
 
+INTEGRATION
+  serve --mcp         Start MCP server for AI tool integration
+  watch               Watch inbox/ and auto-ingest new files
+
 MANAGEMENT
   config [key] [val]  Get or set configuration
   skill <sub> [name]  Manage skills (list, run)
-  watch               Watch inbox/ and auto-ingest new files
   export              Export wiki to markdown or HTML
 
 FLAGS
@@ -225,6 +228,32 @@ Override via config:
 ```bash
 kib config provider.default openai
 kib config provider.model gpt-4o
+```
+
+## MCP Server
+
+kib exposes your vault as MCP tools, so Claude Desktop, Cursor, Claude Code, and other AI tools can search, query, and ingest into your knowledge base directly.
+
+```bash
+kib serve --mcp
+```
+
+**8 tools:** `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
+
+**2 resources:** `wiki://index`, `wiki://graph`
+
+Add to your MCP client config (Claude Desktop, Cursor, Claude Code):
+
+```json
+{
+  "mcpServers": {
+    "kib": {
+      "command": "kib",
+      "args": ["serve", "--mcp"],
+      "cwd": "/path/to/your/vault"
+    }
+  }
+}
 ```
 
 ## Tech Stack

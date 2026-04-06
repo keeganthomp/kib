@@ -34,9 +34,10 @@ What's built, what's next, and what's deferred.
 - [x] Add `"files"` field to package.json to exclude test files from npm package
 
 ### MCP Server Mode
-- [ ] `kib serve --mcp` — expose vault as MCP tools over stdio
-- [ ] MCP tools: `kib_search`, `kib_query`, `kib_ingest`, `kib_read`, `kib_status`
-- [ ] Documentation for Claude Desktop / Cursor / Windsurf integration
+- [x] `kib serve --mcp` — expose vault as MCP tools over stdio
+- [x] MCP tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
+- [x] MCP resources: `wiki://index`, `wiki://graph`
+- [x] Documentation for Claude Desktop / Cursor / Claude Code integration
 - [ ] Auto-generate a `CLAUDE.md` in vault root on `kib init` for agent discovery
 
 ### CLI Polish
