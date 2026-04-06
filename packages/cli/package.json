@@ -1,6 +1,7 @@
 {
 	"name": "@kibhq/cli",
 	"version": "0.1.0",
+	"description": "The Headless Knowledge Compiler — turn raw sources into a structured, queryable wiki with AI",
 	"type": "module",
 	"bin": {
 		"kib": "./bin/kib.ts"
@@ -8,6 +9,7 @@
 	"files": [
 		"bin",
 		"src",
+		"README.md",
 		"package.json"
 	],
 	"repository": {
@@ -16,6 +18,9 @@
 		"directory": "packages/cli"
 	},
 	"license": "MIT",
+	"publishConfig": {
+		"access": "public"
+	},
 	"keywords": [
 		"knowledge-base",
 		"wiki",
@@ -30,7 +35,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@kibhq/core": "workspace:*",
+		"@kibhq/core": "^0.1.0",
 		"commander": "^14.0.0",
 		"chalk": "^5.4.1",
 		"ora": "^8.2.0"
