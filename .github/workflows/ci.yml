@@ -52,26 +52,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      - name: Setup npm auth
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-          cp .npmrc packages/core/.npmrc
-          cp .npmrc packages/cli/.npmrc
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Publish @kibhq/core
         working-directory: packages/core
-        run: bun publish --access public
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @kibhq/cli
         working-directory: packages/cli
-        run: bun publish --access public
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   build-binaries:
     needs: release-please
