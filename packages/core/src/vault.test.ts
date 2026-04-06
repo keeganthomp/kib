@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { VaultNotFoundError } from "./errors.js";
 import {
 	initVault,
 	listWiki,
@@ -72,9 +73,16 @@ describe("resolveVaultRoot", () => {
 		expect(resolveVaultRoot(subdir)).toBe(dir);
 	});
 
-	test("throws if no vault found", async () => {
+	test("throws or falls back to ~/.kib if no local vault found", async () => {
 		const dir = await makeTempDir();
-		expect(() => resolveVaultRoot(dir)).toThrow("No vault found");
+		try {
+			const result = resolveVaultRoot(dir);
+			// If it didn't throw, it found ~/.kib
+			expect(result).toContain(".kib");
+		} catch (e) {
+			// No ~/.kib on this machine — should throw VaultNotFoundError
+			expect(e).toBeInstanceOf(VaultNotFoundError);
+		}
 	});
 });
 

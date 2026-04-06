@@ -19,7 +19,7 @@ Standalone binaries for macOS and Linux are available on the [releases page](htt
 ## Quick Start
 
 ```bash
-# Initialize a vault
+# Initialize a vault (creates ~/.kib by default)
 kib init
 
 # Ingest sources (URLs, files, PDFs, YouTube, GitHub repos)
@@ -44,7 +44,7 @@ kib chat
 
 ```
 CORE
-  init                Create a new vault in the current directory
+  init [dir]          Create a new vault (defaults to ~/.kib)
   ingest <source>     Ingest sources into raw/ (URLs, files, PDFs, etc.)
   compile             Compile raw sources into wiki articles via LLM
   query <question>    Ask a question against the knowledge base (RAG)

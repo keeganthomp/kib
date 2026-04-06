@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import TOML from "@iarna/toml";
 import {
@@ -23,8 +24,11 @@ import { ManifestError, VaultExistsError, VaultNotFoundError } from "./errors.js
 import { ManifestSchema, VaultConfigSchema } from "./schemas.js";
 import type { Manifest, VaultConfig } from "./types.js";
 
+const GLOBAL_VAULT = join(homedir(), ".kib");
+
 /**
  * Find the vault root by walking up from startDir looking for .kb/
+ * Falls back to ~/.kib if no local vault is found.
  */
 export function resolveVaultRoot(startDir?: string): string {
 	let dir = resolve(startDir ?? process.cwd());
@@ -34,6 +38,10 @@ export function resolveVaultRoot(startDir?: string): string {
 		}
 		const parent = dirname(dir);
 		if (parent === dir) {
+			// No local vault found — try global ~/.kib
+			if (existsSync(join(GLOBAL_VAULT, VAULT_DIR))) {
+				return GLOBAL_VAULT;
+			}
 			throw new VaultNotFoundError(startDir);
 		}
 		dir = parent;
