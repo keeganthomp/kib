@@ -11,8 +11,8 @@
 				"noUnusedFunctionParameters": "warn"
 			},
 			"suspicious": {
-				"noExplicitAny": "warn",
-				"noImplicitAnyLet": "warn",
+				"noExplicitAny": "error",
+				"noImplicitAnyLet": "error",
 				"noAssignInExpressions": "warn"
 			},
 			"style": {

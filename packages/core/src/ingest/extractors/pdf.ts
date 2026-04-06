@@ -2,14 +2,39 @@ import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import type { ExtractOptions, Extractor, ExtractResult } from "./interface.js";
 
-// Lazy-load pdf-parse (it's heavy)
-let pdfParse: any = null;
+type PdfParseFn = (buffer: Buffer) => Promise<{
+	text: string;
+	numpages: number;
+	info?: { Title?: string; Author?: string };
+	date?: string;
+}>;
 
-async function getPdfParse() {
+// Lazy-load pdf-parse (it's heavy)
+let pdfParse: PdfParseFn | null = null;
+
+async function getPdfParse(): Promise<PdfParseFn> {
 	if (!pdfParse) {
-		const mod = await import("pdf-parse");
-		// pdf-parse exports default as the function in some builds
-		pdfParse = mod.default ?? mod;
+		const { PDFParse } = await import("pdf-parse");
+		pdfParse = async (buffer: Buffer) => {
+			const parser = new PDFParse({ data: buffer });
+
+			try {
+				const textResult = await parser.getText();
+				const infoResult = await parser.getInfo();
+
+				return {
+					text: textResult.text,
+					numpages: textResult.total,
+					info: {
+						Title: getOptionalString(infoResult.info?.Title),
+						Author: getOptionalString(infoResult.info?.Author),
+					},
+					date: formatPdfDate(infoResult.getDateNode().CreationDate),
+				};
+			} finally {
+				await parser.destroy();
+			}
+		};
 	}
 	return pdfParse;
 }
@@ -50,7 +75,7 @@ export function createPdfExtractor(): Extractor {
 				formatFilename(input);
 
 			const author = data.info?.Author ?? undefined;
-			const date = data.info?.CreationDate ? parsePdfDate(data.info.CreationDate) : undefined;
+			const date = data.date;
 
 			// Clean up the extracted text into readable markdown
 			const content = formatPdfText(data.text, title);
@@ -119,12 +144,15 @@ function formatPdfText(text: string, title: string): string {
 }
 
 /**
- * Parse PDF date format (D:20240315120000+00'00') to ISO date string.
+ * Normalize parsed PDF dates to YYYY-MM-DD.
  */
-function parsePdfDate(dateStr: string): string | undefined {
-	const match = dateStr.match(/D:(\d{4})(\d{2})(\d{2})/);
-	if (match) {
-		return `${match[1]}-${match[2]}-${match[3]}`;
+function formatPdfDate(date: Date | null | undefined): string | undefined {
+	if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+		return undefined;
 	}
-	return undefined;
+	return date.toISOString().slice(0, 10);
+}
+
+function getOptionalString(value: unknown): string | undefined {
+	return typeof value === "string" && value.length > 0 ? value : undefined;
 }

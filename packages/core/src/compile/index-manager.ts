@@ -113,7 +113,7 @@ export async function generateIndexMd(root: string): Promise<string> {
 		}
 	}
 
-	return lines.join("\n") + "\n";
+	return `${lines.join("\n")}\n`;
 }
 
 /**

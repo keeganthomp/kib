@@ -148,7 +148,7 @@ async function saveCredential(key: string, value: string): Promise<void> {
 	const updated = lines.filter((l) => !l.startsWith(`${key}=`));
 	updated.push(`${key}=${value}`);
 
-	await writeFile(CREDENTIALS_FILE, updated.join("\n") + "\n", { mode: 0o600 });
+	await writeFile(CREDENTIALS_FILE, `${updated.join("\n")}\n`, { mode: 0o600 });
 }
 
 /**

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ingestSource } from "../ingest/ingest.js";
 import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
-import { initVault, listWiki, loadManifest, readWiki } from "../vault.js";
+import { initVault, loadManifest, readWiki } from "../vault.js";
 import { compileVault } from "./compiler.js";
 
 let tempDir: string;
@@ -27,7 +27,7 @@ function createMockProvider(responses: string[]): LLMProvider {
 	let callIndex = 0;
 	return {
 		name: "mock",
-		async complete(params: CompletionParams): Promise<CompletionResult> {
+		async complete(_params: CompletionParams): Promise<CompletionResult> {
 			const content = responses[callIndex] ?? "[]";
 			callIndex++;
 			return {

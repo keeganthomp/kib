@@ -30,7 +30,13 @@ export function createGithubExtractor(): Extractor {
 					`Failed to fetch repo info: ${repoResponse.status} ${repoResponse.statusText}`,
 				);
 			}
-			const repoData = (await repoResponse.json()) as any;
+			const repoData = (await repoResponse.json()) as {
+				full_name?: string;
+				description?: string;
+				stargazers_count?: number;
+				language?: string;
+				default_branch?: string;
+			};
 
 			// Fetch README
 			let readme = "";
@@ -51,9 +57,11 @@ export function createGithubExtractor(): Extractor {
 				const ref = branch ?? repoData.default_branch ?? "main";
 				const treeResponse = await fetch(`${apiBase}/git/trees/${ref}`, { headers });
 				if (treeResponse.ok) {
-					const treeData = (await treeResponse.json()) as any;
+					const treeData = (await treeResponse.json()) as {
+						tree?: { type: string; path: string }[];
+					};
 					const files = (treeData.tree ?? [])
-						.map((f: any) => `${f.type === "tree" ? "📁" : "📄"} ${f.path}`)
+						.map((f) => `${f.type === "tree" ? "📁" : "📄"} ${f.path}`)
 						.slice(0, 50); // Cap at 50 entries
 					fileTree = files.join("\n");
 				}

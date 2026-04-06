@@ -1,4 +1,4 @@
-import type { LintDiagnostic, Manifest } from "../types.js";
+import type { LintDiagnostic } from "../types.js";
 import { loadManifest } from "../vault.js";
 import { ALL_RULES } from "./rules.js";
 

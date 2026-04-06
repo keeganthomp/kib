@@ -1,5 +1,5 @@
 import * as readline from "node:readline";
-import type { Message } from "@kibhq/core";
+import type { LLMProvider, Message } from "@kibhq/core";
 import {
 	createProvider,
 	loadConfig,
@@ -25,7 +25,7 @@ export async function chat() {
 	const config = await loadConfig(root);
 
 	// Create provider
-	let provider;
+	let provider: LLMProvider;
 	try {
 		provider = await createProvider(config.provider.default, config.provider.model);
 	} catch (err) {

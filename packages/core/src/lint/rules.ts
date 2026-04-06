@@ -10,7 +10,7 @@ type LintRuleFn = (root: string, manifest: Manifest) => Promise<LintDiagnostic[]
 /**
  * Find articles with no backlinks from other articles (orphans).
  */
-export const orphanRule: LintRuleFn = async (root, manifest) => {
+export const orphanRule: LintRuleFn = async (_root, manifest) => {
 	const diagnostics: LintDiagnostic[] = [];
 
 	for (const [slug, article] of Object.entries(manifest.articles)) {
@@ -132,7 +132,7 @@ export const frontmatterRule: LintRuleFn = async (root) => {
  */
 export const missingRule: LintRuleFn = async (root, manifest) => {
 	const diagnostics: LintDiagnostic[] = [];
-	const wikiDir = `${root}/${WIKI_DIR}`;
+	const _wikiDir = `${root}/${WIKI_DIR}`;
 	const files = await listWiki(root);
 	const articleFiles = files.filter((f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"));
 

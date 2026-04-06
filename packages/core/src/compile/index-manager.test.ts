@@ -139,7 +139,7 @@ describe("generateIndexMd", () => {
 		);
 
 		const index = await generateIndexMd(root);
-		const conceptsIdx = index.indexOf("## Concepts");
+		const _conceptsIdx = index.indexOf("## Concepts");
 		const alphaIdx = index.indexOf("Alpha Concept");
 		const midIdx = index.indexOf("Mid Concept");
 		const zebraIdx = index.indexOf("Zebra Concept");

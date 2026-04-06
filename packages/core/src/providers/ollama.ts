@@ -30,7 +30,11 @@ export function createOllamaProvider(model: string): LLMProvider {
 				throw new Error(`Ollama request failed: ${response.status} ${response.statusText}`);
 			}
 
-			const data = (await response.json()) as any;
+			const data = (await response.json()) as {
+				message?: { content: string };
+				prompt_eval_count?: number;
+				eval_count?: number;
+			};
 			return {
 				content: data.message?.content ?? "",
 				usage: {
@@ -81,7 +85,12 @@ export function createOllamaProvider(model: string): LLMProvider {
 
 				for (const line of lines) {
 					if (!line.trim()) continue;
-					const data = JSON.parse(line) as any;
+					const data = JSON.parse(line) as {
+						message?: { content: string };
+						done?: boolean;
+						prompt_eval_count?: number;
+						eval_count?: number;
+					};
 					if (data.message?.content) {
 						yield { type: "text", text: data.message.content };
 					}

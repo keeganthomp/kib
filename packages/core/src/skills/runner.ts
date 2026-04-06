@@ -10,15 +10,7 @@ import type {
 	SkillDefinition,
 	VaultConfig,
 } from "../types.js";
-import {
-	listRaw,
-	listWiki,
-	loadConfig,
-	loadManifest,
-	readIndex,
-	readWiki,
-	writeWiki,
-} from "../vault.js";
+import { listRaw, listWiki, loadConfig, loadManifest, readIndex, writeWiki } from "../vault.js";
 
 export interface RunSkillOptions {
 	/** Additional CLI args */

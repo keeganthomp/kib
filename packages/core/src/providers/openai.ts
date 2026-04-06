@@ -1,12 +1,27 @@
 import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
 
-// Lazy-loaded SDK
-let OpenAIClass: any = null;
+interface OpenAIClient {
+	chat: {
+		completions: {
+			create(params: Record<string, unknown>): Promise<{
+				choices: {
+					message?: { content: string };
+					finish_reason: string;
+					delta?: { content?: string };
+				}[];
+				usage?: { prompt_tokens: number; completion_tokens: number };
+			}>;
+		};
+	};
+}
 
-async function getClient() {
+// Lazy-loaded SDK
+let OpenAIClass: (new () => OpenAIClient) | null = null;
+
+async function getClient(): Promise<OpenAIClient> {
 	if (!OpenAIClass) {
 		const mod = await import("openai");
-		OpenAIClass = mod.default;
+		OpenAIClass = mod.default as unknown as new () => OpenAIClient;
 	}
 	return new OpenAIClass();
 }
