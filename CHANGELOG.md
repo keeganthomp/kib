@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/keeganthomp/kib/compare/v0.2.0...v0.3.0) (2026-04-06)
+
+
+### Features
+
+* **cli:** add MCP server mode (kib serve --mcp) ([#16](https://github.com/keeganthomp/kib/issues/16)) ([e857089](https://github.com/keeganthomp/kib/commit/e8570891d102646f6459b8aace843abe88609291))
+
 ## [0.2.0](https://github.com/keeganthomp/kib/compare/v0.1.1...v0.2.0) (2026-04-06)
 
 
