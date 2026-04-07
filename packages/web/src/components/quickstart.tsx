@@ -1,28 +1,55 @@
-import { CodeBlock } from "./code-block";
+"use client";
 
-const code = `npm i -g @kibhq/cli
-kib init
-kib ingest https://arxiv.org/abs/1706.03762
-kib compile
-kib query "explain the attention mechanism"`;
+import { Check, Copy } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+
+const lines = [
+	"kib init",
+	"kib ingest https://arxiv.org/abs/1706.03762",
+	"kib compile",
+	'kib query "explain the attention mechanism"',
+];
 
 export function Quickstart() {
+	const [copied, setCopied] = useState(false);
+	const cooldown = useRef(false);
+	const code = lines.join("\n");
+
+	const handleCopy = useCallback(async () => {
+		if (cooldown.current) return;
+		cooldown.current = true;
+		await navigator.clipboard.writeText(code);
+		setCopied(true);
+		setTimeout(() => {
+			setCopied(false);
+			cooldown.current = false;
+		}, 1500);
+	}, [code]);
+
 	return (
-		<section id="quickstart" className="mx-auto max-w-5xl px-6 py-12">
-			<h2 className="mb-8 text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-				Get started in seconds
-			</h2>
-			<div className="mx-auto max-w-xl">
-				<CodeBlock copyText={code}>
-					<div className="space-y-1">
-						{code.split("\n").map((line) => (
-							<div key={line}>
-								<span className="text-cyan-400 select-none">$ </span>
-								<span>{line}</span>
-							</div>
-						))}
-					</div>
-				</CodeBlock>
+		<section className="mx-auto max-w-3xl px-6 py-16">
+			<div className="border border-border">
+				<div className="flex items-center justify-between border-b border-border px-4 py-2">
+					<span className="font-mono text-[11px] uppercase tracking-widest text-muted">
+						cli quickstart
+					</span>
+					<button
+						type="button"
+						onClick={handleCopy}
+						className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+						aria-label="Copy"
+					>
+						{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+					</button>
+				</div>
+				<div className="p-4 font-mono text-[13px] leading-loose">
+					{lines.map((line) => (
+						<div key={line}>
+							<span className="select-none text-muted-foreground">$ </span>
+							{line}
+						</div>
+					))}
+				</div>
 			</div>
 		</section>
 	);
