@@ -23,6 +23,7 @@ export const SourceEntrySchema = z.object({
 		author: z.string().optional(),
 		date: z.string().optional(),
 		wordCount: z.number().int().nonnegative(),
+		imageAsset: z.string().optional(),
 	}),
 });
 

@@ -1,6 +1,6 @@
 import { hash } from "../hash.js";
 import type { IngestResult, LLMProvider, Manifest, SourceEntry, SourceType } from "../types.js";
-import { appendLog, loadManifest, saveManifest, writeRaw } from "../vault.js";
+import { appendLog, loadManifest, saveManifest, writeImageAsset, writeRaw } from "../vault.js";
 import type { Extractor } from "./extractors/interface.js";
 import { countWords, normalizeSource, slugify } from "./normalize.js";
 import { detectSourceType } from "./router.js";
@@ -95,12 +95,32 @@ export async function ingestSource(
 	// Write to raw/
 	await writeRaw(root, relativePath, normalizedContent);
 
+	// For images, also save the original binary to wiki/images/ for article references
+	if (sourceType === "image" && extracted.metadata.imageBuffer) {
+		const ext = (extracted.metadata.fileType as string) ?? ".png";
+		const imageFilename = `${slug}${ext}`;
+		await writeImageAsset(root, imageFilename, extracted.metadata.imageBuffer as Buffer);
+	}
+
 	// Generate a source ID
 	const sourceId = `src_${contentHash.slice(0, 12)}`;
 
 	// Update manifest
 	const now = new Date().toISOString();
 	const wordCount = countWords(extracted.content);
+
+	// Build metadata, including image asset path for image sources
+	const sourceMetadata: SourceEntry["metadata"] = {
+		title: extracted.title,
+		author: extracted.metadata.author as string | undefined,
+		date: extracted.metadata.date as string | undefined,
+		wordCount,
+	};
+
+	if (sourceType === "image" && extracted.metadata.fileType) {
+		const ext = extracted.metadata.fileType as string;
+		sourceMetadata.imageAsset = `images/${slug}${ext}`;
+	}
 
 	const sourceEntry: SourceEntry = {
 		hash: contentHash,
@@ -109,12 +129,7 @@ export async function ingestSource(
 		sourceType,
 		originalUrl: isUrl(uri) ? uri : undefined,
 		producedArticles: [],
-		metadata: {
-			title: extracted.title,
-			author: extracted.metadata.author as string | undefined,
-			date: extracted.metadata.date as string | undefined,
-			wordCount,
-		},
+		metadata: sourceMetadata,
 	};
 
 	manifest.sources[sourceId] = sourceEntry;

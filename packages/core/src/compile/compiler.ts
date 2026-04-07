@@ -13,6 +13,7 @@ import type {
 import {
 	appendLog,
 	deleteFile,
+	listImageAssets,
 	loadManifest,
 	readIndex,
 	readRaw,
@@ -141,7 +142,7 @@ function detectDuplicateArticles(operations: FileOperation[], manifest: Manifest
 			const existingTitle = existingArticle.summary.split(".")[0]?.toLowerCase() ?? "";
 			const titleOverlap =
 				(newTitle && existingTitle && newTitle.includes(existingTitle)) ||
-				(newTitle && existingTitle && existingTitle.includes(newTitle));
+				(newTitle && existingTitle?.includes(newTitle));
 
 			// Check tag overlap (>= 3 shared tags = likely same topic)
 			const sharedTags = newTags.filter((t) => existingArticle.tags.includes(t));
@@ -246,6 +247,7 @@ async function compileSingleSource(
 	indexContent: string,
 	cache: CompileCache | null,
 	options: CompileOptions & { onArticle?: (event: ArticleEvent) => void },
+	imageAssets?: string[],
 ): Promise<SourceCompileResult> {
 	const categories = config.compile.categories;
 	const contextWindow = config.compile.context_window;
@@ -294,7 +296,9 @@ async function compileSingleSource(
 	});
 
 	// Call the LLM with retry and cache
-	const system = compileSystemPrompt(categories);
+	const system = compileSystemPrompt(categories, {
+		imageAssets: imageAssets && imageAssets.length > 0 ? imageAssets : undefined,
+	});
 	const result = await compileWithRetry(
 		provider,
 		system,
@@ -450,6 +454,9 @@ export async function compileVault(
 	// Read current INDEX.md for context
 	const indexContent = await readIndex(root);
 
+	// Load available image assets for reference in articles
+	const imageAssets = await listImageAssets(root);
+
 	// Initialize compile cache
 	const cache = new CompileCache(root, {
 		enabled: config.cache.enabled,
@@ -501,13 +508,14 @@ export async function compileVault(
 						indexContent,
 						cache,
 						options,
+						imageAssets,
 					),
 				),
 			);
 
 			for (let j = 0; j < results.length; j++) {
 				const result = results[j]!;
-				const [sourceId, sourcePath] = batch[j]!;
+				const [_sourceId, sourcePath] = batch[j]!;
 
 				if (result.status === "fulfilled") {
 					const r = result.value;
@@ -567,6 +575,7 @@ export async function compileVault(
 					indexContent,
 					cache,
 					options,
+					imageAssets,
 				);
 
 				totalCreated += result.created;

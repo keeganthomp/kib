@@ -90,9 +90,9 @@ What's built, what's next, and what's deferred.
 - [x] Screenshot → extract text content via vision model
 
 ### Image References in Articles
-- [ ] Compile step can reference images from raw/images/ in wiki articles
-- [ ] HTML export includes images with proper relative paths
-- [ ] Image gallery view in HTML export
+- [x] Compile step can reference images from raw/images/ in wiki articles
+- [x] HTML export includes images with proper relative paths
+- [x] Image gallery view in HTML export
 
 ---
 

@@ -6,12 +6,14 @@ import { join } from "node:path";
 import { VaultNotFoundError } from "./errors.js";
 import {
 	initVault,
+	listImageAssets,
 	listWiki,
 	loadConfig,
 	loadManifest,
 	readRaw,
 	readWiki,
 	resolveVaultRoot,
+	writeImageAsset,
 	writeRaw,
 	writeWiki,
 } from "./vault.js";
@@ -154,5 +156,35 @@ describe("wiki file operations", () => {
 		expect(files.length).toBe(2);
 		expect(files.some((f) => f.endsWith("a.md"))).toBe(true);
 		expect(files.some((f) => f.endsWith("b.md"))).toBe(true);
+	});
+});
+
+describe("image assets", () => {
+	test("writeImageAsset stores binary and returns relative path", async () => {
+		const dir = await makeTempDir();
+		await initVault(dir);
+		const data = Buffer.from("fake-png-data");
+		const relPath = await writeImageAsset(dir, "diagram.png", data);
+		expect(relPath).toBe("images/diagram.png");
+
+		const stored = await readFile(join(dir, "wiki", "images", "diagram.png"));
+		expect(stored).toEqual(data);
+	});
+
+	test("listImageAssets returns image filenames", async () => {
+		const dir = await makeTempDir();
+		await initVault(dir);
+		await writeImageAsset(dir, "a.png", Buffer.from("a"));
+		await writeImageAsset(dir, "b.jpg", Buffer.from("b"));
+
+		const files = await listImageAssets(dir);
+		expect(files.sort()).toEqual(["a.png", "b.jpg"]);
+	});
+
+	test("listImageAssets returns empty array when no images dir", async () => {
+		const dir = await makeTempDir();
+		await initVault(dir);
+		const files = await listImageAssets(dir);
+		expect(files).toEqual([]);
 	});
 });

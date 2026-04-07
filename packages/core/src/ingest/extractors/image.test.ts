@@ -153,6 +153,20 @@ describe("image extractor", () => {
 		expect(() => createImageExtractor(provider)).toThrow("does not support vision");
 	});
 
+	test("includes imageBuffer in metadata for asset storage", async () => {
+		const dir = await makeTempDir();
+		const path = join(dir, "test.png");
+		const pngBuffer = createTestPng();
+		await writeFile(path, pngBuffer);
+
+		const provider = createMockProvider("# Test\n\nContent.");
+		const extractor = createImageExtractor(provider);
+
+		const result = await extractor.extract(path);
+		expect(result.metadata.imageBuffer).toBeInstanceOf(Buffer);
+		expect((result.metadata.imageBuffer as Buffer).length).toBe(pngBuffer.length);
+	});
+
 	test("includes image size in metadata", async () => {
 		const dir = await makeTempDir();
 		const path = join(dir, "test.png");

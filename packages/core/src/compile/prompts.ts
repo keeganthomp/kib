@@ -1,7 +1,21 @@
 /**
  * System prompt for compiling raw sources into wiki articles.
  */
-export function compileSystemPrompt(categories: string[]): string {
+export function compileSystemPrompt(
+	categories: string[],
+	opts?: { imageAssets?: string[] },
+): string {
+	const imageSection =
+		opts?.imageAssets && opts.imageAssets.length > 0
+			? `
+IMAGE REFERENCES:
+- The vault contains these image assets: ${opts.imageAssets.join(", ")}
+- When an article relates to an image source, embed it using standard markdown: ![description](images/filename.ext)
+- Use descriptive alt text that summarizes the image content
+- Only reference images that are directly relevant to the article content
+- Place image references near the text that discusses them`
+			: "";
+
 	return `You are a knowledge compiler. You receive raw source material and an existing wiki index. Your job is to:
 
 1. Extract key concepts, topics, and entities from the source
@@ -20,6 +34,7 @@ RULES:
 - Slugs should be kebab-case (e.g., "transformer-architecture")
 - Tags should be lowercase, hyphenated (e.g., "deep-learning")
 - Summary should be 1-2 sentences
+${imageSection}
 
 OUTPUT FORMAT:
 Respond with ONLY a JSON array of file operations. No other text, no markdown code fences, just the raw JSON array:

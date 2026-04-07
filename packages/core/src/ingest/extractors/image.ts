@@ -121,6 +121,7 @@ export function createImageExtractor(provider: LLMProvider): Extractor {
 					mimeType,
 					originalFile: basename(input),
 					imageSize: buffer.length,
+					imageBuffer: buffer,
 				},
 			};
 		},
