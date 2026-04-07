@@ -97,7 +97,7 @@ export const VaultConfigSchema = z.object({
 		poll_interval_ms: z.number().int().positive().default(DEFAULTS.watchPollIntervalMs),
 	}),
 	search: z.object({
-		engine: z.string().default("builtin"),
+		engine: z.enum(["builtin", "vector", "hybrid"]).default("builtin"),
 		max_results: z.number().int().positive().default(DEFAULTS.searchMaxResults),
 	}),
 	query: z.object({

@@ -2,8 +2,10 @@ import { readFile } from "node:fs/promises";
 import { parseFrontmatter } from "../compile/diff.js";
 import { slugify } from "../ingest/normalize.js";
 import { SearchIndex } from "../search/engine.js";
-import type { CompletionResult, LLMProvider, Message } from "../types.js";
-import { appendLog, readIndex, writeWiki } from "../vault.js";
+import { HybridSearch } from "../search/hybrid.js";
+import { VectorIndex } from "../search/vector.js";
+import type { CompletionResult, LLMProvider, Message, SearchResult } from "../types.js";
+import { appendLog, loadConfig, readIndex, writeWiki } from "../vault.js";
 
 export interface QueryOptions {
 	/** Maximum articles to include as context */
@@ -50,15 +52,36 @@ export async function queryVault(
 ): Promise<QueryResult> {
 	const maxArticles = options.maxArticles ?? 5;
 
-	// Build or load search index
-	const index = new SearchIndex();
-	const loaded = await index.load(root);
-	if (!loaded) {
-		await index.build(root, "wiki");
+	// Determine search engine from vault config
+	let searchEngine: "builtin" | "vector" | "hybrid" = "builtin";
+	try {
+		const config = await loadConfig(root);
+		searchEngine = config.search.engine;
+	} catch {
+		// Default to builtin
 	}
 
 	// Search for relevant articles
-	const searchResults = index.search(question, { limit: maxArticles });
+	let searchResults: SearchResult[];
+
+	if (searchEngine === "hybrid" || searchEngine === "vector") {
+		const bm25 = new SearchIndex();
+		const vector = new VectorIndex();
+		const hybrid = new HybridSearch(bm25, vector);
+		const loaded = await hybrid.load(root);
+		if (!loaded.bm25) {
+			await hybrid.build(root, provider, "wiki");
+			await hybrid.save(root);
+		}
+		searchResults = await hybrid.search(question, provider, { limit: maxArticles });
+	} else {
+		const index = new SearchIndex();
+		const loaded = await index.load(root);
+		if (!loaded) {
+			await index.build(root, "wiki");
+		}
+		searchResults = index.search(question, { limit: maxArticles });
+	}
 
 	// Load the full articles
 	const articles: { title: string; path: string; content: string }[] = [];

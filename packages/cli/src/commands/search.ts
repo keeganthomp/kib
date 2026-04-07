@@ -1,3 +1,4 @@
+import type { SearchResult } from "@kibhq/core";
 import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 import { debug, debugTime } from "../ui/debug.js";
 import * as log from "../ui/logger.js";
@@ -8,6 +9,7 @@ interface SearchOpts {
 	raw?: boolean;
 	limit?: number;
 	json?: boolean;
+	engine?: "builtin" | "vector" | "hybrid";
 }
 
 export async function search(term: string, opts: SearchOpts) {
@@ -22,35 +24,97 @@ export async function search(term: string, opts: SearchOpts) {
 		throw err;
 	}
 
-	const { SearchIndex } = await import("@kibhq/core");
+	const { SearchIndex, HybridSearch, VectorIndex, loadConfig, createProvider } = await import(
+		"@kibhq/core"
+	);
 
 	const scope = opts.wiki ? "wiki" : opts.raw ? "raw" : "all";
 	const limit = opts.limit ?? 20;
 
+	// Determine search engine
+	let engine = opts.engine;
+	if (!engine) {
+		try {
+			const config = await loadConfig(root);
+			engine = config.search.engine;
+		} catch {
+			engine = "builtin";
+		}
+	}
+
 	debug(`vault root: ${root}`);
-	debug(`scope: ${scope}, limit: ${limit}, term: "${term}"`);
+	debug(`scope: ${scope}, limit: ${limit}, engine: ${engine}, term: "${term}"`);
 
 	const spinner = createSpinner("Searching...");
 	spinner.start();
 
-	const index = new SearchIndex();
+	let results: SearchResult[];
+	let elapsed: number;
 
-	// Try to load cached index first
-	const endIndex = debugTime("load/build index");
-	const loaded = await index.load(root);
-	if (!loaded) {
-		debug("no cached index, building...");
-		spinner.text = "  Building search index...";
-		await index.build(root, scope);
-		await index.save(root);
+	if (engine === "hybrid" || engine === "vector") {
+		const endIndex = debugTime("load/build hybrid index");
+		const bm25 = new SearchIndex();
+		const vector = new VectorIndex();
+		const hybrid = new HybridSearch(bm25, vector);
+		const loaded = await hybrid.load(root);
+
+		let provider: Awaited<ReturnType<typeof createProvider>> | null = null;
+		try {
+			provider = await createProvider();
+		} catch {
+			log.warn("No embedding provider available, falling back to BM25");
+			engine = "builtin";
+		}
+
+		if (provider && (engine === "hybrid" || engine === "vector")) {
+			if (!loaded.bm25) {
+				debug("no cached index, building...");
+				spinner.text = "  Building search index...";
+				await hybrid.build(root, provider, scope);
+				await hybrid.save(root);
+			} else if (!loaded.vector && provider.embed) {
+				debug("no vector index, building embeddings...");
+				spinner.text = "  Building vector index...";
+				await vector.build(root, provider, scope);
+				await vector.save(root);
+			}
+			endIndex();
+
+			const start = performance.now();
+			results = await hybrid.search(term, provider, { limit });
+			elapsed = Math.round(performance.now() - start);
+		} else {
+			endIndex();
+			// Fallback path
+			const index = new SearchIndex();
+			const bm25Loaded = await index.load(root);
+			if (!bm25Loaded) {
+				spinner.text = "  Building search index...";
+				await index.build(root, scope);
+				await index.save(root);
+			}
+			const start = performance.now();
+			results = index.search(term, { limit });
+			elapsed = Math.round(performance.now() - start);
+		}
 	} else {
-		debug("loaded cached index");
-	}
-	endIndex();
+		const index = new SearchIndex();
+		const endIndex = debugTime("load/build index");
+		const loaded = await index.load(root);
+		if (!loaded) {
+			debug("no cached index, building...");
+			spinner.text = "  Building search index...";
+			await index.build(root, scope);
+			await index.save(root);
+		} else {
+			debug("loaded cached index");
+		}
+		endIndex();
 
-	const start = performance.now();
-	const results = index.search(term, { limit });
-	const elapsed = Math.round(performance.now() - start);
+		const start = performance.now();
+		results = index.search(term, { limit });
+		elapsed = Math.round(performance.now() - start);
+	}
 
 	spinner.stop();
 

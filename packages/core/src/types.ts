@@ -69,6 +69,9 @@ export interface LLMProvider {
 
 	/** Optional: for vision-based ingest */
 	vision?(params: { image: Buffer; prompt: string; mimeType?: string }): Promise<string>;
+
+	/** Optional: generate embeddings for semantic search */
+	embed?(texts: string[]): Promise<Float32Array[]>;
 }
 
 // ─── Skill Types ─────────────────────────────────────────────────

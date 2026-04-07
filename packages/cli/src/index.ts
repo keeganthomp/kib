@@ -70,11 +70,12 @@ program
 
 program
 	.command("search <term>")
-	.description("Fast text search across the vault")
+	.description("Search across the vault (BM25, vector, or hybrid)")
 	.option("--wiki", "search only wiki/")
 	.option("--raw", "search only raw/")
 	.option("--limit <n>", "max results", Number.parseInt)
 	.option("--json", "JSON output")
+	.option("--engine <type>", "search engine: builtin, vector, hybrid")
 	.action(async (term, opts) => {
 		const { search } = await import("./commands/search.js");
 		await search(term, opts);
