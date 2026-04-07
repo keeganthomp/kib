@@ -22,10 +22,11 @@ Standalone binaries for macOS and Linux are available on the [releases page](htt
 # Initialize a vault (creates ~/.kib by default)
 kib init
 
-# Ingest sources (URLs, files, PDFs, YouTube, GitHub repos)
+# Ingest sources (URLs, files, PDFs, YouTube, GitHub repos, images)
 kib ingest https://arxiv.org/abs/1706.03762
 kib ingest ./papers/*.pdf
 kib ingest https://www.youtube.com/watch?v=...
+kib ingest ./whiteboard.png
 
 # Compile into wiki articles
 kib compile
@@ -83,7 +84,8 @@ my-vault/
 │   ├── articles/
 │   ├── papers/
 │   ├── transcripts/
-│   └── repos/
+│   ├── repos/
+│   └── images/
 ├── wiki/                 # LLM-compiled knowledge base
 │   ├── INDEX.md          # Master index
 │   ├── GRAPH.md          # Article relationship graph

@@ -81,13 +81,13 @@ What's built, what's next, and what's deferred.
 - [ ] Auto-generate a `CLAUDE.md` in vault root on `kib init` for agent discovery
 
 ### Image Extractor
-- [ ] `kib ingest photo.png` — send to vision model, get markdown description
-- [ ] Store original image in `raw/images/`, description in `raw/images/{name}.desc.md`
-- [ ] Support PNG, JPG, JPEG, WebP, GIF, SVG
-- [ ] Vision API integration for Anthropic (Claude), OpenAI (GPT-4V)
-- [ ] Whiteboard photo → structured notes extraction
-- [ ] Diagram → markdown description + detected labels
-- [ ] Screenshot → extract text content via OCR fallback
+- [x] `kib ingest photo.png` — send to vision model, get markdown description
+- [x] Store description in `raw/images/{name}.md` with metadata
+- [x] Support PNG, JPG, JPEG, WebP, GIF, SVG, BMP, TIFF
+- [x] Vision API integration for Anthropic (Claude) and OpenAI (GPT-4V)
+- [x] Whiteboard photo → structured notes extraction
+- [x] Diagram → markdown description + detected labels
+- [x] Screenshot → extract text content via vision model
 
 ### Image References in Articles
 - [ ] Compile step can reference images from raw/images/ in wiki articles
