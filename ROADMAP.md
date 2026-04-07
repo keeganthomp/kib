@@ -78,7 +78,7 @@ What's built, what's next, and what's deferred.
 
 ### Distribution
 - [ ] Homebrew formula for `brew install kib`
-- [ ] Auto-generate a `CLAUDE.md` in vault root on `kib init` for agent discovery
+- [x] Auto-generate a `CLAUDE.md` in vault root on `kib init` for agent discovery
 
 ### Image Extractor
 - [x] `kib ingest photo.png` — send to vision model, get markdown description

@@ -123,29 +123,55 @@ function generateClaudeMd(name: string, provider: string, model: string): string
 	return `# ${name}
 
 This is a [kib](https://github.com/keeganthomp/kib) vault — an AI-compiled knowledge base.
+kib ingests raw sources (URLs, PDFs, YouTube, GitHub repos, local files, images) and compiles them into a structured wiki using an LLM.
 
 ## Commands
 
 \`\`\`bash
-kib ingest <source>   # Ingest URLs, PDFs, YouTube, GitHub repos, local files
-kib compile           # Compile raw sources into wiki articles via LLM
-kib search <term>     # BM25 full-text search
-kib query <question>  # RAG query with cited answers
-kib chat              # Interactive REPL
-kib lint              # Health checks (--fix to auto-repair)
-kib status            # Vault dashboard
+kib status                        # Vault health dashboard
+kib ingest <source>               # Ingest URLs, PDFs, YouTube, GitHub repos, local files, images
+kib ingest <source> --dry-run     # Preview what would be ingested
+kib compile                       # Compile raw sources into wiki articles via LLM
+kib compile --force               # Recompile all sources
+kib compile --source <path>       # Recompile a specific source
+kib compile --dry-run             # Preview compile diff without writing
+kib search <term>                 # BM25 full-text search across the vault
+kib query <question>              # RAG query with cited answers
+kib chat                          # Interactive REPL with conversation history
+kib lint                          # Run health checks on the wiki
+kib lint --fix                    # Auto-fix issues (recompile stale, create missing)
+kib skill list                    # List available skills
+kib skill run <name>              # Run a skill
+kib export --format html          # Export wiki as static HTML site
+kib config --list                 # Show vault configuration
 \`\`\`
 
 ## Vault Structure
 
-- \`raw/\` — ingested source material (never modified by compile)
-- \`wiki/\` — LLM-compiled articles, INDEX.md, GRAPH.md
-- \`inbox/\` — drop zone for \`kib watch\`
-- \`.kb/\` — manifest, config, cache
+- \`raw/\` — ingested source material, organized by type. **Never modified by compile.**
+  - \`articles/\` — web pages, text content
+  - \`papers/\` — academic papers, PDFs
+  - \`repos/\` — GitHub repository summaries
+  - \`images/\` — image descriptions (extracted via vision model)
+  - \`transcripts/\` — YouTube/video transcripts
+- \`wiki/\` — LLM-compiled articles with frontmatter, plus INDEX.md and GRAPH.md
+  - \`concepts/\` — core concept articles
+  - \`topics/\` — topic overviews
+  - \`references/\` — reference material
+  - \`outputs/\` — query results filed as articles
+- \`inbox/\` — drop zone for \`kib watch\` (auto-ingested)
+- \`.kb/\` — internal state (manifest.json, config.toml, cache, logs)
+
+## Workflow
+
+1. **Ingest** sources: \`kib ingest <url-or-file>\` adds raw material
+2. **Compile**: \`kib compile\` processes new sources into wiki articles
+3. **Query**: \`kib query "your question"\` or \`kib search "term"\` to retrieve knowledge
+4. **Maintain**: \`kib lint --fix\` keeps the wiki healthy
 
 ## MCP Server
 
-\`kib serve\` exposes 8 tools: kib_status, kib_list, kib_read, kib_search, kib_query, kib_ingest, kib_compile, kib_lint
+\`kib serve\` exposes this vault as MCP tools over stdio. Tools: kib_status, kib_list, kib_read, kib_search, kib_query, kib_ingest, kib_compile, kib_lint. Resources: wiki://index, wiki://graph.
 
 ## Provider
 
