@@ -68,7 +68,7 @@ export interface LLMProvider {
 	stream(params: CompletionParams): AsyncIterable<StreamChunk>;
 
 	/** Optional: for vision-based ingest */
-	vision?(params: { image: Buffer; prompt: string }): Promise<string>;
+	vision?(params: { image: Buffer; prompt: string; mimeType?: string }): Promise<string>;
 }
 
 // ─── Skill Types ─────────────────────────────────────────────────

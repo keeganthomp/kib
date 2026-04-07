@@ -26,10 +26,11 @@ kib init
 kib init ./my-vault
 kib init .   # current directory
 
-# Ingest sources (URLs, files, PDFs, YouTube, GitHub repos) — works from anywhere
+# Ingest sources (URLs, files, PDFs, YouTube, GitHub repos, images) — works from anywhere
 kib ingest https://arxiv.org/abs/1706.03762
 kib ingest ./papers/*.pdf
 kib ingest https://www.youtube.com/watch?v=...
+kib ingest ./whiteboard.png
 
 # Compile into wiki articles
 kib compile
@@ -60,7 +61,8 @@ kib chat
      │                 │            │                 │            │                 │
      │  Web, PDF,      │            │  LLM prompts,   │            │  BM25 search,   │
      │  YouTube,       │            │  parser,        │            │  RAG, article   │
-     │  GitHub, File   │            │  INDEX/GRAPH,   │            │  retrieval,     │
+     │  GitHub, File,  │            │  INDEX/GRAPH,   │            │  retrieval,     │
+     │  Image (vision) │            │                 │            │                 │
      │                 │            │  backlinks      │            │  citations      │
      └────────┬────────┘            └────────┬────────┘            └────────┬────────┘
               │                              │                              │
@@ -73,7 +75,8 @@ kib chat
               │   ├── manifest.json  ├── articles/     ├── INDEX.md          │
               │   ├── config.toml    ├── papers/       ├── GRAPH.md          │
               │   ├── cache/         ├── transcripts/  ├── concepts/         │
-              │   └── skills/        └── repos/        ├── topics/           │
+              │   └── skills/        ├── repos/        ├── topics/           │
+              │                      └── images/       │                     │
               │                                            ├── references/   │
               │                                            └── outputs/      │
               └──────────────────────────────┬───────────────────────────────┘
@@ -88,7 +91,7 @@ kib chat
 
 ### How it works
 
-1. **Ingest** — `kib ingest <source>` fetches content from URLs, PDFs, YouTube, GitHub repos, or local files. Extractors convert everything to normalized markdown with frontmatter. Content is hashed for dedup and stored in `raw/`.
+1. **Ingest** — `kib ingest <source>` fetches content from URLs, PDFs, YouTube, GitHub repos, images, or local files. Extractors convert everything to normalized markdown with frontmatter. Images are described via vision models (Anthropic Claude, OpenAI GPT-4V). Content is hashed for dedup and stored in `raw/`.
 
 2. **Compile** — `kib compile` finds sources not yet compiled (tracked via manifest). For each, it sends the raw content + current wiki index to the LLM, which produces structured wiki articles with frontmatter, tags, and `[[wikilinks]]`. The compiler then regenerates `INDEX.md` (table of contents) and `GRAPH.md` (relationship graph).
 
@@ -152,6 +155,10 @@ kib ingest https://www.youtube.com/watch?v=dQw4w9WgXcQ
 # GitHub repos (README + file structure)
 kib ingest https://github.com/anthropics/claude-code
 
+# Images (described via vision model)
+kib ingest ./whiteboard.png ./diagram.jpg
+kib ingest https://example.com/screenshot.webp
+
 # Local files (markdown, text, code)
 kib ingest ./notes.md ./research/*.txt
 
@@ -203,7 +210,8 @@ my-vault/
 │   ├── articles/
 │   ├── papers/
 │   ├── transcripts/
-│   └── repos/
+│   ├── repos/
+│   └── images/
 ├── wiki/                 # LLM-compiled knowledge base
 │   ├── INDEX.md          # Master index: every article + summary + tags
 │   ├── GRAPH.md          # Article relationship adjacency list

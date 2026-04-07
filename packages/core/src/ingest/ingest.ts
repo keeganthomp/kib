@@ -1,5 +1,5 @@
 import { hash } from "../hash.js";
-import type { IngestResult, Manifest, SourceEntry, SourceType } from "../types.js";
+import type { IngestResult, LLMProvider, Manifest, SourceEntry, SourceType } from "../types.js";
 import { appendLog, loadManifest, saveManifest, writeRaw } from "../vault.js";
 import type { Extractor } from "./extractors/interface.js";
 import { countWords, normalizeSource, slugify } from "./normalize.js";
@@ -16,6 +16,8 @@ interface IngestOptions {
 	title?: string;
 	/** Preview what would be ingested without writing */
 	dryRun?: boolean;
+	/** LLM provider (required for image ingestion) */
+	provider?: LLMProvider;
 }
 
 /**
@@ -37,7 +39,7 @@ export async function ingestSource(
 	const sourceType = options.sourceType ?? detectSourceType(uri);
 
 	// Get the extractor for this source type
-	const extractor = await getExtractor(sourceType);
+	const extractor = await getExtractor(sourceType, options.provider);
 
 	// Extract content
 	const extracted = await extractor.extract(uri, { title: options.title, tags: options.tags });
@@ -131,7 +133,7 @@ export async function ingestSource(
 	};
 }
 
-async function getExtractor(sourceType: SourceType): Promise<Extractor> {
+async function getExtractor(sourceType: SourceType, provider?: LLMProvider): Promise<Extractor> {
 	switch (sourceType) {
 		case "web": {
 			const { createWebExtractor } = await import("./extractors/web.js");
@@ -153,8 +155,15 @@ async function getExtractor(sourceType: SourceType): Promise<Extractor> {
 			const { createFileExtractor } = await import("./extractors/file.js");
 			return createFileExtractor();
 		}
-		case "image":
-			throw new Error("Image extraction requires vision model support (coming soon)");
+		case "image": {
+			if (!provider) {
+				// Auto-detect provider if not passed
+				const { createProvider } = await import("../providers/router.js");
+				provider = await createProvider();
+			}
+			const { createImageExtractor } = await import("./extractors/image.js");
+			return createImageExtractor(provider);
+		}
 		default:
 			throw new Error(`Unsupported source type: ${sourceType}`);
 	}

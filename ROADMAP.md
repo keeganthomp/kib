@@ -4,9 +4,9 @@ What's built, what's next, and what's deferred.
 
 ---
 
-## Shipped (v0.2.0)
+## Shipped (v0.4.x)
 
-### Core
+### Core (v0.2.0)
 - `kib init` — vault creation with auto-detected LLM provider
 - `kib ingest` — web, file, PDF, YouTube, GitHub extractors with dedup
 - `kib compile` — LLM-powered compilation with incremental builds, INDEX.md, GRAPH.md
@@ -20,78 +20,74 @@ What's built, what's next, and what's deferred.
 - `kib status` — vault health dashboard
 - `kib config` — get/set/list vault configuration
 
-### LLM & Providers
+### LLM & Providers (v0.2.0)
 - Anthropic, OpenAI, Ollama providers with lazy-loading
 - Interactive provider setup flow (select provider, enter API key, auto-save)
 - Credentials stored at `~/.config/kib/credentials`, auto-loaded on startup
 - LLM response cache with TTL
 
-### Distribution
+### Distribution (v0.2.0)
 - Published to npm as `@kibhq/core` and `@kibhq/cli`
 - Standalone binaries for macOS/Linux via `bun build --compile`
 - Release Please: auto-versioning, changelogs, npm publish, binary builds
 - CI: Biome lint + 412 tests on every push
 
-### MCP Server
+### MCP Server (v0.2.0)
 - `kib serve` — expose vault as MCP tools over stdio
 - `kib init` auto-configures MCP in Claude Code, Claude Desktop, and Cursor
 - `kib mcp` to re-configure MCP clients independently
 - 8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
 - 2 resources: `wiki://index`, `wiki://graph`
 
+### CLI Polish (v0.3.0)
+- `--json` flag working consistently across all commands
+- `--verbose` flag for debug output
+- `--dry-run` for ingest (show what would be ingested without writing)
+- `kib compile --dry-run` visual diff preview
+- `kib lint --fix` actually runs auto-fixes (recompile stale, create missing articles)
+- Colored diff output showing what compile changed
+- <100ms cold start for `kib --help`
+
+### Smarter Compilation (v0.4.0)
+- Token usage tracking per compile pass and per source
+- Auto-summarize large sources before sending to LLM (chunk into 8K-token windows)
+- Smart context selection: for large vaults, send INDEX.md + summaries, not full articles
+- Token budget config: `compile.max_tokens_per_pass`
+- Warning when a single source exceeds the model's context window
+- Article merging: detect when two sources produce articles about the same topic
+- Compile cache integration: skip LLM call when cache hit matches
+- Retry with adjusted prompt when LLM returns malformed output (max 2 retries)
+- `kib compile --source <path>` to recompile a specific source
+- Streaming compile output: show article titles as they're generated
+- Parallel compilation: compile independent sources concurrently
+
+### Multi-Model Support (v0.4.0)
+- Config-based model selection per operation: `compile.model`, `query.model`, `lint.model`
+- `fast_model` used for lightweight ops (skills with `model: "fast"`)
+- `default` model used for heavy ops (compile, query)
+
+### Other (v0.4.x)
+- Fall back to `~/.kib` when no local vault found
+- Surface auth errors in compile and improve MCP provider feedback
+- Improved compile error handling
+- Website launched
+
 ---
 
-## v0.3.0 — Polish & Packaging
+## v0.5.0 — Image + Vision Support & Packaging
 
-### Remaining Distribution
+### Distribution
 - [ ] Homebrew formula for `brew install kib`
 - [ ] Auto-generate a `CLAUDE.md` in vault root on `kib init` for agent discovery
 
-### CLI Polish
-- [x] `--json` flag working consistently across all commands
-- [x] `--verbose` flag for debug output
-- [x] `--dry-run` for ingest (show what would be ingested without writing)
-- [x] `kib compile --dry-run` visual diff preview
-- [x] `kib lint --fix` actually runs auto-fixes (recompile stale, create missing articles)
-- [x] Colored diff output showing what compile changed
-- [x] Measure and enforce <100ms cold start for `kib --help`
-
----
-
-## v0.4.0 — Smarter Compilation
-
-### Token Budget Management
-- [x] Track token usage per compile pass and per source
-- [x] Auto-summarize large sources before sending to LLM (chunk into 8K-token windows)
-- [x] Smart context selection: for large vaults, send INDEX.md + summaries, not full articles
-- [x] Token budget config: `compile.max_tokens_per_pass` 
-- [x] Warning when a single source exceeds the model's context window
-
-### Compile Improvements
-- [x] Article merging: detect when two sources produce articles about the same topic
-- [x] Compile cache integration: skip LLM call when cache hit matches
-- [x] Retry with adjusted prompt when LLM returns malformed output (max 2 retries)
-- [x] `kib compile --source <path>` to recompile a specific source
-- [x] Streaming compile output: show article titles as they're generated
-- [x] Parallel compilation: compile independent sources concurrently
-
-### Multi-Model Support
-- [x] Config-based model selection per operation: `compile.model`, `query.model`, `lint.model`
-- [x] `fast_model` used for lightweight ops (skills with `model: "fast"`)
-- [x] `default` model used for heavy ops (compile, query)
-
----
-
-## v0.5.0 — Image + Vision Support
-
 ### Image Extractor
-- [ ] `kib ingest photo.png` — send to vision model, get markdown description
-- [ ] Store original image in `raw/images/`, description in `raw/images/{name}.desc.md`
-- [ ] Support PNG, JPG, JPEG, WebP, GIF, SVG
-- [ ] Vision API integration for Anthropic (Claude), OpenAI (GPT-4V)
-- [ ] Whiteboard photo → structured notes extraction
-- [ ] Diagram → markdown description + detected labels
-- [ ] Screenshot → extract text content via OCR fallback
+- [x] `kib ingest photo.png` — send to vision model, get markdown description
+- [x] Store description in `raw/images/{name}.md` with metadata
+- [x] Support PNG, JPG, JPEG, WebP, GIF, SVG, BMP, TIFF
+- [x] Vision API integration for Anthropic (Claude) and OpenAI (GPT-4V)
+- [x] Whiteboard photo → structured notes extraction
+- [x] Diagram → markdown description + detected labels
+- [x] Screenshot → extract text content via vision model
 
 ### Image References in Articles
 - [ ] Compile step can reference images from raw/images/ in wiki articles

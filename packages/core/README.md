@@ -17,7 +17,7 @@ npm i @kibhq/core
 | Module | Description |
 |--------|-------------|
 | **Vault** | Filesystem operations, manifest tracking, config management |
-| **Ingest** | Extractors for web pages, PDFs, YouTube, GitHub repos, and local files |
+| **Ingest** | Extractors for web pages, PDFs, YouTube, GitHub repos, images (vision), and local files |
 | **Compile** | LLM-powered compilation from raw sources into structured wiki articles |
 | **Search** | BM25 full-text search with English stemming |
 | **Query** | RAG engine — retrieves relevant articles and generates cited answers |

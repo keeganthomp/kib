@@ -169,6 +169,48 @@ describe("ingestSource", () => {
 		expect(rawContent).toContain("```typescript");
 	});
 
+	test("ingests image files with vision provider", async () => {
+		const root = await makeTempVault();
+
+		// Create a test PNG file (minimal valid PNG)
+		const testFile = join(root, "diagram.png");
+		const pngBuffer = Buffer.from(
+			"89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489" +
+				"0000000a49444154789c626000000002000198e195280000000049454e44ae426082",
+			"hex",
+		);
+		await writeFile(testFile, pngBuffer);
+
+		// Create a mock provider with vision support
+		const mockProvider = {
+			name: "mock",
+			async complete() {
+				return {
+					content: "",
+					usage: { inputTokens: 0, outputTokens: 0 },
+					stopReason: "end_turn" as const,
+				};
+			},
+			async *stream() {},
+			async vision() {
+				return "# System Architecture\n\nA diagram showing the main components.";
+			},
+		};
+
+		const result = await ingestSource(root, testFile, { provider: mockProvider });
+
+		expect(result.skipped).toBe(false);
+		expect(result.sourceType).toBe("image");
+		expect(result.title).toBe("System Architecture");
+		expect(result.path).toMatch(/^raw\/images\//);
+
+		// Verify manifest
+		const manifest = await loadManifest(root);
+		expect(manifest.stats.totalSources).toBe(1);
+		const source = Object.values(manifest.sources)[0]!;
+		expect(source.sourceType).toBe("image");
+	});
+
 	test("normalized content includes frontmatter", async () => {
 		const root = await makeTempVault();
 
