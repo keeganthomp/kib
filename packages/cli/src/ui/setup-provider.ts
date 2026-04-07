@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { LLMProvider } from "@kibhq/core";
-import { createProvider, loadConfig, saveConfig } from "@kibhq/core";
+import { createProvider, DEFAULTS, loadConfig, saveConfig } from "@kibhq/core";
 import chalk from "chalk";
 import * as log from "./logger.js";
 import { input, select } from "./prompt.js";
@@ -18,6 +18,8 @@ const PROVIDERS = [
 		envKey: "ANTHROPIC_API_KEY",
 		keyPrefix: "sk-ant-",
 		keyUrl: "https://console.anthropic.com/settings/keys",
+		defaultModel: DEFAULTS.model,
+		defaultFastModel: DEFAULTS.fastModel,
 	},
 	{
 		name: "openai",
@@ -26,6 +28,8 @@ const PROVIDERS = [
 		envKey: "OPENAI_API_KEY",
 		keyPrefix: "sk-",
 		keyUrl: "https://platform.openai.com/api-keys",
+		defaultModel: "gpt-4o",
+		defaultFastModel: "gpt-4o-mini",
 	},
 	{
 		name: "ollama",
@@ -34,6 +38,8 @@ const PROVIDERS = [
 		envKey: null,
 		keyPrefix: null,
 		keyUrl: null,
+		defaultModel: "llama3",
+		defaultFastModel: "llama3",
 	},
 ] as const;
 
@@ -81,9 +87,11 @@ export async function setupProvider(root: string): Promise<LLMProvider> {
 	// 5. Save to credentials file
 	await saveCredential(provider.envKey, key);
 
-	// 6. Update vault config
+	// 6. Update vault config (provider + models for new provider)
 	const config = await loadConfig(root);
 	config.provider.default = provider.name;
+	config.provider.model = provider.defaultModel;
+	config.provider.fast_model = provider.defaultFastModel;
 	await saveConfig(root, config);
 
 	// 7. Test connection
