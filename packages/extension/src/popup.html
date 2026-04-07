@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <span class="logo">kib</span>
+      <span id="status" class="status" title="Disconnected">
+        <span class="status-dot"></span>
+      </span>
+    </header>
+
+    <!-- Idle state: ready to save -->
+    <main id="view-idle">
+      <div id="page-info" class="page-info">
+        <p id="page-title" class="page-title"></p>
+        <p id="page-url" class="page-url"></p>
+      </div>
+      <div id="selection-hint" class="hint" hidden>
+        Saving selected text only
+      </div>
+      <button id="btn-save" type="button" class="btn-primary" disabled>
+        Save to kib
+      </button>
+      <p class="hint-footer">
+        Select text on the page to save just a snippet
+      </p>
+    </main>
+
+    <!-- Saving state -->
+    <main id="view-saving" hidden>
+      <div class="saving-indicator">
+        <div class="spinner"></div>
+        <p>Saving...</p>
+      </div>
+    </main>
+
+    <!-- Success state -->
+    <main id="view-success" hidden>
+      <div class="result">
+        <div class="checkmark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Success checkmark" role="img">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <p class="result-title">Saved</p>
+        <p id="result-detail" class="result-detail"></p>
+      </div>
+    </main>
+
+    <!-- Error state -->
+    <main id="view-error" hidden>
+      <div class="result">
+        <p class="result-title error-title">Could not save</p>
+        <p id="error-detail" class="result-detail"></p>
+        <button id="btn-retry" type="button" class="btn-secondary">Try again</button>
+      </div>
+    </main>
+
+    <!-- Disconnected state -->
+    <main id="view-disconnected" hidden>
+      <div class="result">
+        <p class="result-title">kib is not running</p>
+        <p class="result-detail">
+          Start the watch server first:
+        </p>
+        <code class="code-block">kib watch</code>
+      </div>
+    </main>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
