@@ -3,7 +3,7 @@ import TurndownService from "turndown";
 
 /**
  * Content script — injected on demand via chrome.scripting.executeScript.
- * Returns extracted page content as { title, content, url }.
+ * Extracts page content and sends it back via chrome.runtime message.
  * If text is selected, captures only the selection.
  */
 (() => {
@@ -12,11 +12,11 @@ import TurndownService from "turndown";
 	// Check for text selection first
 	const selection = window.getSelection()?.toString().trim();
 	if (selection && selection.length > 20) {
-		return {
-			title: document.title || "Untitled",
-			content: selection,
-			url,
-		};
+		chrome.runtime.sendMessage({
+			type: "kib-extracted",
+			data: { title: document.title || "Untitled", content: selection, url },
+		});
+		return;
 	}
 
 	// Full page extraction via Readability
@@ -27,11 +27,11 @@ import TurndownService from "turndown";
 	if (!article?.content) {
 		// Fallback: grab body text
 		const bodyText = document.body.innerText?.trim();
-		return {
-			title: document.title || "Untitled",
-			content: bodyText || "",
-			url,
-		};
+		chrome.runtime.sendMessage({
+			type: "kib-extracted",
+			data: { title: document.title || "Untitled", content: bodyText || "", url },
+		});
+		return;
 	}
 
 	// Convert HTML to markdown
@@ -55,9 +55,12 @@ import TurndownService from "turndown";
 
 	const markdown = td.turndown(article.content);
 
-	return {
-		title: article.title || document.title || "Untitled",
-		content: markdown,
-		url,
-	};
+	chrome.runtime.sendMessage({
+		type: "kib-extracted",
+		data: {
+			title: article.title || document.title || "Untitled",
+			content: markdown,
+			url,
+		},
+	});
 })();

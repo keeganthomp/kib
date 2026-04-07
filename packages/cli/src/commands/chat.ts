@@ -91,12 +91,27 @@ export async function chat() {
 
 		// Query the vault
 		console.log();
-		process.stdout.write("  kib: ");
+
+		const thinkFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+		let frame = 0;
+		let thinking = true;
+		process.stdout.write(`  kib: ${thinkFrames[0]}`);
+		const thinkTimer = setInterval(() => {
+			frame = (frame + 1) % thinkFrames.length;
+			process.stdout.write(`\r  kib: ${thinkFrames[frame]}`);
+		}, 80);
 
 		try {
 			const result = await queryVault(root, input, provider, {
 				history,
-				onChunk: (text) => process.stdout.write(text),
+				onChunk: (text) => {
+					if (thinking) {
+						thinking = false;
+						clearInterval(thinkTimer);
+						process.stdout.write("\r  kib: ");
+					}
+					process.stdout.write(text);
+				},
 			});
 
 			console.log("\n");
@@ -110,6 +125,11 @@ export async function chat() {
 				history.shift();
 			}
 		} catch (err) {
+			if (thinking) {
+				thinking = false;
+				clearInterval(thinkTimer);
+				process.stdout.write("\r  kib: ");
+			}
 			console.log();
 			log.error((err as Error).message);
 		}
