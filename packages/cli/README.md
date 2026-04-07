@@ -65,6 +65,18 @@ MANAGEMENT
   export              Export wiki to markdown or HTML
 ```
 
+### Export
+
+```bash
+# Export as clean markdown
+kib export --format markdown
+
+# Export as HTML static site (with image gallery)
+kib export --format html
+```
+
+HTML export includes image assets with proper relative paths and generates a browsable image gallery page.
+
 ## LLM Providers
 
 On first use, kib walks you through provider setup interactively. Or set via environment:
@@ -89,6 +101,7 @@ my-vault/
 ├── wiki/                 # LLM-compiled knowledge base
 │   ├── INDEX.md          # Master index
 │   ├── GRAPH.md          # Article relationship graph
+│   ├── images/           # Image assets (originals from ingested images)
 │   ├── concepts/
 │   ├── topics/
 │   ├── references/
