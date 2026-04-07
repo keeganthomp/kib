@@ -54,18 +54,36 @@ async function checkSelection(tabId: number): Promise<string | null> {
 
 // ── Extract page content ──
 
-async function extractContent(
+function extractContent(
 	tabId: number,
 ): Promise<{ title: string; content: string; url: string }> {
-	const results = await chrome.scripting.executeScript({
-		target: { tabId },
-		files: ["content.js"],
+	return new Promise((resolve, reject) => {
+		const timeout = setTimeout(() => {
+			chrome.runtime.onMessage.removeListener(listener);
+			reject(new Error("Could not extract page content"));
+		}, 10000);
+
+		function listener(msg: { type: string; data: { title: string; content: string; url: string } }) {
+			if (msg.type !== "kib-extracted") return;
+			chrome.runtime.onMessage.removeListener(listener);
+			clearTimeout(timeout);
+			if (!msg.data?.content) {
+				reject(new Error("Could not extract page content"));
+			} else {
+				resolve(msg.data);
+			}
+		}
+
+		chrome.runtime.onMessage.addListener(listener);
+		chrome.scripting.executeScript({
+			target: { tabId },
+			files: ["content.js"],
+		}).catch((err) => {
+			chrome.runtime.onMessage.removeListener(listener);
+			clearTimeout(timeout);
+			reject(err);
+		});
 	});
-	const result = results[0]?.result;
-	if (!result?.content) {
-		throw new Error("Could not extract page content");
-	}
-	return result;
 }
 
 // ── Send to kib ──
@@ -159,6 +177,14 @@ btnSave.addEventListener("click", save);
 btnRetry.addEventListener("click", () => {
 	showView(viewIdle);
 	save();
+});
+
+// Copy command button
+$("btn-copy-cmd").addEventListener("click", async () => {
+	await navigator.clipboard.writeText("kib watch");
+	const label = $("copy-label");
+	label.textContent = "copied!";
+	setTimeout(() => { label.textContent = "copy"; }, 1500);
 });
 
 // Keyboard: Enter to save

@@ -38,10 +38,6 @@ cpSync(path.join(src, "popup.html"), path.join(dist, "popup.html"));
 cpSync(path.join(src, "popup.css"), path.join(dist, "popup.css"));
 cpSync(path.resolve(import.meta.dir, "manifest.json"), path.join(dist, "manifest.json"));
 
-// Copy icons
-const iconsDir = path.resolve(import.meta.dir, "icons");
-cpSync(iconsDir, path.join(dist, "icons"), { recursive: true });
-
 // Generate icons programmatically (simple "K" lettermark PNGs)
 await generateIcons(dist);
 

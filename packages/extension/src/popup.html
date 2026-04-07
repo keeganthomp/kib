@@ -64,10 +64,11 @@
     <main id="view-disconnected" hidden>
       <div class="result">
         <p class="result-title">kib is not running</p>
-        <p class="result-detail">
-          Start the watch server first:
-        </p>
-        <code class="code-block">kib watch</code>
+        <p class="result-detail">Run this in your terminal:</p>
+        <button id="btn-copy-cmd" type="button" class="code-block-btn">
+          <code>kib watch</code>
+          <span id="copy-label" class="copy-icon">copy</span>
+        </button>
       </div>
     </main>
   </div>
