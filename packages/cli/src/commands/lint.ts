@@ -1,4 +1,5 @@
 import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
+import { debug, debugTime } from "../ui/debug.js";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
 
@@ -33,8 +34,14 @@ export async function lint(opts: LintOpts) {
 		// No provider available — AI-powered lint rules will be skipped
 	}
 
+	debug(`vault root: ${root}`);
+	if (opts.check) debug(`rule filter: ${opts.check}`);
+	if (opts.fix) debug("fix mode enabled");
+	debug(`provider available: ${!!provider}`);
+
 	const spinner = createSpinner("Checking articles...");
 	spinner.start();
+	const endLint = debugTime("lintVault");
 
 	const result = await lintVault(root, {
 		ruleFilter: opts.check,
@@ -44,6 +51,10 @@ export async function lint(opts: LintOpts) {
 		},
 	});
 
+	endLint();
+	debug(
+		`found ${result.diagnostics.length} issues (${result.errors} errors, ${result.warnings} warnings)`,
+	);
 	spinner.stop();
 
 	if (opts.json) {

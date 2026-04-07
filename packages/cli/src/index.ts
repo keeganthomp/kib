@@ -1,9 +1,17 @@
 import { Command } from "commander";
+import { setVerbose } from "./ui/debug.js";
 
 const program = new Command()
 	.name("kib")
 	.description("The Headless Knowledge Compiler")
-	.version("0.1.0");
+	.version("0.1.0")
+	.option("-v, --verbose", "enable debug output")
+	.hook("preAction", (_thisCommand, actionCommand) => {
+		const rootOpts = actionCommand.optsWithGlobals();
+		if (rootOpts.verbose) {
+			setVerbose(true);
+		}
+	});
 
 program
 	.command("init [dir]")
@@ -19,6 +27,7 @@ program
 	.command("config [key] [value]")
 	.description("Get or set configuration")
 	.option("--list", "list all configuration")
+	.option("--json", "JSON output")
 	.action(async (key, value, opts) => {
 		const { config } = await import("./commands/config.js");
 		await config(key, value, opts);
@@ -105,6 +114,7 @@ program
 program
 	.command("skill <subcommand> [name]")
 	.description("Manage skills (install, list, run, create)")
+	.option("--json", "JSON output")
 	.action(async (subcommand, name, opts) => {
 		const { skill } = await import("./commands/skill.js");
 		await skill(subcommand, name, opts);
@@ -140,6 +150,7 @@ program
 	.description("Export wiki to other formats")
 	.option("--format <type>", "output format: markdown, html, pdf", "markdown")
 	.option("--output <path>", "output directory")
+	.option("--json", "JSON output")
 	.action(async (opts) => {
 		const { exportVault } = await import("./commands/export.js");
 		await exportVault(opts);

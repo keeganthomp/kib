@@ -1,4 +1,5 @@
 import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
+import { debug, debugTime } from "../ui/debug.js";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
 
@@ -29,6 +30,12 @@ export async function ingest(sources: string[], opts: IngestOpts) {
 		log.header("ingesting sources");
 	}
 
+	debug(`vault root: ${root}`);
+	debug(`sources: ${sources.join(", ")}`);
+	if (opts.category) debug(`category: ${opts.category}`);
+	if (opts.tags) debug(`tags: ${opts.tags}`);
+	if (opts.dryRun) debug("dry run enabled");
+
 	const tags = opts.tags?.split(",").map((t) => t.trim());
 	const results: {
 		source: string;
@@ -44,12 +51,15 @@ export async function ingest(sources: string[], opts: IngestOpts) {
 		const spinner = opts.json ? null : createSpinner(`Ingesting ${source}`);
 		spinner?.start();
 
+		const endIngest = debugTime(`ingest ${source}`);
 		try {
 			const result = await ingestSource(root, source, {
 				category: opts.category,
 				tags,
 				dryRun: opts.dryRun,
 			});
+
+			endIngest();
 
 			results.push({
 				source,
