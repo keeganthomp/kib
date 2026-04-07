@@ -1,8 +1,5 @@
-# typed: false
-# frozen_string_literal: true
-
 class Kib < Formula
-  desc "The Headless Knowledge Compiler"
+  desc "The Headless Knowledge Compiler — turn raw sources into a queryable AI wiki"
   homepage "https://github.com/keeganthomp/kib"
   version "VERSION_PLACEHOLDER"
   license "MIT"
@@ -28,11 +25,11 @@ class Kib < Formula
   end
 
   def install
-    binary = stable.url.split("/").last
+    binary = Dir["kib-*"].first || "kib"
     bin.install binary => "kib"
   end
 
   test do
-    system "#{bin}/kib", "--version"
+    assert_match "kib", shell_output("#{bin}/kib --version")
   end
 end
