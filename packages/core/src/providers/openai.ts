@@ -78,5 +78,34 @@ export function createOpenAIProvider(model: string): LLMProvider {
 				}
 			}
 		},
+
+		async vision(params: { image: Buffer; prompt: string; mimeType?: string }): Promise<string> {
+			const client = await getClient();
+			const mime = params.mimeType ?? "image/png";
+			const base64 = params.image.toString("base64");
+			const dataUrl = `data:${mime};base64,${base64}`;
+
+			const response = await client.chat.completions.create({
+				model,
+				max_tokens: 4096,
+				messages: [
+					{
+						role: "user",
+						content: [
+							{
+								type: "image_url",
+								image_url: { url: dataUrl },
+							},
+							{
+								type: "text",
+								text: params.prompt,
+							},
+						],
+					},
+				],
+			});
+
+			return response.choices[0]?.message?.content ?? "";
+		},
 	};
 }

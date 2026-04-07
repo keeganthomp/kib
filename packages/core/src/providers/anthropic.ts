@@ -92,7 +92,7 @@ export function createAnthropicProvider(model: string): LLMProvider {
 			}
 		},
 
-		async vision(params: { image: Buffer; prompt: string }): Promise<string> {
+		async vision(params: { image: Buffer; prompt: string; mimeType?: string }): Promise<string> {
 			const client = await getClient();
 			const response = await client.messages.create({
 				model,
@@ -105,7 +105,7 @@ export function createAnthropicProvider(model: string): LLMProvider {
 								type: "image",
 								source: {
 									type: "base64",
-									media_type: "image/png",
+									media_type: params.mimeType ?? "image/png",
 									data: params.image.toString("base64"),
 								},
 							},
