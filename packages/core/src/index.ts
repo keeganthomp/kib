@@ -17,6 +17,8 @@ export { createProvider, detectProvider } from "./providers/router.js";
 export { queryVault } from "./query/query.js";
 export * from "./schemas.js";
 export { SearchIndex } from "./search/engine.js";
+export { HybridSearch } from "./search/hybrid.js";
+export { VectorIndex } from "./search/vector.js";
 export { findSkill, loadSkills } from "./skills/loader.js";
 export { runSkill } from "./skills/runner.js";
 export { SkillDefinitionSchema } from "./skills/schema.js";

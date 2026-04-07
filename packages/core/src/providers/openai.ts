@@ -9,6 +9,11 @@ interface OpenAIChatResponse {
 	usage?: { prompt_tokens: number; completion_tokens: number };
 }
 
+interface OpenAIEmbeddingResponse {
+	data: { embedding: number[]; index: number }[];
+	usage?: { prompt_tokens: number; total_tokens: number };
+}
+
 interface OpenAIClient {
 	chat: {
 		completions: {
@@ -16,6 +21,9 @@ interface OpenAIClient {
 				params: Record<string, unknown>,
 			): Promise<OpenAIChatResponse & AsyncIterable<OpenAIChatResponse>>;
 		};
+	};
+	embeddings: {
+		create(params: Record<string, unknown>): Promise<OpenAIEmbeddingResponse>;
 	};
 }
 
@@ -110,6 +118,27 @@ export function createOpenAIProvider(model: string): LLMProvider {
 			});
 
 			return response.choices[0]?.message?.content ?? "";
+		},
+
+		async embed(texts: string[]): Promise<Float32Array[]> {
+			const client = await getClient();
+			const BATCH_SIZE = 2048; // OpenAI max batch size
+			const results: Float32Array[] = [];
+
+			for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+				const batch = texts.slice(i, i + BATCH_SIZE);
+				const response = await client.embeddings.create({
+					model: "text-embedding-3-small",
+					input: batch,
+				});
+				// Sort by index to preserve order
+				const sorted = response.data.sort((a, b) => a.index - b.index);
+				for (const item of sorted) {
+					results.push(new Float32Array(item.embedding));
+				}
+			}
+
+			return results;
 		},
 	};
 }

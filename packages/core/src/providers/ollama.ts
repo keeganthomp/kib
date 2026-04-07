@@ -106,5 +106,23 @@ export function createOllamaProvider(model: string): LLMProvider {
 				}
 			}
 		},
+
+		async embed(texts: string[]): Promise<Float32Array[]> {
+			const results: Float32Array[] = [];
+			// Ollama embed API supports single input; batch sequentially
+			for (const text of texts) {
+				const response = await fetch(`${OLLAMA_BASE}/api/embed`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ model: "nomic-embed-text", input: text }),
+				});
+				if (!response.ok) {
+					throw new Error(`Ollama embed failed: ${response.status} ${response.statusText}`);
+				}
+				const data = (await response.json()) as { embeddings: number[][] };
+				results.push(new Float32Array(data.embeddings[0]!));
+			}
+			return results;
+		},
 	};
 }
