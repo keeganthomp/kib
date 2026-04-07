@@ -36,6 +36,7 @@ export async function init(dir: string | undefined, opts: InitOpts) {
 		log.success("Created raw/");
 		log.success("Created wiki/");
 		log.success("Created inbox/");
+		log.success("Created CLAUDE.md");
 
 		const providerLabel =
 			provider === "anthropic"

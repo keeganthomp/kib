@@ -75,6 +75,8 @@ export const VaultConfigSchema = z.object({
 		auto_graph: z.boolean().default(true),
 		max_sources_per_pass: z.number().int().positive().default(DEFAULTS.maxSourcesPerPass),
 		categories: z.array(z.string()).default([...DEFAULT_CATEGORIES]),
+		enrich_cross_refs: z.boolean().default(true),
+		max_enrich_articles: z.number().int().positive().default(10),
 	}),
 	ingest: z.object({
 		download_images: z.boolean().default(true),
@@ -93,7 +95,8 @@ export const VaultConfigSchema = z.object({
 	}),
 	query: z.object({
 		file_output: z.boolean().default(true),
-		auto_file: z.boolean().default(false),
+		auto_file: z.boolean().default(true),
+		auto_file_threshold: z.number().int().positive().default(3),
 	}),
 	cache: z.object({
 		enabled: z.boolean().default(true),
@@ -176,13 +179,21 @@ export const CompileResultSchema = z.object({
 	articlesCreated: z.number().int().nonnegative(),
 	articlesUpdated: z.number().int().nonnegative(),
 	articlesDeleted: z.number().int().nonnegative(),
+	articlesEnriched: z.number().int().nonnegative(),
 	operations: z.array(FileOperationSchema),
 });
 
 // ─── Lint Diagnostic ─────────────────────────────────────────────
 
 export const LintSeveritySchema = z.enum(["error", "warning", "info"]);
-export const LintRuleSchema = z.enum(["orphan", "stale", "missing", "broken-link", "frontmatter"]);
+export const LintRuleSchema = z.enum([
+	"orphan",
+	"stale",
+	"missing",
+	"broken-link",
+	"frontmatter",
+	"contradiction",
+]);
 
 export const LintDiagnosticSchema = z.object({
 	rule: LintRuleSchema,

@@ -15,6 +15,7 @@ interface CompileOpts {
 	dryRun?: boolean;
 	source?: string;
 	max?: number;
+	json?: boolean;
 }
 
 export async function compile(opts: CompileOpts) {
@@ -31,17 +32,19 @@ export async function compile(opts: CompileOpts) {
 
 	const config = await loadConfig(root);
 
-	log.header("compiling wiki");
+	if (!opts.json) {
+		log.header("compiling wiki");
+	}
 
 	// Create LLM provider
 	let provider: LLMProvider;
-	const providerSpinner = createSpinner("Connecting to LLM provider...");
-	providerSpinner.start();
+	const providerSpinner = opts.json ? null : createSpinner("Connecting to LLM provider...");
+	providerSpinner?.start();
 	try {
 		provider = await createProvider(config.provider.default, config.provider.model);
-		providerSpinner.succeed(`Connected to ${provider.name}`);
+		providerSpinner?.succeed(`Connected to ${provider.name}`);
 	} catch (err) {
-		providerSpinner.stop();
+		providerSpinner?.stop();
 		if (err instanceof NoProviderError) {
 			provider = await setupProvider(root);
 		} else {
@@ -53,8 +56,8 @@ export async function compile(opts: CompileOpts) {
 	// Lazy import compile engine
 	const { compileVault } = await import("@kibhq/core");
 
-	const compileSpinner = createSpinner("Compiling sources...");
-	compileSpinner.start();
+	const compileSpinner = opts.json ? null : createSpinner("Compiling sources...");
+	compileSpinner?.start();
 
 	try {
 		const result = await compileVault(root, provider, config, {
@@ -63,19 +66,24 @@ export async function compile(opts: CompileOpts) {
 			sourceFilter: opts.source,
 			maxSources: opts.max,
 			onProgress: (msg) => {
-				compileSpinner.text = `  ${msg}`;
+				if (compileSpinner) compileSpinner.text = `  ${msg}`;
 			},
 		});
 
+		if (opts.json) {
+			console.log(JSON.stringify(result, null, 2));
+			return;
+		}
+
 		if (result.sourcesCompiled === 0) {
-			compileSpinner.info("No sources pending compilation");
+			compileSpinner?.info("No sources pending compilation");
 			log.blank();
 			log.dim("Use --force to recompile all sources");
 			log.blank();
 			return;
 		}
 
-		compileSpinner.succeed(
+		compileSpinner?.succeed(
 			`Compiled ${result.sourcesCompiled} source${result.sourcesCompiled === 1 ? "" : "s"}`,
 		);
 
@@ -95,6 +103,15 @@ export async function compile(opts: CompileOpts) {
 				`${result.articlesDeleted} article${result.articlesDeleted === 1 ? "" : "s"} deleted`,
 			);
 		}
+		const articlesEnriched =
+			"articlesEnriched" in result && typeof result.articlesEnriched === "number"
+				? result.articlesEnriched
+				: 0;
+		if (articlesEnriched > 0) {
+			log.success(
+				`${articlesEnriched} article${articlesEnriched === 1 ? "" : "s"} enriched with cross-references`,
+			);
+		}
 
 		if (opts.dryRun) {
 			log.blank();
@@ -111,7 +128,7 @@ export async function compile(opts: CompileOpts) {
 
 		log.blank();
 	} catch (err) {
-		compileSpinner.fail("Compilation failed");
+		compileSpinner?.fail("Compilation failed");
 		log.error((err as Error).message);
 		process.exit(1);
 	}

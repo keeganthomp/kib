@@ -27,9 +27,10 @@ program
 program
 	.command("status")
 	.description("Vault health dashboard")
-	.action(async () => {
+	.option("--json", "JSON output")
+	.action(async (opts) => {
 		const { status } = await import("./commands/status.js");
-		await status();
+		await status(opts);
 	});
 
 program
@@ -38,6 +39,8 @@ program
 	.option("--category <cat>", "override raw/ subdirectory")
 	.option("--tags <tags>", "comma-separated tags")
 	.option("--batch", "read sources from stdin (one per line)")
+	.option("--dry-run", "show what would be ingested without writing")
+	.option("--json", "JSON output")
 	.action(async (sources, opts) => {
 		const { ingest } = await import("./commands/ingest.js");
 		await ingest(sources, opts);
@@ -50,6 +53,7 @@ program
 	.option("--dry-run", "show what would happen without doing it")
 	.option("--source <path>", "compile only a specific source")
 	.option("--max <n>", "limit sources per pass", Number.parseInt)
+	.option("--json", "JSON output")
 	.action(async (opts) => {
 		const { compile } = await import("./commands/compile.js");
 		await compile(opts);

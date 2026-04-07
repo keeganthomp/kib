@@ -51,7 +51,11 @@ export async function query(question: string, opts: QueryOpts) {
 	spinner.start();
 
 	try {
-		const result = await queryVault(root, question, provider);
+		const autoFile = opts.file !== false && config.query.auto_file;
+		const result = await queryVault(root, question, provider, {
+			autoFile,
+			autoFileThreshold: config.query.auto_file_threshold,
+		});
 		spinner.stop();
 
 		// Print answer
@@ -65,6 +69,11 @@ export async function query(question: string, opts: QueryOpts) {
 			for (const path of result.sourcePaths) {
 				log.dim(`  - ${path}`);
 			}
+			log.blank();
+		}
+
+		if (result.filedTo) {
+			log.dim(`Auto-filed to ${result.filedTo}`);
 			log.blank();
 		}
 

@@ -6,6 +6,8 @@ interface IngestOpts {
 	category?: string;
 	tags?: string;
 	batch?: boolean;
+	json?: boolean;
+	dryRun?: boolean;
 }
 
 export async function ingest(sources: string[], opts: IngestOpts) {
@@ -23,44 +25,79 @@ export async function ingest(sources: string[], opts: IngestOpts) {
 	// Lazy import — don't load ingest machinery for other commands
 	const { ingestSource } = await import("@kibhq/core");
 
-	log.header("ingesting sources");
+	if (!opts.json) {
+		log.header("ingesting sources");
+	}
 
 	const tags = opts.tags?.split(",").map((t) => t.trim());
-	let ingested = 0;
-	let skipped = 0;
+	const results: {
+		source: string;
+		title?: string;
+		path?: string;
+		wordCount?: number;
+		skipped?: boolean;
+		skipReason?: string;
+		error?: string;
+	}[] = [];
 
 	for (const source of sources) {
-		const spinner = createSpinner(`Ingesting ${source}`);
-		spinner.start();
+		const spinner = opts.json ? null : createSpinner(`Ingesting ${source}`);
+		spinner?.start();
 
 		try {
 			const result = await ingestSource(root, source, {
 				category: opts.category,
 				tags,
+				dryRun: opts.dryRun,
 			});
 
-			if (result.skipped) {
-				spinner.warn(`Skipped: ${result.skipReason}`);
-				skipped++;
-			} else {
-				spinner.succeed(
-					`${result.title} → ${result.path} (${result.wordCount.toLocaleString()} words)`,
-				);
-				ingested++;
+			results.push({
+				source,
+				title: result.title,
+				path: result.path,
+				wordCount: result.wordCount,
+				skipped: result.skipped,
+				skipReason: result.skipReason,
+			});
+
+			if (!opts.json) {
+				if (result.skipped) {
+					spinner?.warn(`Skipped: ${result.skipReason}`);
+				} else {
+					const suffix = opts.dryRun ? " (dry run)" : "";
+					spinner?.succeed(
+						`${result.title} → ${result.path} (${result.wordCount.toLocaleString()} words)${suffix}`,
+					);
+				}
 			}
 		} catch (err) {
-			spinner.fail(`Failed: ${source}`);
-			log.error((err as Error).message);
+			results.push({ source, error: (err as Error).message });
+			if (!opts.json) {
+				spinner?.fail(`Failed: ${source}`);
+				log.error((err as Error).message);
+			}
 		}
 	}
+
+	if (opts.json) {
+		console.log(JSON.stringify(results, null, 2));
+		return;
+	}
+
+	const ingested = results.filter((r) => !r.skipped && !r.error).length;
+	const skipped = results.filter((r) => r.skipped).length;
 
 	log.blank();
 	if (ingested > 0) {
 		log.success(
 			`Ingested ${ingested} source${ingested === 1 ? "" : "s"}${skipped > 0 ? `, skipped ${skipped}` : ""}`,
 		);
-		log.blank();
-		log.dim("run kib compile to update the wiki");
+		if (opts.dryRun) {
+			log.dim("(dry run — no files were written)");
+		} else {
+			log.blank();
+			log.dim("run kib compile to update the wiki");
+		}
 	} else if (skipped > 0) {
 		log.dim(`All ${skipped} source${skipped === 1 ? "" : "s"} already ingested`);
 	}

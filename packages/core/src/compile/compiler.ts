@@ -4,6 +4,7 @@ import { hash } from "../hash.js";
 import { countWords } from "../ingest/normalize.js";
 import type { CompileResult, LLMProvider, Manifest, VaultConfig } from "../types.js";
 import {
+	appendLog,
 	deleteFile,
 	loadManifest,
 	readIndex,
@@ -14,6 +15,7 @@ import {
 } from "../vault.js";
 import { buildLinkGraph, generateGraphMd } from "./backlinks.js";
 import { extractWikilinks, parseCompileOutput, parseFrontmatter } from "./diff.js";
+import { enrichCrossReferences } from "./enrichment.js";
 import { computeStats, generateIndexMd } from "./index-manager.js";
 import { compileSystemPrompt, compileUserPrompt } from "./prompts.js";
 
@@ -51,6 +53,7 @@ export async function compileVault(
 			articlesCreated: 0,
 			articlesUpdated: 0,
 			articlesDeleted: 0,
+			articlesEnriched: 0,
 			operations: [],
 		};
 	}
@@ -65,7 +68,9 @@ export async function compileVault(
 	let totalCreated = 0;
 	let totalUpdated = 0;
 	let totalDeleted = 0;
+	let totalEnriched = 0;
 	const allOperations: CompileResult["operations"] = [];
+	const newlyChangedSlugs = new Set<string>();
 
 	for (const [sourceId, sourcePath] of sourcesToCompile) {
 		options.onProgress?.(`Compiling ${sourcePath}...`);
@@ -140,6 +145,7 @@ export async function compileVault(
 						category: (frontmatter.category as string) ?? "topic",
 					};
 
+					newlyChangedSlugs.add(articleSlug);
 					if (op.op === "create") totalCreated++;
 					else totalUpdated++;
 				} else if (op.op === "delete") {
@@ -174,6 +180,27 @@ export async function compileVault(
 	}
 
 	if (!options.dryRun) {
+		// Cross-reference enrichment pass
+		if (config.compile.enrich_cross_refs !== false && newlyChangedSlugs.size > 0) {
+			options.onProgress?.("Enriching cross-references...");
+			try {
+				const enrichResult = await enrichCrossReferences(
+					root,
+					provider,
+					manifest,
+					newlyChangedSlugs,
+					{
+						maxArticles: config.compile.max_enrich_articles,
+						onProgress: options.onProgress,
+					},
+				);
+				totalEnriched += enrichResult.articlesEnriched;
+				allOperations.push(...enrichResult.operations);
+			} catch {
+				options.onProgress?.("Cross-reference enrichment failed, continuing...");
+			}
+		}
+
 		// Rebuild link graph (backlinks)
 		options.onProgress?.("Updating backlinks...");
 		const graph = await buildLinkGraph(root);
@@ -212,6 +239,13 @@ export async function compileVault(
 		manifest.vault.lastCompiled = new Date().toISOString();
 
 		await saveManifest(root, manifest);
+
+		// Log compile activity
+		const parts = [`${sourcesToCompile.length} sources compiled`];
+		if (totalCreated > 0) parts.push(`${totalCreated} articles created`);
+		if (totalUpdated > 0) parts.push(`${totalUpdated} articles updated`);
+		if (totalEnriched > 0) parts.push(`${totalEnriched} articles enriched`);
+		await appendLog(root, "compile", parts.join(", "));
 	}
 
 	return {
@@ -219,6 +253,7 @@ export async function compileVault(
 		articlesCreated: totalCreated,
 		articlesUpdated: totalUpdated,
 		articlesDeleted: totalDeleted,
+		articlesEnriched: totalEnriched,
 		operations: allOperations,
 	};
 }

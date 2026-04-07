@@ -212,10 +212,16 @@ export function createMcpServer(root: string) {
 		async ({ question, max_articles }) => {
 			try {
 				const provider = await ctx.getProvider();
+				const config = await ctx.getConfig();
 				const result = await queryVault(root, question, provider, {
 					maxArticles: max_articles,
+					autoFile: config.query.auto_file,
+					autoFileThreshold: config.query.auto_file_threshold,
 				});
-				return ok(`${result.answer}\n\n---\nSources: ${result.sourcePaths.join(", ") || "none"}`);
+				const filed = result.filedTo ? `\nFiled to: ${result.filedTo}` : "";
+				return ok(
+					`${result.answer}\n\n---\nSources: ${result.sourcePaths.join(", ") || "none"}${filed}`,
+				);
 			} catch (e) {
 				return err((e as Error).message);
 			}
@@ -332,11 +338,14 @@ export function createMcpServer(root: string) {
 			rule: z
 				.string()
 				.optional()
-				.describe("Run only a specific rule: orphan, stale, missing, broken-link, frontmatter"),
+				.describe(
+					"Run only a specific rule: orphan, stale, missing, broken-link, frontmatter, contradiction",
+				),
 		},
 		async ({ rule }) => {
 			try {
-				const result = await lintVault(root, { ruleFilter: rule });
+				const provider = await ctx.getProvider().catch(() => undefined);
+				const result = await lintVault(root, { ruleFilter: rule, provider });
 				return json({
 					errors: result.errors,
 					warnings: result.warnings,
@@ -362,6 +371,14 @@ export function createMcpServer(root: string) {
 		const content = await readGraph(root);
 		return {
 			contents: [{ uri: "wiki://graph", text: content || "(no graph yet — run kib compile)" }],
+		};
+	});
+
+	server.resource("wiki-log", "wiki://log", { mimeType: "text/markdown" }, async () => {
+		const { readLog } = await import("@kibhq/core");
+		const content = await readLog(root);
+		return {
+			contents: [{ uri: "wiki://log", text: content || "(no activity yet)" }],
 		};
 	});
 

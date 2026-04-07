@@ -14,4 +14,6 @@ inbox/
 coverage/
 *.tsbuildinfo
 .mcp.json
+.next/
+out/
 
