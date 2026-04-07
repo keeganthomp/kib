@@ -72,7 +72,7 @@ What's built, what's next, and what's deferred.
 - [x] Compile cache integration: skip LLM call when cache hit matches
 - [x] Retry with adjusted prompt when LLM returns malformed output (max 2 retries)
 - [x] `kib compile --source <path>` to recompile a specific source
-- [ ] Streaming compile output: show article titles as they're generated
+- [x] Streaming compile output: show article titles as they're generated
 - [x] Parallel compilation: compile independent sources concurrently
 
 ### Multi-Model Support

@@ -1,5 +1,6 @@
 export { buildLinkGraph, generateGraphMd } from "./compile/backlinks.js";
 export { CompileCache } from "./compile/cache.js";
+export type { ArticleEvent, CompileOptions } from "./compile/compiler.js";
 export { compileVault } from "./compile/compiler.js";
 export { extractWikilinks, parseCompileOutput, parseFrontmatter } from "./compile/diff.js";
 export { enrichCrossReferences } from "./compile/enrichment.js";

@@ -27,6 +27,14 @@ import { enrichCrossReferences } from "./enrichment.js";
 import { computeStats, generateIndexMd } from "./index-manager.js";
 import { compileSystemPrompt, compileUserPrompt } from "./prompts.js";
 
+/** Emitted for each article as it is created, updated, or deleted. */
+export interface ArticleEvent {
+	op: "create" | "update" | "delete";
+	title: string;
+	path: string;
+	source: string;
+}
+
 export interface CompileOptions {
 	/** Recompile all sources regardless of state */
 	force?: boolean;
@@ -38,6 +46,8 @@ export interface CompileOptions {
 	dryRun?: boolean;
 	/** Callback for progress updates */
 	onProgress?: (msg: string) => void;
+	/** Callback fired for each article as it is processed */
+	onArticle?: (event: ArticleEvent) => void;
 }
 
 // ─── Token estimation ──────────────────────────────────────────
@@ -235,7 +245,7 @@ async function compileSingleSource(
 	config: VaultConfig,
 	indexContent: string,
 	cache: CompileCache | null,
-	options: CompileOptions,
+	options: CompileOptions & { onArticle?: (event: ArticleEvent) => void },
 ): Promise<SourceCompileResult> {
 	const categories = config.compile.categories;
 	const contextWindow = config.compile.context_window;
@@ -335,6 +345,9 @@ async function compileSingleSource(
 					category: (frontmatter.category as string) ?? "topic",
 				};
 
+				const articleTitle = (frontmatter.title as string) ?? articleSlug;
+				options.onArticle?.({ op: op.op, title: articleTitle, path: op.path, source: sourcePath });
+
 				if (op.op === "create") created++;
 				else updated++;
 			} else if (op.op === "delete") {
@@ -344,6 +357,13 @@ async function compileSingleSource(
 
 				// Remove from manifest
 				const slug = wikiRelPath.replace(/\.md$/, "");
+				const deletedTitle = manifest.articles[slug]?.summary?.split(".")[0] ?? slug;
+				options.onArticle?.({
+					op: "delete",
+					title: deletedTitle,
+					path: op.path,
+					source: sourcePath,
+				});
 				delete manifest.articles[slug];
 			}
 		}
@@ -353,6 +373,26 @@ async function compileSingleSource(
 		manifest.sources[sourceId]!.producedArticles = producedArticles;
 	} else {
 		for (const op of operations) {
+			if (op.op === "create" || op.op === "update") {
+				const { frontmatter } = op.content ? parseFrontmatter(op.content) : { frontmatter: {} };
+				const slug =
+					op.path
+						.replace(/^wiki\//, "")
+						.replace(/\.md$/, "")
+						.split("/")
+						.pop() ?? op.path;
+				const title = (frontmatter.title as string) ?? slug;
+				options.onArticle?.({ op: op.op, title, path: op.path, source: sourcePath });
+			} else if (op.op === "delete") {
+				const slug =
+					op.path
+						.replace(/^wiki\//, "")
+						.replace(/\.md$/, "")
+						.split("/")
+						.pop() ?? op.path;
+				options.onArticle?.({ op: "delete", title: slug, path: op.path, source: sourcePath });
+			}
+
 			if (op.op === "create") created++;
 			else if (op.op === "update") updated++;
 			else if (op.op === "delete") deleted++;
