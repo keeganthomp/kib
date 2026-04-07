@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { LLMProvider } from "@kibhq/core";
+import type { ArticleEvent, LLMProvider } from "@kibhq/core";
 import {
 	createProvider,
 	loadConfig,
@@ -8,6 +8,7 @@ import {
 	resolveVaultRoot,
 	VaultNotFoundError,
 } from "@kibhq/core";
+import chalk from "chalk";
 import { debug, debugTime } from "../ui/debug.js";
 import { coloredDiff } from "../ui/diff.js";
 import * as log from "../ui/logger.js";
@@ -76,6 +77,19 @@ export async function compile(opts: CompileOpts) {
 	compileSpinner?.start();
 	const endCompile = debugTime("compileVault");
 
+	// Track current source for streaming output
+	let currentSource = "";
+
+	const formatArticleEvent = (event: ArticleEvent) => {
+		const symbol =
+			event.op === "create"
+				? chalk.green("+")
+				: event.op === "update"
+					? chalk.yellow("~")
+					: chalk.red("−");
+		return `  ${symbol} ${event.title} ${chalk.dim(event.path)}`;
+	};
+
 	try {
 		const result = await compileVault(root, provider, config, {
 			force: opts.force,
@@ -85,6 +99,17 @@ export async function compile(opts: CompileOpts) {
 			onProgress: (msg) => {
 				if (compileSpinner) compileSpinner.text = `  ${msg}`;
 			},
+			onArticle: opts.json
+				? undefined
+				: (event) => {
+						// When we start seeing articles from a new source, print the source header
+						if (event.source !== currentSource) {
+							if (compileSpinner?.isSpinning) compileSpinner.stop();
+							currentSource = event.source;
+							log.dim(`  ${currentSource}`);
+						}
+						console.log(formatArticleEvent(event));
+					},
 		});
 
 		endCompile();
@@ -103,7 +128,10 @@ export async function compile(opts: CompileOpts) {
 			return;
 		}
 
-		compileSpinner?.succeed(
+		// If spinner is still running (no articles emitted), stop it
+		if (compileSpinner?.isSpinning) compileSpinner.stop();
+		log.blank();
+		log.success(
 			`Compiled ${result.sourcesCompiled} source${result.sourcesCompiled === 1 ? "" : "s"}`,
 		);
 
