@@ -34,7 +34,8 @@ export async function query(question: string, opts: QueryOpts) {
 	// Create provider
 	let provider: LLMProvider;
 	try {
-		provider = await createProvider(config.provider.default, config.provider.model);
+		const queryModel = config.query.model ?? config.provider.model;
+		provider = await createProvider(config.provider.default, queryModel);
 	} catch (err) {
 		if (err instanceof NoProviderError) {
 			provider = await setupProvider(root);

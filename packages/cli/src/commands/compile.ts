@@ -55,7 +55,8 @@ export async function compile(opts: CompileOpts) {
 	providerSpinner?.start();
 	const endProvider = debugTime("createProvider");
 	try {
-		provider = await createProvider(config.provider.default, config.provider.model);
+		const compileModel = config.compile.model ?? config.provider.model;
+		provider = await createProvider(config.provider.default, compileModel);
 		endProvider();
 		providerSpinner?.succeed(`Connected to ${provider.name}`);
 	} catch (err) {
@@ -130,6 +131,24 @@ export async function compile(opts: CompileOpts) {
 			log.success(
 				`${articlesEnriched} article${articlesEnriched === 1 ? "" : "s"} enriched with cross-references`,
 			);
+		}
+
+		// Show token usage
+		if (result.tokenUsage) {
+			const { totalInputTokens, totalOutputTokens, perSource } = result.tokenUsage;
+			const cachedCount = perSource.filter((s) => s.cached).length;
+			const parts = [`${totalInputTokens + totalOutputTokens} tokens used`];
+			parts.push(`${totalInputTokens} in / ${totalOutputTokens} out`);
+			if (cachedCount > 0) parts.push(`${cachedCount} cache hit${cachedCount === 1 ? "" : "s"}`);
+			log.dim(parts.join(" · "));
+		}
+
+		// Show warnings
+		if (result.warnings && result.warnings.length > 0) {
+			log.blank();
+			for (const warning of result.warnings) {
+				log.warn(warning);
+			}
 		}
 
 		if (opts.dryRun) {
