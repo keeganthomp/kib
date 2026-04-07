@@ -246,7 +246,9 @@ header {
 	border: 1px solid transparent;
 	border-radius: 6px;
 	cursor: pointer;
-	transition: border-color 150ms ease, background 150ms ease;
+	transition:
+		border-color 150ms ease,
+		background 150ms ease;
 }
 
 .code-block-btn:hover {

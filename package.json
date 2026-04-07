@@ -8,7 +8,7 @@
 		"check": "biome check .",
 		"check:fix": "biome check --write .",
 		"test": "bun test",
-    "build:ext": "bun run --filter @kibhq/extension build",
+		"build:ext": "bun run --filter @kibhq/extension build",
 		"build": "bun run --filter '*' build"
 	},
 	"devDependencies": {
