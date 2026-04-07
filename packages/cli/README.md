@@ -64,6 +64,28 @@ MANAGEMENT
   export              Export wiki to markdown or HTML
 ```
 
+## Compile Options
+
+```bash
+kib compile                    # compile pending sources
+kib compile --force            # recompile all sources
+kib compile --dry-run          # preview changes without writing
+kib compile --source <path>    # recompile a specific source
+kib compile --max 5            # limit to 5 sources this pass
+```
+
+Configure in `.kb/config.toml`:
+
+```toml
+[compile]
+parallel = true                # compile sources concurrently
+max_parallel = 3               # max concurrent compilations
+# max_tokens_per_pass = 500000 # token budget per run
+# model = "claude-sonnet-4-20250514"  # override model for compile
+```
+
+The compiler caches LLM responses, retries on malformed output, auto-truncates large sources, and reports token usage after each run.
+
 ## LLM Providers
 
 On first use, kib walks you through provider setup interactively. Or set via environment:

@@ -100,6 +100,21 @@ kib chat
 
 6. **Skills** — `kib skill run <name>` executes skills (built-in or custom `.ts` files in `.kb/skills/`) with full access to the vault, LLM, and search engine.
 
+### Smart compilation
+
+The compile engine includes several features to handle large vaults and sources efficiently:
+
+- **Token budget** — Set `compile.max_tokens_per_pass` to cap LLM token usage per compile run. Compilation stops when the budget is exhausted.
+- **Auto-truncation** — Sources exceeding `compile.max_source_tokens` (default 32K) are truncated at paragraph boundaries before sending to the LLM.
+- **Smart context** — When existing articles are too large for the context window, the compiler sends compact summaries instead of full article content.
+- **Context window warnings** — Warns when a source approaches the model's context limit (`compile.context_window`, default 200K tokens).
+- **Compile cache** — Identical prompts skip the LLM call entirely, using cached responses from `.kb/cache/responses/`.
+- **Retry on malformed output** — If the LLM returns invalid JSON, the compiler retries up to 2 times with an adjusted prompt.
+- **Duplicate detection** — Warns when new articles overlap with existing ones (shared tags or similar titles).
+- **Parallel compilation** — Enable `compile.parallel = true` to compile independent sources concurrently (up to `compile.max_parallel`, default 3).
+- **Per-operation models** — Override the LLM model for specific operations via `compile.model` or `query.model` in config.
+- **Token tracking** — Every compile run reports per-source and total token usage (input/output tokens, cache hits, truncations).
+
 ## Commands
 
 ```
@@ -233,6 +248,33 @@ Override via config:
 ```bash
 kib config provider.default openai
 kib config provider.model gpt-4o
+```
+
+### Compile Configuration
+
+All compile settings live in `.kb/config.toml` under `[compile]`:
+
+```toml
+[compile]
+auto_index = true              # Regenerate INDEX.md after compile
+auto_graph = true              # Regenerate GRAPH.md after compile
+max_sources_per_pass = 10      # Max sources per compile run
+enrich_cross_refs = true       # Add [[wikilinks]] to existing articles
+max_enrich_articles = 10       # Max articles to enrich per pass
+# model = "claude-sonnet-4-20250514"  # Override LLM model for compile
+# max_tokens_per_pass = 500000       # Token budget per compile run
+context_window = 200000        # Model's context window (tokens)
+max_source_tokens = 32000      # Auto-truncate sources above this
+parallel = false               # Compile sources concurrently
+max_parallel = 3               # Max concurrent compilations
+
+[query]
+# model = "claude-sonnet-4-20250514"  # Override LLM model for queries
+
+[cache]
+enabled = true                 # LLM response cache
+ttl_hours = 168                # Cache TTL (7 days)
+max_size_mb = 500              # Max cache size
 ```
 
 ## MCP Server
