@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "kib-monorepo",
@@ -10,7 +9,7 @@
     },
     "packages/cli": {
       "name": "@kibhq/cli",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "bin": {
         "kib": "./bin/kib.ts",
       },
@@ -29,7 +28,7 @@
     },
     "packages/core": {
       "name": "@kibhq/core",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.82.0",
         "@iarna/toml": "^2.2.5",
@@ -73,6 +72,7 @@
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.7",
+        "@types/node": "^25.5.2",
         "@types/react": "^19.1.2",
         "@types/react-dom": "^19.1.2",
         "postcss": "^8.5.3",
