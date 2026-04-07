@@ -16,6 +16,7 @@ import type {
 	MessageSchema,
 	SearchResultSchema,
 	SourceEntrySchema,
+	SourceTokenUsageSchema,
 	SourceTypeSchema,
 	VaultConfigSchema,
 } from "./schemas.js";
@@ -40,6 +41,7 @@ export type CompletionResult = z.infer<typeof CompletionResultSchema>;
 // ─── Operation Types ─────────────────────────────────────────────
 
 export type FileOperation = z.infer<typeof FileOperationSchema>;
+export type SourceTokenUsage = z.infer<typeof SourceTokenUsageSchema>;
 export type SearchResult = z.infer<typeof SearchResultSchema>;
 export type IngestResult = z.infer<typeof IngestResultSchema>;
 export type CompileResult = z.infer<typeof CompileResultSchema>;

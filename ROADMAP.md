@@ -61,22 +61,22 @@ What's built, what's next, and what's deferred.
 ## v0.4.0 — Smarter Compilation
 
 ### Token Budget Management
-- [ ] Track token usage per compile pass and per source
-- [ ] Auto-summarize large sources before sending to LLM (chunk into 8K-token windows)
-- [ ] Smart context selection: for large vaults, send INDEX.md + summaries, not full articles
-- [ ] Token budget config: `compile.max_tokens_per_pass` 
-- [ ] Warning when a single source exceeds the model's context window
+- [x] Track token usage per compile pass and per source
+- [x] Auto-summarize large sources before sending to LLM (chunk into 8K-token windows)
+- [x] Smart context selection: for large vaults, send INDEX.md + summaries, not full articles
+- [x] Token budget config: `compile.max_tokens_per_pass` 
+- [x] Warning when a single source exceeds the model's context window
 
 ### Compile Improvements
-- [ ] Article merging: detect when two sources produce articles about the same topic
-- [ ] Compile cache integration: skip LLM call when cache hit matches
-- [ ] Retry with adjusted prompt when LLM returns malformed output (max 2 retries)
+- [x] Article merging: detect when two sources produce articles about the same topic
+- [x] Compile cache integration: skip LLM call when cache hit matches
+- [x] Retry with adjusted prompt when LLM returns malformed output (max 2 retries)
 - [x] `kib compile --source <path>` to recompile a specific source
 - [ ] Streaming compile output: show article titles as they're generated
-- [ ] Parallel compilation: compile independent sources concurrently
+- [x] Parallel compilation: compile independent sources concurrently
 
 ### Multi-Model Support
-- [ ] Config-based model selection per operation: `compile.model`, `query.model`, `lint.model`
+- [x] Config-based model selection per operation: `compile.model`, `query.model`, `lint.model`
 - [x] `fast_model` used for lightweight ops (skills with `model: "fast"`)
 - [x] `default` model used for heavy ops (compile, query)
 

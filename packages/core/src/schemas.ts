@@ -77,6 +77,12 @@ export const VaultConfigSchema = z.object({
 		categories: z.array(z.string()).default([...DEFAULT_CATEGORIES]),
 		enrich_cross_refs: z.boolean().default(true),
 		max_enrich_articles: z.number().int().positive().default(10),
+		max_tokens_per_pass: z.number().int().positive().optional(),
+		context_window: z.number().int().positive().default(DEFAULTS.contextWindow),
+		max_source_tokens: z.number().int().positive().default(DEFAULTS.maxSourceTokens),
+		parallel: z.boolean().default(false),
+		max_parallel: z.number().int().positive().default(DEFAULTS.maxParallel),
+		model: z.string().optional(),
 	}),
 	ingest: z.object({
 		download_images: z.boolean().default(true),
@@ -97,6 +103,7 @@ export const VaultConfigSchema = z.object({
 		file_output: z.boolean().default(true),
 		auto_file: z.boolean().default(true),
 		auto_file_threshold: z.number().int().positive().default(3),
+		model: z.string().optional(),
 	}),
 	cache: z.object({
 		enabled: z.boolean().default(true),
@@ -174,6 +181,15 @@ export const IngestResultSchema = z.object({
 
 // ─── Compile Result ──────────────────────────────────────────────
 
+export const SourceTokenUsageSchema = z.object({
+	sourceId: z.string(),
+	sourcePath: z.string(),
+	inputTokens: z.number().int().nonnegative(),
+	outputTokens: z.number().int().nonnegative(),
+	cached: z.boolean(),
+	truncated: z.boolean(),
+});
+
 export const CompileResultSchema = z.object({
 	sourcesCompiled: z.number().int().nonnegative(),
 	articlesCreated: z.number().int().nonnegative(),
@@ -181,6 +197,14 @@ export const CompileResultSchema = z.object({
 	articlesDeleted: z.number().int().nonnegative(),
 	articlesEnriched: z.number().int().nonnegative(),
 	operations: z.array(FileOperationSchema),
+	tokenUsage: z
+		.object({
+			totalInputTokens: z.number().int().nonnegative(),
+			totalOutputTokens: z.number().int().nonnegative(),
+			perSource: z.array(SourceTokenUsageSchema),
+		})
+		.optional(),
+	warnings: z.array(z.string()).optional(),
 });
 
 // ─── Lint Diagnostic ─────────────────────────────────────────────

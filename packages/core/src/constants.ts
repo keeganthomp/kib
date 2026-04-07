@@ -34,6 +34,10 @@ export const DEFAULTS = {
 	maxFileSizeMb: 50,
 	compileArticleMinWords: 200,
 	compileArticleMaxWords: 1000,
+	contextWindow: 200_000, // tokens — conservative default for Claude Sonnet
+	maxSourceTokens: 32_000, // auto-summarize sources larger than this
+	maxParallel: 3, // max concurrent source compilations
+	tokensPerChar: 0.25, // rough estimate: ~4 chars per token
 } as const;
 
 /** Manifest version */

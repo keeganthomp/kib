@@ -238,6 +238,143 @@ See also: [[attention-mechanisms]], [[positional-encoding]]`,
 		expect(result.sourcesCompiled).toBe(0);
 	});
 
+	test("returns token usage in compile result", async () => {
+		const root = await makeTempVault();
+
+		const testFile = join(root, "source.md");
+		await writeFile(testFile, "# Test\n\nContent about tokens.");
+		await ingestSource(root, testFile);
+
+		const mockResponse = JSON.stringify([
+			{
+				op: "create",
+				path: "wiki/concepts/test.md",
+				content:
+					"---\ntitle: Test\nslug: test\ncategory: concept\ntags: []\nsummary: A test.\n---\n\n# Test\n\nContent.",
+			},
+		]);
+		const provider = createMockProvider([mockResponse]);
+		const vaultConfig = await (await import("../vault.js")).loadConfig(root);
+
+		const result = await compileVault(root, provider, vaultConfig);
+		expect(result.tokenUsage).toBeDefined();
+		expect(result.tokenUsage!.totalInputTokens).toBe(100);
+		expect(result.tokenUsage!.totalOutputTokens).toBe(200);
+		expect(result.tokenUsage!.perSource).toHaveLength(1);
+		expect(result.tokenUsage!.perSource[0]!.sourceId).toBeDefined();
+		expect(result.tokenUsage!.perSource[0]!.cached).toBe(false);
+	});
+
+	test("uses compile cache on second run with force", async () => {
+		const root = await makeTempVault();
+
+		const testFile = join(root, "source.md");
+		await writeFile(testFile, "# Cached Test\n\nContent for caching.");
+		await ingestSource(root, testFile);
+
+		// LLM returns empty array so no articles are produced, keeping prompt stable
+		const emptyResponse = "[]";
+
+		// First compile — populates cache
+		const provider1 = createMockProvider([emptyResponse]);
+		const vaultConfig = await (await import("../vault.js")).loadConfig(root);
+		vaultConfig.compile.auto_index = false;
+		vaultConfig.compile.auto_graph = false;
+		await compileVault(root, provider1, vaultConfig);
+
+		// Second compile with force — should hit cache
+		const provider2 = createMockProvider([]); // empty — should never be called
+		const result = await compileVault(root, provider2, vaultConfig, { force: true });
+		expect(result.sourcesCompiled).toBe(1);
+		expect(result.tokenUsage!.perSource[0]!.cached).toBe(true);
+	});
+
+	test("retries on malformed LLM output", async () => {
+		const root = await makeTempVault();
+
+		const testFile = join(root, "source.md");
+		await writeFile(testFile, "# Retry Test\n\nContent.");
+		await ingestSource(root, testFile);
+
+		let callCount = 0;
+		const provider: LLMProvider = {
+			name: "mock-retry",
+			async complete(_params: CompletionParams): Promise<CompletionResult> {
+				callCount++;
+				if (callCount === 1) {
+					// First call returns malformed output
+					return {
+						content: "Here is the result: not valid json at all",
+						usage: { inputTokens: 50, outputTokens: 30 },
+						stopReason: "end_turn",
+					};
+				}
+				// Second call returns valid output
+				return {
+					content: JSON.stringify([
+						{
+							op: "create",
+							path: "wiki/concepts/retry-test.md",
+							content:
+								"---\ntitle: Retry Test\nslug: retry-test\ncategory: concept\ntags: []\nsummary: Retry.\n---\n\n# Retry Test\n\nRetried.",
+						},
+					]),
+					usage: { inputTokens: 60, outputTokens: 40 },
+					stopReason: "end_turn",
+				};
+			},
+			async *stream(): AsyncIterable<StreamChunk> {
+				yield { type: "text", text: "" };
+			},
+		};
+
+		const vaultConfig = await (await import("../vault.js")).loadConfig(root);
+		const result = await compileVault(root, provider, vaultConfig);
+
+		expect(result.sourcesCompiled).toBe(1);
+		expect(result.articlesCreated).toBe(1);
+		expect(callCount).toBe(2); // first call failed, second succeeded
+	});
+
+	test("compiles sources in parallel when configured", async () => {
+		const root = await makeTempVault();
+
+		const file1 = join(root, "parallel1.md");
+		const file2 = join(root, "parallel2.md");
+		await writeFile(file1, "# Parallel One\n\nFirst parallel content.");
+		await writeFile(file2, "# Parallel Two\n\nSecond parallel content.");
+		await ingestSource(root, file1);
+		await ingestSource(root, file2);
+
+		const provider = createMockProvider([
+			JSON.stringify([
+				{
+					op: "create",
+					path: "wiki/concepts/parallel-one.md",
+					content:
+						"---\ntitle: Parallel One\nslug: parallel-one\ncategory: concept\ntags: []\nsummary: First.\n---\n\n# Parallel One\n\nFirst.",
+				},
+			]),
+			JSON.stringify([
+				{
+					op: "create",
+					path: "wiki/concepts/parallel-two.md",
+					content:
+						"---\ntitle: Parallel Two\nslug: parallel-two\ncategory: concept\ntags: []\nsummary: Second.\n---\n\n# Parallel Two\n\nSecond.",
+				},
+			]),
+		]);
+
+		const vaultConfig = await (await import("../vault.js")).loadConfig(root);
+		// Enable parallel compilation
+		vaultConfig.compile.parallel = true;
+		vaultConfig.compile.max_parallel = 2;
+
+		const result = await compileVault(root, provider, vaultConfig);
+		expect(result.sourcesCompiled).toBe(2);
+		expect(result.articlesCreated).toBe(2);
+	});
+
 	test("compiles multiple sources", async () => {
 		const root = await makeTempVault();
 
