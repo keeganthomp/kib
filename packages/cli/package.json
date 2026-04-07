@@ -1,6 +1,6 @@
 {
 	"name": "@kibhq/cli",
-	"version": "0.4.2",
+	"version": "0.4.3",
 	"description": "The Headless Knowledge Compiler — turn raw sources into a structured, queryable wiki with AI",
 	"type": "module",
 	"bin": {
