@@ -346,7 +346,11 @@ async function compileSingleSource(
 					tags: Array.isArray(frontmatter.tags) ? (frontmatter.tags as string[]) : [],
 					summary: (frontmatter.summary as string) ?? "",
 					wordCount: countWords(body),
-					category: (frontmatter.category as string) ?? "topic",
+					category: ((frontmatter.category as string) ?? "topic") as
+						| "concept"
+						| "topic"
+						| "reference"
+						| "output",
 				};
 
 				const articleTitle = (frontmatter.title as string) ?? articleSlug;
@@ -378,14 +382,16 @@ async function compileSingleSource(
 	} else {
 		for (const op of operations) {
 			if (op.op === "create" || op.op === "update") {
-				const { frontmatter } = op.content ? parseFrontmatter(op.content) : { frontmatter: {} };
+				const { frontmatter } = op.content
+					? parseFrontmatter(op.content)
+					: { frontmatter: {} as Record<string, unknown> };
 				const slug =
 					op.path
 						.replace(/^wiki\//, "")
 						.replace(/\.md$/, "")
 						.split("/")
 						.pop() ?? op.path;
-				const title = (frontmatter.title as string) ?? slug;
+				const title = ((frontmatter as Record<string, unknown>).title as string) ?? slug;
 				options.onArticle?.({ op: op.op, title, path: op.path, source: sourcePath });
 			} else if (op.op === "delete") {
 				const slug =

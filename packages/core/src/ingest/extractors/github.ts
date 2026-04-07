@@ -36,6 +36,7 @@ export function createGithubExtractor(): Extractor {
 				stargazers_count?: number;
 				language?: string;
 				default_branch?: string;
+				topics?: string[];
 			};
 
 			// Fetch README

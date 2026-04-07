@@ -67,7 +67,7 @@ function printOptions(
 ) {
 	console.log(`  ${chalk.bold("◆")} ${message}`);
 	for (let i = 0; i < options.length; i++) {
-		const opt = options[i];
+		const opt = options[i]!;
 		const cursor = i === selected ? chalk.cyan("●") : chalk.dim("○");
 		const label = i === selected ? chalk.cyan(opt.label) : opt.label;
 		const hint = opt.hint ? chalk.dim(` — ${opt.hint}`) : "";
@@ -87,7 +87,7 @@ function selectFallback(
 
 	console.log(`  ${chalk.bold("◆")} ${message}`);
 	for (let i = 0; i < options.length; i++) {
-		const opt = options[i];
+		const opt = options[i]!;
 		const hint = opt.hint ? chalk.dim(` — ${opt.hint}`) : "";
 		console.log(`    ${chalk.cyan(`${i + 1})`)} ${opt.label}${hint}`);
 	}

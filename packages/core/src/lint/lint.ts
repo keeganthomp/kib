@@ -40,7 +40,7 @@ export async function lintVault(root: string, options: LintOptions = {}): Promis
 	// LLM-powered rules (only run when provider is available)
 	const shouldRunContradiction =
 		options.provider && (!options.ruleFilter || options.ruleFilter === "contradiction");
-	if (shouldRunContradiction) {
+	if (shouldRunContradiction && options.provider) {
 		options.onProgress?.("Running contradiction check...");
 		const contradictions = await contradictionRule(root, manifest, options.provider);
 		allDiagnostics.push(...contradictions);
@@ -85,7 +85,7 @@ export async function fixLintIssues(
 			const match = d.message.match(/^"([^"]+)"/);
 			if (!match) continue;
 
-			const slug = match[1];
+			const slug = match[1]!;
 			const title = slug
 				.split("-")
 				.map((w) => w.charAt(0).toUpperCase() + w.slice(1))

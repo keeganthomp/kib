@@ -102,7 +102,7 @@ function printConfig(obj: Record<string, unknown>, prefix: string) {
 	for (const [key, val] of Object.entries(obj)) {
 		const fullKey = prefix ? `${prefix}.${key}` : key;
 		if (val != null && typeof val === "object" && !Array.isArray(val)) {
-			printConfig(val, fullKey);
+			printConfig(val as Record<string, unknown>, fullKey);
 		} else {
 			log.keyValue(fullKey, String(val));
 		}
