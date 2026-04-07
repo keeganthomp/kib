@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { initVault, loadManifest } from "../vault.js";
+import type { LLMProvider } from "../types.js";
+import { initVault, listImageAssets, loadManifest } from "../vault.js";
 import { ingestSource } from "./ingest.js";
 
 let tempDir: string;
@@ -225,5 +226,53 @@ describe("ingestSource", () => {
 		expect(rawContent).toContain('title: "My Great Article"');
 		expect(rawContent).toContain("source_type: file");
 		expect(rawContent).toContain("word_count:");
+	});
+
+	test("image ingest saves binary to wiki/images/", async () => {
+		const root = await makeTempVault();
+
+		// Create a test image file
+		const pngData = Buffer.from(
+			"89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489" +
+				"0000000a49444154789c626000000002000198e195280000000049454e44ae426082",
+			"hex",
+		);
+		const imgPath = join(root, "diagram.png");
+		await writeFile(imgPath, pngData);
+
+		// Mock vision provider
+		const mockProvider: LLMProvider = {
+			name: "mock",
+			async complete() {
+				return {
+					content: "",
+					usage: { inputTokens: 0, outputTokens: 0 },
+					stopReason: "end_turn" as const,
+				};
+			},
+			async *stream() {},
+			async vision() {
+				return "# Architecture Diagram\n\nA system architecture diagram.";
+			},
+		};
+
+		const result = await ingestSource(root, imgPath, { provider: mockProvider });
+
+		expect(result.sourceType).toBe("image");
+		expect(result.skipped).toBe(false);
+
+		// Verify image binary was saved to wiki/images/
+		const imageFiles = await listImageAssets(root);
+		expect(imageFiles.length).toBe(1);
+		expect(imageFiles[0]).toMatch(/\.png$/);
+
+		// Verify binary content matches
+		const storedImage = await readFile(join(root, "wiki", "images", imageFiles[0]!));
+		expect(storedImage).toEqual(pngData);
+
+		// Verify manifest has imageAsset
+		const manifest = await loadManifest(root);
+		const source = Object.values(manifest.sources)[0]!;
+		expect(source.metadata.imageAsset).toMatch(/^images\//);
 	});
 });

@@ -263,6 +263,40 @@ export async function readGraph(root: string): Promise<string> {
 	}
 }
 
+// ─── Image Asset Operations ─────────────────────────────────────
+
+const IMAGES_DIR = "images";
+
+/**
+ * Write an image binary to wiki/images/{filename}.
+ * Returns the relative path from wiki/ (e.g. "images/diagram.png").
+ */
+export async function writeImageAsset(
+	root: string,
+	filename: string,
+	data: Buffer,
+): Promise<string> {
+	const dir = join(root, WIKI_DIR, IMAGES_DIR);
+	await mkdir(dir, { recursive: true });
+	const fullPath = join(dir, filename);
+	await writeFile(fullPath, data);
+	return `${IMAGES_DIR}/${filename}`;
+}
+
+/**
+ * List all image asset files in wiki/images/.
+ * Returns filenames (e.g. ["diagram.png", "photo.jpg"]).
+ */
+export async function listImageAssets(root: string): Promise<string[]> {
+	const dir = join(root, WIKI_DIR, IMAGES_DIR);
+	try {
+		const entries = await readdir(dir, { withFileTypes: true });
+		return entries.filter((e) => e.isFile()).map((e) => e.name);
+	} catch {
+		return [];
+	}
+}
+
 // ─── Log Operations ─────────────────────────────────────────────
 
 const LOG_FILE = "LOG.md";

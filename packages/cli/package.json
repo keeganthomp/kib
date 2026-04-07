@@ -35,11 +35,12 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@kibhq/core": "^0.1.0",
+		"@kibhq/core": "^0.4.2",
 		"@modelcontextprotocol/sdk": "^1.29.0",
 		"chalk": "^5.4.1",
 		"commander": "^14.0.0",
-		"ora": "^8.2.0"
+		"ora": "^8.2.0",
+		"zod": "^3.24.4"
 	},
 	"devDependencies": {
 		"@types/bun": "latest",

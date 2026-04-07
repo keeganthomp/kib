@@ -45,7 +45,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Architecture
 
-See [docs/architecture.md](docs/architecture.md) for details on the codebase structure.
+See the [README](README.md#architecture) for details on the codebase structure.
 
 ## Code Style
 

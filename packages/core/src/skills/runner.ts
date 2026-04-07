@@ -38,7 +38,7 @@ export async function runSkill(
 		throw new Error(`Skill "${skill.name}" requires an LLM provider`);
 	}
 
-	const ctx = buildContext(root, manifest, config, options);
+	const ctx = buildContext(root, manifest, config, options, skill);
 	return skill.run(ctx);
 }
 
@@ -47,6 +47,7 @@ function buildContext(
 	manifest: Manifest,
 	config: VaultConfig,
 	options: RunSkillOptions,
+	skill: SkillDefinition,
 ): SkillContext {
 	return {
 		vault: {

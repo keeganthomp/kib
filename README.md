@@ -74,11 +74,11 @@ kib chat
               │   .kb/               raw/               wiki/                │
               │   ├── manifest.json  ├── articles/     ├── INDEX.md          │
               │   ├── config.toml    ├── papers/       ├── GRAPH.md          │
-              │   ├── cache/         ├── transcripts/  ├── concepts/         │
-              │   └── skills/        ├── repos/        ├── topics/           │
-              │                      └── images/       │                     │
-              │                                            ├── references/   │
-              │                                            └── outputs/      │
+              │   ├── cache/         ├── transcripts/  ├── images/           │
+              │   └── skills/        ├── repos/        ├── concepts/         │
+              │                      └── images/       ├── topics/           │
+              │                                        ├── references/       │
+              │                                        └── outputs/          │
               └──────────────────────────────┬───────────────────────────────┘
                                              │
               ┌──────────────────────────────┼──────────────────────────────┐
@@ -93,7 +93,7 @@ kib chat
 
 1. **Ingest** — `kib ingest <source>` fetches content from URLs, PDFs, YouTube, GitHub repos, images, or local files. Extractors convert everything to normalized markdown with frontmatter. Images are described via vision models (Anthropic Claude, OpenAI GPT-4V). Content is hashed for dedup and stored in `raw/`.
 
-2. **Compile** — `kib compile` finds sources not yet compiled (tracked via manifest). For each, it sends the raw content + current wiki index to the LLM, which produces structured wiki articles with frontmatter, tags, and `[[wikilinks]]`. The compiler then regenerates `INDEX.md` (table of contents) and `GRAPH.md` (relationship graph).
+2. **Compile** — `kib compile` finds sources not yet compiled (tracked via manifest). For each, it sends the raw content + current wiki index to the LLM, which produces structured wiki articles with frontmatter, tags, and `[[wikilinks]]`. Articles compiled from image sources can embed the original images using standard markdown syntax (`![alt](images/file.png)`). The compiler then regenerates `INDEX.md` (table of contents) and `GRAPH.md` (relationship graph).
 
 3. **Search** — `kib search <term>` runs BM25 full-text search with English stemming over all wiki articles. Sub-50ms for thousands of articles. Index is cached and rebuilt on compile.
 
@@ -197,6 +197,21 @@ kib skill run flashcards
 kib skill run connections
 ```
 
+### Export
+
+```bash
+# Export as clean markdown (stripped frontmatter, resolved links)
+kib export --format markdown
+
+# Export as HTML static site (with image support and gallery)
+kib export --format html
+
+# Custom output directory
+kib export --format html --output ./site
+```
+
+HTML export copies image assets, resolves relative paths, and generates a browsable gallery page.
+
 ## Vault Structure
 
 ```
@@ -215,6 +230,7 @@ my-vault/
 ├── wiki/                 # LLM-compiled knowledge base
 │   ├── INDEX.md          # Master index: every article + summary + tags
 │   ├── GRAPH.md          # Article relationship adjacency list
+│   ├── images/           # Image assets (originals from ingested images)
 │   ├── concepts/         # Core concept articles
 │   ├── topics/           # Topic deep-dives
 │   ├── references/       # People, papers, organizations

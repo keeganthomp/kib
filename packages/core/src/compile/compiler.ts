@@ -13,6 +13,7 @@ import type {
 import {
 	appendLog,
 	deleteFile,
+	listImageAssets,
 	loadManifest,
 	readIndex,
 	readRaw,
@@ -141,7 +142,7 @@ function detectDuplicateArticles(operations: FileOperation[], manifest: Manifest
 			const existingTitle = existingArticle.summary.split(".")[0]?.toLowerCase() ?? "";
 			const titleOverlap =
 				(newTitle && existingTitle && newTitle.includes(existingTitle)) ||
-				(newTitle && existingTitle && existingTitle.includes(newTitle));
+				(newTitle && existingTitle?.includes(newTitle));
 
 			// Check tag overlap (>= 3 shared tags = likely same topic)
 			const sharedTags = newTags.filter((t) => existingArticle.tags.includes(t));
@@ -246,6 +247,7 @@ async function compileSingleSource(
 	indexContent: string,
 	cache: CompileCache | null,
 	options: CompileOptions & { onArticle?: (event: ArticleEvent) => void },
+	imageAssets?: string[],
 ): Promise<SourceCompileResult> {
 	const categories = config.compile.categories;
 	const contextWindow = config.compile.context_window;
@@ -294,7 +296,9 @@ async function compileSingleSource(
 	});
 
 	// Call the LLM with retry and cache
-	const system = compileSystemPrompt(categories);
+	const system = compileSystemPrompt(categories, {
+		imageAssets: imageAssets && imageAssets.length > 0 ? imageAssets : undefined,
+	});
 	const result = await compileWithRetry(
 		provider,
 		system,
@@ -342,7 +346,11 @@ async function compileSingleSource(
 					tags: Array.isArray(frontmatter.tags) ? (frontmatter.tags as string[]) : [],
 					summary: (frontmatter.summary as string) ?? "",
 					wordCount: countWords(body),
-					category: (frontmatter.category as string) ?? "topic",
+					category: ((frontmatter.category as string) ?? "topic") as
+						| "concept"
+						| "topic"
+						| "reference"
+						| "output",
 				};
 
 				const articleTitle = (frontmatter.title as string) ?? articleSlug;
@@ -374,14 +382,16 @@ async function compileSingleSource(
 	} else {
 		for (const op of operations) {
 			if (op.op === "create" || op.op === "update") {
-				const { frontmatter } = op.content ? parseFrontmatter(op.content) : { frontmatter: {} };
+				const { frontmatter } = op.content
+					? parseFrontmatter(op.content)
+					: { frontmatter: {} as Record<string, unknown> };
 				const slug =
 					op.path
 						.replace(/^wiki\//, "")
 						.replace(/\.md$/, "")
 						.split("/")
 						.pop() ?? op.path;
-				const title = (frontmatter.title as string) ?? slug;
+				const title = ((frontmatter as Record<string, unknown>).title as string) ?? slug;
 				options.onArticle?.({ op: op.op, title, path: op.path, source: sourcePath });
 			} else if (op.op === "delete") {
 				const slug =
@@ -450,6 +460,9 @@ export async function compileVault(
 	// Read current INDEX.md for context
 	const indexContent = await readIndex(root);
 
+	// Load available image assets for reference in articles
+	const imageAssets = await listImageAssets(root);
+
 	// Initialize compile cache
 	const cache = new CompileCache(root, {
 		enabled: config.cache.enabled,
@@ -501,13 +514,14 @@ export async function compileVault(
 						indexContent,
 						cache,
 						options,
+						imageAssets,
 					),
 				),
 			);
 
 			for (let j = 0; j < results.length; j++) {
 				const result = results[j]!;
-				const [sourceId, sourcePath] = batch[j]!;
+				const [_sourceId, sourcePath] = batch[j]!;
 
 				if (result.status === "fulfilled") {
 					const r = result.value;
@@ -567,6 +581,7 @@ export async function compileVault(
 					indexContent,
 					cache,
 					options,
+					imageAssets,
 				);
 
 				totalCreated += result.created;

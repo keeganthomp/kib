@@ -55,7 +55,7 @@ export async function setupProvider(root: string): Promise<LLMProvider> {
 			hint: p.hint,
 		})),
 	);
-	const provider = PROVIDERS[providerIndex];
+	const provider = PROVIDERS[providerIndex]!;
 
 	console.log();
 

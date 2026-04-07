@@ -37,7 +37,7 @@ Manual workflow dispatch via GitHub Actions (`release.yml`). **Critical rules:**
 ## Commands
 
 ```bash
-bun test                              # run tests (412+)
+bun test                              # run tests (258+)
 bun run check                         # biome lint + format
 bun run packages/cli/bin/kib.ts       # run CLI locally
 ```

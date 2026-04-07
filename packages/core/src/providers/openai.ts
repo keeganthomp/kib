@@ -1,16 +1,20 @@
 import type { CompletionParams, CompletionResult, LLMProvider, StreamChunk } from "../types.js";
 
+interface OpenAIChatResponse {
+	choices: {
+		message?: { content: string };
+		finish_reason: string;
+		delta?: { content?: string };
+	}[];
+	usage?: { prompt_tokens: number; completion_tokens: number };
+}
+
 interface OpenAIClient {
 	chat: {
 		completions: {
-			create(params: Record<string, unknown>): Promise<{
-				choices: {
-					message?: { content: string };
-					finish_reason: string;
-					delta?: { content?: string };
-				}[];
-				usage?: { prompt_tokens: number; completion_tokens: number };
-			}>;
+			create(
+				params: Record<string, unknown>,
+			): Promise<OpenAIChatResponse & AsyncIterable<OpenAIChatResponse>>;
 		};
 	};
 }
