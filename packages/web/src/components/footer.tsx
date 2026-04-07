@@ -20,6 +20,9 @@ export function Footer() {
 					>
 						npm
 					</a>
+					<a href="/privacy" className="transition-colors hover:text-foreground">
+						Privacy
+					</a>
 					<span className="text-muted-foreground">MIT</span>
 				</div>
 			</div>
