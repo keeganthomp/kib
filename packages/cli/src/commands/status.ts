@@ -1,4 +1,5 @@
 import { loadConfig, loadManifest, resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
+import { debug, debugTime } from "../ui/debug.js";
 import * as log from "../ui/logger.js";
 
 interface StatusOpts {
@@ -17,8 +18,11 @@ export async function status(opts: StatusOpts) {
 		throw err;
 	}
 
+	debug(`vault root: ${root}`);
+	const endLoad = debugTime("load manifest + config");
 	const manifest = await loadManifest(root);
 	const config = await loadConfig(root);
+	endLoad();
 
 	const sourceCount = Object.keys(manifest.sources).length;
 	const articleCount = Object.keys(manifest.articles).length;

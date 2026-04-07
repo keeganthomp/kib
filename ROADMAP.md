@@ -48,13 +48,13 @@ What's built, what's next, and what's deferred.
 - [ ] Auto-generate a `CLAUDE.md` in vault root on `kib init` for agent discovery
 
 ### CLI Polish
-- [ ] `--json` flag working consistently across all commands
-- [ ] `--verbose` flag for debug output
-- [ ] `--dry-run` for ingest (show what would be ingested without writing)
-- [ ] `kib compile --dry-run` visual diff preview
-- [ ] `kib lint --fix` actually runs auto-fixes (recompile stale, create missing articles)
-- [ ] Colored diff output showing what compile changed
-- [ ] Measure and enforce <100ms cold start for `kib --help`
+- [x] `--json` flag working consistently across all commands
+- [x] `--verbose` flag for debug output
+- [x] `--dry-run` for ingest (show what would be ingested without writing)
+- [x] `kib compile --dry-run` visual diff preview
+- [x] `kib lint --fix` actually runs auto-fixes (recompile stale, create missing articles)
+- [x] Colored diff output showing what compile changed
+- [x] Measure and enforce <100ms cold start for `kib --help`
 
 ---
 

@@ -10,7 +10,11 @@ import * as log from "../ui/logger.js";
 import { setupProvider } from "../ui/setup-provider.js";
 import { createSpinner } from "../ui/spinner.js";
 
-export async function skill(subcommand: string, name?: string, _opts?: unknown) {
+interface SkillOpts {
+	json?: boolean;
+}
+
+export async function skill(subcommand: string, name?: string, opts?: SkillOpts) {
 	let root: string;
 	try {
 		root = resolveVaultRoot();
@@ -26,9 +30,20 @@ export async function skill(subcommand: string, name?: string, _opts?: unknown) 
 
 	switch (subcommand) {
 		case "list": {
-			log.header("available skills");
-
 			const skills = await loadSkills(root);
+
+			if (opts?.json) {
+				console.log(
+					JSON.stringify(
+						skills.map((s) => ({ name: s.name, description: s.description })),
+						null,
+						2,
+					),
+				);
+				break;
+			}
+
+			log.header("available skills");
 
 			for (const s of skills) {
 				console.log(`  ${s.name.padEnd(20)} ${s.description}`);
@@ -51,7 +66,9 @@ export async function skill(subcommand: string, name?: string, _opts?: unknown) 
 				process.exit(1);
 			}
 
-			log.header(`running skill: ${s.name}`);
+			if (!opts?.json) {
+				log.header(`running skill: ${s.name}`);
+			}
 
 			let provider: LLMProvider | undefined;
 			if (s.llm?.required) {
@@ -70,12 +87,18 @@ export async function skill(subcommand: string, name?: string, _opts?: unknown) 
 				}
 			}
 
-			const spinner = createSpinner(`Running ${s.name}...`);
-			spinner.start();
+			const spinner = opts?.json ? null : createSpinner(`Running ${s.name}...`);
+			spinner?.start();
 
 			try {
 				const result = await runSkill(root, s, { provider });
-				spinner.succeed(`${s.name} completed`);
+
+				if (opts?.json) {
+					console.log(JSON.stringify({ skill: s.name, content: result.content ?? null }, null, 2));
+					break;
+				}
+
+				spinner?.succeed(`${s.name} completed`);
 
 				if (result.content) {
 					log.blank();
@@ -83,7 +106,7 @@ export async function skill(subcommand: string, name?: string, _opts?: unknown) 
 					log.blank();
 				}
 			} catch (err) {
-				spinner.fail(`${s.name} failed`);
+				spinner?.fail(`${s.name} failed`);
 				log.error((err as Error).message);
 				process.exit(1);
 			}

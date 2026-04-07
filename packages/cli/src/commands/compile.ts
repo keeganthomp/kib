@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { LLMProvider } from "@kibhq/core";
 import {
 	createProvider,
@@ -6,6 +8,8 @@ import {
 	resolveVaultRoot,
 	VaultNotFoundError,
 } from "@kibhq/core";
+import { debug, debugTime } from "../ui/debug.js";
+import { coloredDiff } from "../ui/diff.js";
 import * as log from "../ui/logger.js";
 import { setupProvider } from "../ui/setup-provider.js";
 import { createSpinner } from "../ui/spinner.js";
@@ -30,7 +34,16 @@ export async function compile(opts: CompileOpts) {
 		throw err;
 	}
 
+	const endLoadConfig = debugTime("loadConfig");
 	const config = await loadConfig(root);
+	endLoadConfig();
+
+	debug(`vault root: ${root}`);
+	debug(`provider: ${config.provider.default}, model: ${config.provider.model}`);
+	if (opts.force) debug("force recompile enabled");
+	if (opts.dryRun) debug("dry run enabled");
+	if (opts.source) debug(`source filter: ${opts.source}`);
+	if (opts.max) debug(`max sources: ${opts.max}`);
 
 	if (!opts.json) {
 		log.header("compiling wiki");
@@ -40,8 +53,10 @@ export async function compile(opts: CompileOpts) {
 	let provider: LLMProvider;
 	const providerSpinner = opts.json ? null : createSpinner("Connecting to LLM provider...");
 	providerSpinner?.start();
+	const endProvider = debugTime("createProvider");
 	try {
 		provider = await createProvider(config.provider.default, config.provider.model);
+		endProvider();
 		providerSpinner?.succeed(`Connected to ${provider.name}`);
 	} catch (err) {
 		providerSpinner?.stop();
@@ -58,6 +73,7 @@ export async function compile(opts: CompileOpts) {
 
 	const compileSpinner = opts.json ? null : createSpinner("Compiling sources...");
 	compileSpinner?.start();
+	const endCompile = debugTime("compileVault");
 
 	try {
 		const result = await compileVault(root, provider, config, {
@@ -69,6 +85,9 @@ export async function compile(opts: CompileOpts) {
 				if (compileSpinner) compileSpinner.text = `  ${msg}`;
 			},
 		});
+
+		endCompile();
+		debug(`compiled ${result.sourcesCompiled} sources, ${result.operations.length} operations`);
 
 		if (opts.json) {
 			console.log(JSON.stringify(result, null, 2));
@@ -122,6 +141,29 @@ export async function compile(opts: CompileOpts) {
 				for (const op of result.operations) {
 					const symbol = op.op === "create" ? "+" : op.op === "update" ? "~" : "-";
 					log.info(`${symbol} ${op.path}`);
+
+					if (op.content) {
+						if (op.op === "update") {
+							// Show colored diff for updates
+							try {
+								const oldContent = await readFile(join(root, op.path), "utf-8");
+								const diff = coloredDiff(oldContent, op.content, op.path);
+								if (diff) {
+									console.log(diff);
+									log.blank();
+								}
+							} catch {
+								// File might not exist yet, show as create
+							}
+						} else if (op.op === "create") {
+							// Show new content preview for creates
+							const diff = coloredDiff("", op.content, op.path);
+							if (diff) {
+								console.log(diff);
+								log.blank();
+							}
+						}
+					}
 				}
 			}
 		}

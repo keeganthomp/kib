@@ -1,7 +1,11 @@
 import { loadConfig, resolveVaultRoot, saveConfig, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 
-export async function config(key?: string, value?: string, opts?: { list?: boolean }) {
+export async function config(
+	key?: string,
+	value?: string,
+	opts?: { list?: boolean; json?: boolean },
+) {
 	let root: string;
 	try {
 		root = resolveVaultRoot();
@@ -17,6 +21,10 @@ export async function config(key?: string, value?: string, opts?: { list?: boole
 
 	// List all config
 	if (opts?.list || (!key && !value)) {
+		if (opts?.json) {
+			console.log(JSON.stringify(cfg, null, 2));
+			return;
+		}
 		log.header("configuration");
 		printConfig(cfg, "");
 		return;
@@ -29,7 +37,11 @@ export async function config(key?: string, value?: string, opts?: { list?: boole
 			log.error(`Unknown config key: ${key}`);
 			process.exit(1);
 		}
-		console.log(val);
+		if (opts?.json) {
+			console.log(JSON.stringify({ [key]: val }, null, 2));
+		} else {
+			console.log(val);
+		}
 		return;
 	}
 
@@ -41,7 +53,11 @@ export async function config(key?: string, value?: string, opts?: { list?: boole
 			process.exit(1);
 		}
 		await saveConfig(root, cfg);
-		log.success(`Set ${key} = ${value}`);
+		if (opts?.json) {
+			console.log(JSON.stringify({ [key]: parseValue(value) }, null, 2));
+		} else {
+			log.success(`Set ${key} = ${value}`);
+		}
 	}
 }
 

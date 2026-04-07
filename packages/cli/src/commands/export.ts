@@ -7,6 +7,7 @@ import { createSpinner } from "../ui/spinner.js";
 interface ExportOpts {
 	format: string;
 	output?: string;
+	json?: boolean;
 }
 
 export async function exportVault(opts: ExportOpts) {
@@ -24,29 +25,37 @@ export async function exportVault(opts: ExportOpts) {
 	const format = opts.format ?? "markdown";
 	const outputDir = opts.output ?? join(root, "export");
 
-	log.header(`exporting wiki as ${format}`);
+	if (!opts.json) {
+		log.header(`exporting wiki as ${format}`);
+	}
 
-	const spinner = createSpinner("Exporting...");
-	spinner.start();
+	const spinner = opts.json ? null : createSpinner("Exporting...");
+	spinner?.start();
 
 	try {
+		let fileCount = 0;
 		switch (format) {
 			case "markdown":
-				await exportMarkdown(root, outputDir);
+				fileCount = await exportMarkdown(root, outputDir);
 				break;
 			case "html":
-				await exportHtml(root, outputDir);
+				fileCount = await exportHtml(root, outputDir);
 				break;
 			default:
-				spinner.fail(`Unsupported format: ${format}`);
+				spinner?.fail(`Unsupported format: ${format}`);
 				log.dim("Supported formats: markdown, html");
 				process.exit(1);
 		}
 
-		spinner.succeed(`Exported to ${outputDir}`);
+		if (opts.json) {
+			console.log(JSON.stringify({ format, output: outputDir, files: fileCount }, null, 2));
+			return;
+		}
+
+		spinner?.succeed(`Exported to ${outputDir}`);
 		log.blank();
 	} catch (err) {
-		spinner.fail("Export failed");
+		spinner?.fail("Export failed");
 		log.error((err as Error).message);
 		process.exit(1);
 	}
@@ -55,7 +64,7 @@ export async function exportVault(opts: ExportOpts) {
 /**
  * Export as clean markdown bundle (strip frontmatter, resolve links).
  */
-async function exportMarkdown(root: string, outputDir: string) {
+async function exportMarkdown(root: string, outputDir: string): Promise<number> {
 	const wikiDir = join(root, WIKI_DIR);
 	const files = await listWiki(root);
 
@@ -76,12 +85,14 @@ async function exportMarkdown(root: string, outputDir: string) {
 
 		await writeFile(outPath, resolved, "utf-8");
 	}
+
+	return files.length;
 }
 
 /**
  * Export as a simple HTML static site.
  */
-async function exportHtml(root: string, outputDir: string) {
+async function exportHtml(root: string, outputDir: string): Promise<number> {
 	const wikiDir = join(root, WIKI_DIR);
 	const files = await listWiki(root);
 	const { parseFrontmatter } = await import("@kibhq/core");
@@ -157,6 +168,8 @@ async function exportHtml(root: string, outputDir: string) {
 </html>`;
 
 	await writeFile(join(outputDir, "index.html"), indexHtml, "utf-8");
+
+	return articles.length;
 }
 
 function simpleMarkdownToHtml(md: string): string {

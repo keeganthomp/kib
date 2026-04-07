@@ -1,4 +1,5 @@
 import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
+import { debug, debugTime } from "../ui/debug.js";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
 
@@ -26,18 +27,26 @@ export async function search(term: string, opts: SearchOpts) {
 	const scope = opts.wiki ? "wiki" : opts.raw ? "raw" : "all";
 	const limit = opts.limit ?? 20;
 
+	debug(`vault root: ${root}`);
+	debug(`scope: ${scope}, limit: ${limit}, term: "${term}"`);
+
 	const spinner = createSpinner("Searching...");
 	spinner.start();
 
 	const index = new SearchIndex();
 
 	// Try to load cached index first
+	const endIndex = debugTime("load/build index");
 	const loaded = await index.load(root);
 	if (!loaded) {
+		debug("no cached index, building...");
 		spinner.text = "  Building search index...";
 		await index.build(root, scope);
 		await index.save(root);
+	} else {
+		debug("loaded cached index");
 	}
+	endIndex();
 
 	const start = performance.now();
 	const results = index.search(term, { limit });
