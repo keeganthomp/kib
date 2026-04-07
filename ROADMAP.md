@@ -77,7 +77,7 @@ What's built, what's next, and what's deferred.
 ## v0.5.0 — Image + Vision Support & Packaging
 
 ### Distribution
-- [ ] Homebrew formula for `brew install kib`
+- [x] Homebrew formula for `brew install kib`
 - [x] Auto-generate a `CLAUDE.md` in vault root on `kib init` for agent discovery
 
 ### Image Extractor
