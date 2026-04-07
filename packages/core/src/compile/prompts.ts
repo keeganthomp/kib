@@ -105,6 +105,55 @@ Output ONLY the markdown content, no JSON, no code fences.`;
 }
 
 /**
+ * System prompt for cross-reference enrichment.
+ */
+export function enrichSystemPrompt(): string {
+	return `You are a knowledge graph enricher. You receive an existing wiki article and summaries of newly created articles. Your job is to add [[wikilinks]] to the new articles where they fit naturally in the existing text.
+
+RULES:
+- Only add links where the referenced concept is directly relevant to the surrounding text
+- Insert [[slug]] links inline within existing sentences (e.g., "uses self-attention" → "uses [[self-attention]]")
+- Do NOT rewrite sentences or paragraphs — only insert link markup
+- Do NOT add links in YAML frontmatter
+- Do NOT add links that already exist in the article
+- Maximum 3 new links per article
+- If no links are appropriate, return an empty array []
+- Preserve ALL existing content exactly — only add [[ ]] around relevant terms or append brief mentions
+- Update the "updated" field in frontmatter to today's date
+
+OUTPUT FORMAT:
+Respond with ONLY a JSON array of file operations. No other text:
+[{"op": "update", "path": "wiki/category/slug.md", "content": "full updated article content"}]
+
+Or if no changes needed:
+[]`;
+}
+
+/**
+ * Build the user message for cross-reference enrichment.
+ */
+export function enrichUserPrompt(params: {
+	articlePath: string;
+	articleContent: string;
+	newArticles: { slug: string; title: string; summary: string; tags: string[] }[];
+	today: string;
+}): string {
+	const parts: string[] = [];
+
+	parts.push(`EXISTING ARTICLE TO ENRICH (${params.articlePath}):`);
+	parts.push(params.articleContent);
+
+	parts.push("\n\nNEWLY CREATED ARTICLES THAT MAY BE RELEVANT:");
+	for (const a of params.newArticles) {
+		parts.push(`- **${a.title}** ([[${a.slug}]]) — ${a.summary}. Tags: ${a.tags.join(", ")}`);
+	}
+
+	parts.push(`\n\nToday's date: ${params.today}`);
+
+	return parts.join("\n");
+}
+
+/**
  * System prompt for generating GRAPH.md from article links.
  */
 export function graphSystemPrompt(): string {

@@ -16,7 +16,10 @@ export async function buildLinkGraph(root: string): Promise<LinkGraph> {
 	const forwardLinks = new Map<string, Set<string>>();
 	const backlinks = new Map<string, Set<string>>();
 
-	const files = await listWiki(root);
+	const allFiles = await listWiki(root);
+	const files = allFiles.filter(
+		(f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md") && !f.endsWith("LOG.md"),
+	);
 
 	for (const filePath of files) {
 		const content = await readFile(filePath, "utf-8");

@@ -1,7 +1,11 @@
 import { loadConfig, loadManifest, resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 
-export async function status() {
+interface StatusOpts {
+	json?: boolean;
+}
+
+export async function status(opts: StatusOpts) {
 	let root: string;
 	try {
 		root = resolveVaultRoot();
@@ -16,18 +20,40 @@ export async function status() {
 	const manifest = await loadManifest(root);
 	const config = await loadConfig(root);
 
+	const sourceCount = Object.keys(manifest.sources).length;
+	const articleCount = Object.keys(manifest.articles).length;
+	const pendingCount = Object.values(manifest.sources).filter(
+		(s) => !s.lastCompiled || s.lastCompiled < s.ingestedAt,
+	).length;
+
+	if (opts.json) {
+		console.log(
+			JSON.stringify(
+				{
+					vault: manifest.vault.name,
+					path: root,
+					provider: config.provider.default,
+					model: config.provider.model,
+					sources: sourceCount,
+					articles: articleCount,
+					pendingCompilation: pendingCount,
+					totalWords: manifest.stats.totalWords,
+					lastCompiled: manifest.vault.lastCompiled,
+					lastLint: manifest.stats.lastLintAt,
+				},
+				null,
+				2,
+			),
+		);
+		return;
+	}
+
 	log.header("vault status");
 
 	log.keyValue("vault", manifest.vault.name);
 	log.keyValue("provider", `${config.provider.default} (${config.provider.model})`);
 	log.keyValue("path", root);
 	log.blank();
-
-	const sourceCount = Object.keys(manifest.sources).length;
-	const articleCount = Object.keys(manifest.articles).length;
-	const pendingCount = Object.values(manifest.sources).filter(
-		(s) => !s.lastCompiled || s.lastCompiled < s.ingestedAt,
-	).length;
 
 	log.keyValue(
 		"SOURCES",

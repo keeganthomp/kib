@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { writeFile as fsWriteFile, mkdtemp, rm } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { writeFile as fsWriteFile, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ingestSource } from "../ingest/ingest.js";
 import { initVault, loadManifest, saveManifest, writeWiki } from "../vault.js";
-import { lintVault } from "./lint.js";
+import { fixLintIssues, lintVault } from "./lint.js";
 
 let tempDir: string;
 
@@ -220,6 +221,56 @@ describe("lint engine", () => {
 		const root = await makeTempVault();
 		const result = await lintVault(root);
 		expect(result.diagnostics).toHaveLength(0);
+	});
+
+	test("fixLintIssues creates stub articles for missing topics", async () => {
+		const root = await makeTempVault();
+
+		// Create 3 articles that all reference [[common-topic]]
+		for (const name of ["a", "b", "c"]) {
+			await writeWiki(
+				root,
+				`concepts/${name}.md`,
+				articleMd({
+					title: name.toUpperCase(),
+					slug: name,
+					category: "concept",
+					body: "See [[common-topic]].",
+				}),
+			);
+
+			const manifest = await loadManifest(root);
+			manifest.articles[name] = {
+				hash: name,
+				createdAt: new Date().toISOString(),
+				lastUpdated: new Date().toISOString(),
+				derivedFrom: [],
+				backlinks: [],
+				forwardLinks: ["common-topic"],
+				tags: [],
+				summary: "",
+				wordCount: 10,
+				category: "concept",
+			};
+			await saveManifest(root, manifest);
+		}
+
+		// Lint should find the missing topic
+		const result = await lintVault(root, { ruleFilter: "missing" });
+		expect(result.diagnostics.some((d) => d.message.includes("common-topic"))).toBe(true);
+
+		// Fix it
+		const fixResult = await fixLintIssues(root, result.diagnostics);
+		expect(fixResult.fixed).toBe(1);
+
+		// Verify stub was created
+		expect(existsSync(join(root, "wiki", "topics", "common-topic.md"))).toBe(true);
+		const content = await readFile(join(root, "wiki", "topics", "common-topic.md"), "utf-8");
+		expect(content).toContain("Common Topic");
+
+		// Verify manifest updated
+		const manifest = await loadManifest(root);
+		expect(manifest.articles["common-topic"]).toBeDefined();
 	});
 
 	test("outputs skip orphan for output category", async () => {

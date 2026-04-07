@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import TOML from "@iarna/toml";
@@ -114,8 +114,43 @@ export async function initVault(
 
 	await saveManifest(root, manifest);
 	await saveConfig(root, config);
+	await writeFile(join(root, "CLAUDE.md"), generateClaudeMd(name, provider, model));
 
 	return { root, manifest, config };
+}
+
+function generateClaudeMd(name: string, provider: string, model: string): string {
+	return `# ${name}
+
+This is a [kib](https://github.com/keeganthomp/kib) vault — an AI-compiled knowledge base.
+
+## Commands
+
+\`\`\`bash
+kib ingest <source>   # Ingest URLs, PDFs, YouTube, GitHub repos, local files
+kib compile           # Compile raw sources into wiki articles via LLM
+kib search <term>     # BM25 full-text search
+kib query <question>  # RAG query with cited answers
+kib chat              # Interactive REPL
+kib lint              # Health checks (--fix to auto-repair)
+kib status            # Vault dashboard
+\`\`\`
+
+## Vault Structure
+
+- \`raw/\` — ingested source material (never modified by compile)
+- \`wiki/\` — LLM-compiled articles, INDEX.md, GRAPH.md
+- \`inbox/\` — drop zone for \`kib watch\`
+- \`.kb/\` — manifest, config, cache
+
+## MCP Server
+
+\`kib serve\` exposes 8 tools: kib_status, kib_list, kib_read, kib_search, kib_query, kib_ingest, kib_compile, kib_lint
+
+## Provider
+
+${provider} (${model})
+`;
 }
 
 // ─── Manifest Operations ─────────────────────────────────────────
@@ -223,6 +258,32 @@ export async function readIndex(root: string): Promise<string> {
 export async function readGraph(root: string): Promise<string> {
 	try {
 		return await readFile(join(root, WIKI_DIR, GRAPH_FILE), "utf-8");
+	} catch {
+		return "";
+	}
+}
+
+// ─── Log Operations ─────────────────────────────────────────────
+
+const LOG_FILE = "LOG.md";
+
+export async function appendLog(root: string, action: string, details: string): Promise<void> {
+	const logPath = join(root, WIKI_DIR, LOG_FILE);
+	const timestamp = new Date().toISOString();
+	const entry = `- **${timestamp}** \`${action}\` ${details}\n`;
+
+	try {
+		await appendFile(logPath, entry, "utf-8");
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+			await writeFile(logPath, `# Vault Log\n\n${entry}`, "utf-8");
+		}
+	}
+}
+
+export async function readLog(root: string): Promise<string> {
+	try {
+		return await readFile(join(root, WIKI_DIR, LOG_FILE), "utf-8");
 	} catch {
 		return "";
 	}

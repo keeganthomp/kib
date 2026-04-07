@@ -15,6 +15,9 @@
 				"noImplicitAnyLet": "error",
 				"noAssignInExpressions": "warn"
 			},
+			"security": {
+				"noDangerouslySetInnerHtml": "off"
+			},
 			"style": {
 				"noNonNullAssertion": "off",
 				"useTemplate": "warn"
@@ -26,6 +29,15 @@
 		"indentStyle": "tab",
 		"lineWidth": 100
 	},
+	"css": {
+		"parser": {
+			"cssModules": false,
+			"tailwindDirectives": true
+		},
+		"linter": {
+			"enabled": true
+		}
+	},
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double",
@@ -33,6 +45,14 @@
 		}
 	},
 	"files": {
-		"includes": ["**", "!**/node_modules", "!**/dist", "!**/.kb", "!**/bun.lock"]
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/dist",
+			"!**/.kb",
+			"!**/bun.lock",
+			"!**/.next",
+			"!**/out"
+		]
 	}
 }

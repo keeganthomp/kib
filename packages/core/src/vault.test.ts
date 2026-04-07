@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { VaultNotFoundError } from "./errors.js";
@@ -49,6 +49,15 @@ describe("initVault", () => {
 		expect(manifest.vault.name).toBe("test-vault");
 		expect(manifest.version).toBe("1");
 		expect(config.provider.default).toBe("anthropic");
+	});
+
+	test("generates CLAUDE.md with vault name", async () => {
+		const dir = await makeTempDir();
+		await initVault(dir, { name: "my-kb" });
+		const claudeMd = await readFile(join(dir, "CLAUDE.md"), "utf-8");
+		expect(claudeMd).toContain("# my-kb");
+		expect(claudeMd).toContain("kib ingest");
+		expect(claudeMd).toContain("MCP");
 	});
 
 	test("throws if vault already exists", async () => {

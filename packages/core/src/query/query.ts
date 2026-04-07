@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { parseFrontmatter } from "../compile/diff.js";
+import { slugify } from "../ingest/normalize.js";
 import { SearchIndex } from "../search/engine.js";
 import type { CompletionResult, LLMProvider, Message } from "../types.js";
-import { readIndex } from "../vault.js";
+import { appendLog, readIndex, writeWiki } from "../vault.js";
 
 export interface QueryOptions {
 	/** Maximum articles to include as context */
@@ -11,12 +12,18 @@ export interface QueryOptions {
 	history?: Message[];
 	/** Callback for streaming chunks */
 	onChunk?: (text: string) => void;
+	/** Auto-save answers that cite enough sources as wiki articles */
+	autoFile?: boolean;
+	/** Minimum sources cited to trigger auto-file (default 3) */
+	autoFileThreshold?: number;
 }
 
 export interface QueryResult {
 	answer: string;
 	sourcePaths: string[];
 	usage: { inputTokens: number; outputTokens: number };
+	/** Path of the auto-filed article, if one was created */
+	filedTo?: string;
 }
 
 const QUERY_SYSTEM_PROMPT = `You are a knowledge assistant for a personal wiki. Answer questions using ONLY the information provided in the articles below.
@@ -128,9 +135,51 @@ export async function queryVault(
 		});
 	}
 
+	const sourcePaths = articles.map((a) => a.path);
+	let filedTo: string | undefined;
+
+	// Auto-file if enough sources were cited
+	const threshold = options.autoFileThreshold ?? 3;
+	if (options.autoFile && sourcePaths.length >= threshold) {
+		try {
+			const slug = slugify(question).slice(0, 60);
+			const now = new Date().toISOString().split("T")[0];
+			const sourcesList = sourcePaths.map((p) => `  - ${p}`).join("\n");
+
+			const article = `---
+title: "${question}"
+slug: "${slug}"
+category: output
+tags: [query]
+sources:
+${sourcesList}
+created: ${now}
+updated: ${now}
+summary: >
+  Auto-filed query result citing ${sourcePaths.length} sources.
+---
+
+# ${question}
+
+${result.content}
+
+---
+*Sources: ${sourcePaths.join(", ")}*
+`;
+
+			const filePath = `outputs/${slug}.md`;
+			await writeWiki(root, filePath, article);
+			await appendLog(root, "query-file", `"${question}" → wiki/${filePath}`);
+			filedTo = `wiki/${filePath}`;
+		} catch {
+			// Auto-file failed — not critical
+		}
+	}
+
 	return {
 		answer: result.content,
-		sourcePaths: articles.map((a) => a.path),
+		sourcePaths,
 		usage: result.usage,
+		filedTo,
 	};
 }

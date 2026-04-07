@@ -1,6 +1,6 @@
 import { hash } from "../hash.js";
 import type { IngestResult, Manifest, SourceEntry, SourceType } from "../types.js";
-import { loadManifest, saveManifest, writeRaw } from "../vault.js";
+import { appendLog, loadManifest, saveManifest, writeRaw } from "../vault.js";
 import type { Extractor } from "./extractors/interface.js";
 import { countWords, normalizeSource, slugify } from "./normalize.js";
 import { detectSourceType } from "./router.js";
@@ -14,6 +14,8 @@ interface IngestOptions {
 	tags?: string[];
 	/** Custom title */
 	title?: string;
+	/** Preview what would be ingested without writing */
+	dryRun?: boolean;
 }
 
 /**
@@ -60,6 +62,20 @@ export async function ingestSource(
 		};
 	}
 
+	// Dry run — return what would be ingested without writing
+	if (options.dryRun) {
+		const category = options.category ?? categoryForType(sourceType);
+		const slug = slugify(extracted.title);
+		return {
+			sourceId: `src_${contentHash.slice(0, 12)}`,
+			path: `raw/${category}/${slug}.md`,
+			sourceType,
+			title: extracted.title,
+			wordCount: countWords(extracted.content),
+			skipped: false,
+		};
+	}
+
 	// Normalize content with frontmatter
 	const normalizedContent = normalizeSource({
 		title: extracted.title,
@@ -103,6 +119,7 @@ export async function ingestSource(
 	manifest.stats.totalSources = Object.keys(manifest.sources).length;
 
 	await saveManifest(root, manifest);
+	await appendLog(root, "ingest", `"${extracted.title}" (${sourceType}) → raw/${relativePath}`);
 
 	return {
 		sourceId,

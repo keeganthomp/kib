@@ -1,16 +1,6 @@
 import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
 
-interface ServeOpts {
-	mcp?: boolean;
-}
-
-export async function serve(opts: ServeOpts) {
-	if (!opts.mcp) {
-		console.error("Usage: kib serve --mcp");
-		console.error("  Starts an MCP server over stdio for AI tool integration.");
-		process.exit(1);
-	}
-
+export async function serve() {
 	let root: string;
 	try {
 		root = resolveVaultRoot();

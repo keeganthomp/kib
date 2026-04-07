@@ -22,8 +22,10 @@ export async function generateIndexMd(root: string): Promise<string> {
 	const wikiDir = `${root}/${WIKI_DIR}`;
 	const files = await listWiki(root);
 
-	// Skip INDEX.md and GRAPH.md themselves
-	const articleFiles = files.filter((f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"));
+	// Skip INDEX.md, GRAPH.md, and LOG.md
+	const articleFiles = files.filter(
+		(f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md") && !f.endsWith("LOG.md"),
+	);
 
 	const articles: ArticleMeta[] = [];
 
@@ -135,7 +137,9 @@ export async function computeStats(root: string): Promise<{
 	totalWords: number;
 }> {
 	const files = await listWiki(root);
-	const articleFiles = files.filter((f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md"));
+	const articleFiles = files.filter(
+		(f) => !f.endsWith("INDEX.md") && !f.endsWith("GRAPH.md") && !f.endsWith("LOG.md"),
+	);
 
 	let totalWords = 0;
 	for (const filePath of articleFiles) {

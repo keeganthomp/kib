@@ -33,10 +33,11 @@ What's built, what's next, and what's deferred.
 - CI: Biome lint + 412 tests on every push
 
 ### MCP Server
-- `kib serve --mcp` — expose vault as MCP tools over stdio
+- `kib serve` — expose vault as MCP tools over stdio
+- `kib init` auto-configures MCP in Claude Code, Claude Desktop, and Cursor
+- `kib mcp` to re-configure MCP clients independently
 - 8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
 - 2 resources: `wiki://index`, `wiki://graph`
-- Works with Claude Desktop, Cursor, Claude Code
 
 ---
 
@@ -182,6 +183,42 @@ What's built, what's next, and what's deferred.
 - [ ] Performance benchmarks: measure compile time, search latency, cold start
 - [ ] CI: test on macOS, Linux, Windows
 - [ ] Code coverage > 80%
+
+---
+
+## Gamechangers
+
+The features that take kib from "cool tool" to "can't live without it."
+
+### Passive Learning Daemon
+kib should silently learn from everything you read without you thinking about it.
+- [ ] Chrome extension: "Send to KB" button + optional auto-capture of pages you spend >30s on
+- [ ] `kib watch` as a background daemon (launchd/systemd) — not just inbox, but browser history, clipboard, screenshots
+- [ ] OS-level integration: watch a folder of PDFs, auto-ingest Kindle highlights, Readwise sync
+- [ ] Zero-friction ingest: no commands, no thinking, it just absorbs
+
+### Instant Value Without Compile
+Most of kib's value is locked behind `kib compile`. That's wrong — value should be immediate on ingest.
+- [ ] Search + query over raw sources directly (no compile required)
+- [ ] Compile becomes an optional enrichment step, not a prerequisite
+- [ ] Incremental indexing: search index updates on ingest, not compile
+- [ ] "Ask about this source" — query a single raw source without compiling the whole vault
+
+### Beyond CLI
+CLI-only means developer-only. The knowledge is valuable to everyone.
+- [ ] VS Code extension: sidebar with search, query, ingest from editor
+- [ ] Obsidian plugin: sync kib vault ↔ Obsidian vault, use kib's compile + search
+- [ ] Web UI: local dashboard with graph visualization, search, query (not just export)
+- [ ] Raycast/Alfred integration: global hotkey → search your knowledge base
+- [ ] Mobile: read-only PWA for querying on the go
+
+### Shared Knowledge Bases
+Personal wikis are useful. Team wikis are essential.
+- [ ] `kib share` — push vault to a git remote, team members clone + contribute
+- [ ] Multi-user ingest: team members ingest from their own browsers, shared compile
+- [ ] Access control: public wiki articles vs private notes
+- [ ] Team dashboard: who ingested what, what's new this week, knowledge gaps
+- [ ] Org-wide knowledge graph: connect team vaults into a federated search
 
 ---
 
