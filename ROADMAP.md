@@ -99,13 +99,13 @@ What's built, what's next, and what's deferred.
 ## v0.6.0 — Browser Extension
 
 ### Chrome Extension (MV3)
-- [ ] `packages/extension/` — Chrome Manifest V3 extension
-- [ ] "Send to KB" button on any webpage
-- [ ] Content script: readability-based article extraction
-- [ ] Background script: turndown conversion + POST to `localhost:4747/ingest`
-- [ ] Popup UI: status indicator (green = kib watch running), tag input, vault selector
-- [ ] Optional: highlight text on page → send selection to KB
-- [ ] Build pipeline: `bun build` for extension, separate from CLI
+- [x] `packages/extension/` — Chrome Manifest V3 extension
+- [x] "Send to KB" button on any webpage
+- [x] Content script: readability-based article extraction
+- [x] Background script: turndown conversion + POST to `localhost:4747/ingest`
+- [x] Popup UI: status indicator (green = kib watch running), tag input, vault selector
+- [x] Optional: highlight text on page → send selection to KB
+- [x] Build pipeline: `bun build` for extension, separate from CLI
 
 ### Firefox Extension
 - [ ] Port Chrome extension to Firefox (WebExtension API)
