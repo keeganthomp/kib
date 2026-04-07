@@ -7,14 +7,18 @@ The Headless Knowledge Compiler. A CLI-first, LLM-powered tool that turns raw so
 ## Install
 
 ```bash
-# Requires Bun (https://bun.sh)
+# Homebrew (macOS & Linux)
+brew tap keeganthomp/kib
+brew install kib
+
+# npm (requires Bun)
 npm i -g @kibhq/cli
 
 # or run without installing
 npx @kibhq/cli init
 ```
 
-Standalone binaries for macOS and Linux are available on the [releases page](https://github.com/keeganthomp/kib/releases).
+Standalone binaries are also available on the [releases page](https://github.com/keeganthomp/kib/releases).
 
 ## Quick Start
 
