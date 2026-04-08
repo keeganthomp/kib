@@ -24,7 +24,7 @@ export const RAW_CATEGORIES = ["articles", "papers", "repos", "images", "transcr
 /** Default config values */
 export const DEFAULTS = {
 	provider: "anthropic",
-	model: "claude-sonnet-4-6-20250514",
+	model: "claude-sonnet-4-20250514",
 	fastModel: "claude-haiku-4-5-20251001",
 	maxSourcesPerPass: 10,
 	searchMaxResults: 20,
