@@ -170,15 +170,27 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_search",
-		"Search the knowledge base using full-text BM25 search",
+		"Search the knowledge base using full-text BM25 search. Supports fuzzy matching, phrase search (wrap in quotes), tag filtering, and date filtering.",
 		{
-			query: z.string().describe("Search query"),
+			query: z
+				.string()
+				.describe(
+					'Search query. Wrap phrases in quotes for exact match, e.g. "attention mechanism"',
+				),
 			limit: z.number().int().positive().max(50).default(10).describe("Max results"),
+			tag: z
+				.union([z.string(), z.array(z.string())])
+				.optional()
+				.describe("Filter by frontmatter tag(s). Single tag or array for AND logic."),
+			since: z
+				.string()
+				.optional()
+				.describe("Filter to articles dated on or after this date (YYYY-MM-DD)"),
 		},
-		async ({ query, limit }) => {
+		async ({ query, limit, tag, since }) => {
 			try {
 				const index = await ctx.getSearchIndex();
-				const results = index.search(query, { limit });
+				const results = index.search(query, { limit, tag, since });
 				const prefix = `${root}/`;
 				return json(
 					results.map((r) => ({
