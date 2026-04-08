@@ -171,7 +171,7 @@ What's built, what's next, and what's deferred.
 - [x] `docs/skill-authoring.md` — how to create custom skills
 - [x] `docs/provider-config.md` — LLM provider setup guide
 - [x] `docs/architecture.md` — codebase architecture for contributors
-- [ ] Example vaults in `examples/` directory (ML research, software docs, reading list)
+- [x] Example vaults in `examples/` directory (ML research, software docs, reading list)
 - [ ] Blog post / launch announcement
 
 ### Testing & Quality

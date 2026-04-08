@@ -4,6 +4,12 @@ dist/
 raw/
 wiki/
 inbox/
+
+# Allow vault content in examples
+!examples/**/.kb/
+!examples/**/raw/
+!examples/**/wiki/
+!examples/**/inbox/
 *.tgz
 .env
 .env.*
