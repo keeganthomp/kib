@@ -1,4 +1,5 @@
 import { hash } from "../hash.js";
+import { withLock } from "../lockfile.js";
 import type { IngestResult, LLMProvider, Manifest, SourceEntry, SourceType } from "../types.js";
 import { appendLog, loadManifest, saveManifest, writeImageAsset, writeRaw } from "../vault.js";
 import type { Extractor } from "./extractors/interface.js";
@@ -41,31 +42,27 @@ export async function ingestSource(
 	// Get the extractor for this source type
 	const extractor = await getExtractor(sourceType, options.provider);
 
-	// Extract content
+	// Extract content (doesn't touch the vault — safe outside the lock)
 	const extracted = await extractor.extract(uri, { title: options.title, tags: options.tags });
 
 	// Hash the extracted content for dedup
 	const contentHash = await hash(extracted.content);
 
-	// Load manifest and check for duplicates
-	const manifest = await loadManifest(root);
-
-	// Check if we already have this exact content
-	const existingSource = findExistingSource(manifest, uri, contentHash);
-	if (existingSource) {
-		return {
-			sourceId: existingSource.id,
-			path: existingSource.path,
-			sourceType,
-			title: extracted.title,
-			wordCount: countWords(extracted.content),
-			skipped: true,
-			skipReason: "Duplicate content (same hash already ingested)",
-		};
-	}
-
-	// Dry run — return what would be ingested without writing
+	// Dry run — no writes needed
 	if (options.dryRun) {
+		const manifest = await loadManifest(root);
+		const existingSource = findExistingSource(manifest, uri, contentHash);
+		if (existingSource) {
+			return {
+				sourceId: existingSource.id,
+				path: existingSource.path,
+				sourceType,
+				title: extracted.title,
+				wordCount: countWords(extracted.content),
+				skipped: true,
+				skipReason: "Duplicate content (same hash already ingested)",
+			};
+		}
 		const category = options.category ?? categoryForType(sourceType);
 		const slug = slugify(extracted.title);
 		return {
@@ -78,74 +75,94 @@ export async function ingestSource(
 		};
 	}
 
-	// Normalize content with frontmatter
-	const normalizedContent = normalizeSource({
-		title: extracted.title,
-		content: extracted.content,
-		sourceType,
-		originalUrl: isUrl(uri) ? uri : undefined,
-		metadata: extracted.metadata,
+	// Acquire vault lock for the write phase
+	return withLock(root, "ingest", async () => {
+		// Load manifest and check for duplicates
+		const manifest = await loadManifest(root);
+
+		// Check if we already have this exact content
+		const existingSource = findExistingSource(manifest, uri, contentHash);
+		if (existingSource) {
+			return {
+				sourceId: existingSource.id,
+				path: existingSource.path,
+				sourceType,
+				title: extracted.title,
+				wordCount: countWords(extracted.content),
+				skipped: true,
+				skipReason: "Duplicate content (same hash already ingested)",
+			};
+		}
+
+		// Normalize content with frontmatter
+		const normalizedContent = normalizeSource({
+			title: extracted.title,
+			content: extracted.content,
+			sourceType,
+			originalUrl: isUrl(uri) ? uri : undefined,
+			metadata: extracted.metadata,
+		});
+
+		// Determine file path within raw/
+		const category = options.category ?? categoryForType(sourceType);
+		const slug = slugify(extracted.title);
+		const relativePath = `${category}/${slug}.md`;
+
+		// Write to raw/
+		await writeRaw(root, relativePath, normalizedContent);
+
+		// For images, also save the original binary to wiki/images/ for article references
+		if (sourceType === "image" && extracted.metadata.imageBuffer) {
+			const ext = (extracted.metadata.fileType as string) ?? ".png";
+			const imageFilename = `${slug}${ext}`;
+			await writeImageAsset(root, imageFilename, extracted.metadata.imageBuffer as Buffer);
+		}
+
+		// Generate a source ID
+		const sourceId = `src_${contentHash.slice(0, 12)}`;
+
+		// Update manifest
+		const now = new Date().toISOString();
+		const wordCount = countWords(extracted.content);
+
+		// Build metadata, including image asset path for image sources
+		const sourceMetadata: SourceEntry["metadata"] = {
+			title: extracted.title,
+			author: extracted.metadata.author as string | undefined,
+			date: extracted.metadata.date as string | undefined,
+			wordCount,
+		};
+
+		if (sourceType === "image" && extracted.metadata.fileType) {
+			const ext = extracted.metadata.fileType as string;
+			sourceMetadata.imageAsset = `images/${slug}${ext}`;
+		}
+
+		const sourceEntry: SourceEntry = {
+			hash: contentHash,
+			ingestedAt: now,
+			lastCompiled: null,
+			sourceType,
+			originalUrl: isUrl(uri) ? uri : undefined,
+			producedArticles: [],
+			metadata: sourceMetadata,
+		};
+
+		manifest.sources[sourceId] = sourceEntry;
+		manifest.stats.totalSources = Object.keys(manifest.sources).length;
+
+		await saveManifest(root, manifest);
+		await appendLog(root, "ingest", `"${extracted.title}" (${sourceType}) → raw/${relativePath}`);
+
+		return {
+			sourceId,
+			path: `raw/${relativePath}`,
+			sourceType,
+			title: extracted.title,
+			wordCount,
+			skipped: false,
+		};
 	});
-
-	// Determine file path within raw/
-	const category = options.category ?? categoryForType(sourceType);
-	const slug = slugify(extracted.title);
-	const relativePath = `${category}/${slug}.md`;
-
-	// Write to raw/
-	await writeRaw(root, relativePath, normalizedContent);
-
-	// For images, also save the original binary to wiki/images/ for article references
-	if (sourceType === "image" && extracted.metadata.imageBuffer) {
-		const ext = (extracted.metadata.fileType as string) ?? ".png";
-		const imageFilename = `${slug}${ext}`;
-		await writeImageAsset(root, imageFilename, extracted.metadata.imageBuffer as Buffer);
-	}
-
-	// Generate a source ID
-	const sourceId = `src_${contentHash.slice(0, 12)}`;
-
-	// Update manifest
-	const now = new Date().toISOString();
-	const wordCount = countWords(extracted.content);
-
-	// Build metadata, including image asset path for image sources
-	const sourceMetadata: SourceEntry["metadata"] = {
-		title: extracted.title,
-		author: extracted.metadata.author as string | undefined,
-		date: extracted.metadata.date as string | undefined,
-		wordCount,
-	};
-
-	if (sourceType === "image" && extracted.metadata.fileType) {
-		const ext = extracted.metadata.fileType as string;
-		sourceMetadata.imageAsset = `images/${slug}${ext}`;
-	}
-
-	const sourceEntry: SourceEntry = {
-		hash: contentHash,
-		ingestedAt: now,
-		lastCompiled: null,
-		sourceType,
-		originalUrl: isUrl(uri) ? uri : undefined,
-		producedArticles: [],
-		metadata: sourceMetadata,
-	};
-
-	manifest.sources[sourceId] = sourceEntry;
-	manifest.stats.totalSources = Object.keys(manifest.sources).length;
-
-	await saveManifest(root, manifest);
-	await appendLog(root, "ingest", `"${extracted.title}" (${sourceType}) → raw/${relativePath}`);
-
-	return {
-		sourceId,
-		path: `raw/${relativePath}`,
-		sourceType,
-		title: extracted.title,
-		wordCount,
-		skipped: false,
-	};
 }
 
 async function getExtractor(sourceType: SourceType, provider?: LLMProvider): Promise<Extractor> {

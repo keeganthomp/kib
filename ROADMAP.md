@@ -160,10 +160,10 @@ What's built, what's next, and what's deferred.
 ## v1.0.0 — Production Ready
 
 ### Reliability
-- [ ] Lockfile mechanism to prevent concurrent vault writes
-- [ ] Automatic backup before destructive operations (compile --force)
-- [ ] Crash recovery: detect incomplete writes and repair manifest
-- [ ] Validate manifest integrity on every load (detect corruption)
+- [x] Lockfile mechanism to prevent concurrent vault writes
+- [x] Automatic backup before destructive operations (compile --force)
+- [x] Crash recovery: detect incomplete writes and repair manifest
+- [x] Validate manifest integrity on every load (detect corruption)
 
 ### Documentation
 - [ ] `docs/getting-started.md` — quick start tutorial with real example
