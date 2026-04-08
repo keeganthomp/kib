@@ -1,7 +1,9 @@
 import { join } from "node:path";
+import { createBackup } from "../backup.js";
 import { DEFAULTS, GRAPH_FILE, INDEX_FILE } from "../constants.js";
 import { hash } from "../hash.js";
 import { countWords } from "../ingest/normalize.js";
+import { withLock } from "../lockfile.js";
 import type {
 	CompileResult,
 	FileOperation,
@@ -436,6 +438,26 @@ export async function compileVault(
 	provider: LLMProvider,
 	config: VaultConfig,
 	options: CompileOptions = {},
+): Promise<CompileResult> {
+	// Dry runs don't write — skip locking and backups
+	if (options.dryRun) {
+		return compileVaultInner(root, provider, config, options);
+	}
+
+	return withLock(root, "compile", async () => {
+		// Back up manifest before force-recompile (destructive operation)
+		if (options.force) {
+			await createBackup(root);
+		}
+		return compileVaultInner(root, provider, config, options);
+	});
+}
+
+async function compileVaultInner(
+	root: string,
+	provider: LLMProvider,
+	config: VaultConfig,
+	options: CompileOptions,
 ): Promise<CompileResult> {
 	const manifest = await loadManifest(root);
 
