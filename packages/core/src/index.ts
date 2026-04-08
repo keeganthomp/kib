@@ -19,8 +19,23 @@ export * from "./schemas.js";
 export { highlightSnippet, parseQuery, SearchIndex } from "./search/engine.js";
 export { HybridSearch } from "./search/hybrid.js";
 export { VectorIndex } from "./search/vector.js";
+export { getBuiltinSkills } from "./skills/builtins.js";
+export { getHookedSkills, runSkillHooks } from "./skills/hooks.js";
 export { findSkill, loadSkills } from "./skills/loader.js";
+export {
+	createSkill,
+	installSkill,
+	listInstalledSkills,
+	publishSkill,
+	resolveSkillDependencies,
+	uninstallSkill,
+} from "./skills/registry.js";
 export { runSkill } from "./skills/runner.js";
-export { SkillDefinitionSchema } from "./skills/schema.js";
+export {
+	SkillConfigSchema,
+	SkillDefinitionSchema,
+	SkillHookSchema,
+	SkillPackageSchema,
+} from "./skills/schema.js";
 export * from "./types.js";
 export * from "./vault.js";

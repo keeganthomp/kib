@@ -26,7 +26,16 @@ export async function skill(subcommand: string, name?: string, opts?: SkillOpts)
 		throw err;
 	}
 
-	const { loadSkills, findSkill, runSkill } = await import("@kibhq/core");
+	const {
+		loadSkills,
+		findSkill,
+		runSkill,
+		installSkill,
+		uninstallSkill,
+		createSkill,
+		publishSkill,
+		listInstalledSkills,
+	} = await import("@kibhq/core");
 
 	switch (subcommand) {
 		case "list": {
@@ -113,9 +122,146 @@ export async function skill(subcommand: string, name?: string, opts?: SkillOpts)
 			break;
 		}
 
+		case "install": {
+			if (!name) {
+				log.error(
+					"Source required. Usage: kib skill install github:user/repo or kib skill install <npm-package>",
+				);
+				process.exit(1);
+			}
+
+			const spinner = opts?.json ? null : createSpinner(`Installing skill from ${name}...`);
+			spinner?.start();
+
+			try {
+				const result = await installSkill(root, name);
+
+				if (opts?.json) {
+					console.log(JSON.stringify(result, null, 2));
+					break;
+				}
+
+				spinner?.succeed(`Installed "${result.name}" v${result.version} from ${result.source}`);
+				log.dim(`  Path: ${result.path}`);
+				log.blank();
+			} catch (err) {
+				spinner?.fail("Install failed");
+				log.error((err as Error).message);
+				process.exit(1);
+			}
+			break;
+		}
+
+		case "uninstall":
+		case "remove": {
+			if (!name) {
+				log.error("Skill name required. Usage: kib skill uninstall <name>");
+				process.exit(1);
+			}
+
+			const spinner = opts?.json ? null : createSpinner(`Uninstalling "${name}"...`);
+			spinner?.start();
+
+			try {
+				await uninstallSkill(root, name);
+
+				if (opts?.json) {
+					console.log(JSON.stringify({ uninstalled: name }, null, 2));
+					break;
+				}
+
+				spinner?.succeed(`Uninstalled "${name}"`);
+				log.blank();
+			} catch (err) {
+				spinner?.fail("Uninstall failed");
+				log.error((err as Error).message);
+				process.exit(1);
+			}
+			break;
+		}
+
+		case "create": {
+			if (!name) {
+				log.error("Skill name required. Usage: kib skill create <name>");
+				process.exit(1);
+			}
+
+			const spinner = opts?.json ? null : createSpinner(`Creating skill "${name}"...`);
+			spinner?.start();
+
+			try {
+				const path = await createSkill(root, name);
+
+				if (opts?.json) {
+					console.log(JSON.stringify({ name, path }, null, 2));
+					break;
+				}
+
+				spinner?.succeed(`Created skill "${name}"`);
+				log.dim(`  Path: ${path}`);
+				log.dim("  Edit index.ts to implement your skill logic.");
+				log.blank();
+			} catch (err) {
+				spinner?.fail("Create failed");
+				log.error((err as Error).message);
+				process.exit(1);
+			}
+			break;
+		}
+
+		case "publish": {
+			if (!name) {
+				log.error("Skill name required. Usage: kib skill publish <name>");
+				process.exit(1);
+			}
+
+			const spinner = opts?.json ? null : createSpinner(`Validating skill "${name}"...`);
+			spinner?.start();
+
+			try {
+				const path = await publishSkill(root, name);
+
+				if (opts?.json) {
+					console.log(JSON.stringify({ name, path, valid: true }, null, 2));
+					break;
+				}
+
+				spinner?.succeed(`Skill "${name}" is valid and ready to publish`);
+				log.dim(`  Path: ${path}`);
+				log.dim("  To publish to npm: cd <path> && npm publish");
+				log.blank();
+			} catch (err) {
+				spinner?.fail("Publish validation failed");
+				log.error((err as Error).message);
+				process.exit(1);
+			}
+			break;
+		}
+
+		case "installed": {
+			const installed = await listInstalledSkills(root);
+
+			if (opts?.json) {
+				console.log(JSON.stringify(installed, null, 2));
+				break;
+			}
+
+			if (installed.length === 0) {
+				log.info("No installed skills. Use kib skill install to add some.");
+				break;
+			}
+
+			log.header("installed skills");
+			for (const s of installed) {
+				console.log(`  ${s.name.padEnd(20)} ${s.path}`);
+			}
+			log.blank();
+			break;
+		}
+
 		default:
 			log.error(`Unknown subcommand: ${subcommand}`);
-			log.dim("Available: list, run");
+			log.dim("Available: list, run, install, uninstall, create, publish, installed");
 			process.exit(1);
 	}
 }

@@ -1,9 +1,10 @@
 import { existsSync } from "node:fs";
-import { readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SKILLS_DIR, VAULT_DIR } from "../constants.js";
 import type { SkillDefinition } from "../types.js";
-import { SkillDefinitionSchema } from "./schema.js";
+import { getBuiltinSkills } from "./builtins.js";
+import { SkillDefinitionSchema, SkillPackageSchema } from "./schema.js";
 
 /**
  * Load all available skills (built-in + installed).
@@ -24,28 +25,25 @@ export async function findSkill(root: string, name: string): Promise<SkillDefini
 
 /**
  * Load user-installed skills from .kb/skills/.
+ * Supports both single-file skills and directory-based packages.
  */
 async function loadInstalledSkills(root: string): Promise<SkillDefinition[]> {
 	const skillsDir = join(root, VAULT_DIR, SKILLS_DIR);
 	if (!existsSync(skillsDir)) return [];
 
-	const files = await readdir(skillsDir);
-	const tsFiles = files.filter((f) => f.endsWith(".ts") || f.endsWith(".js"));
-
+	const entries = await readdir(skillsDir, { withFileTypes: true });
 	const skills: SkillDefinition[] = [];
 
-	for (const file of tsFiles) {
+	for (const entry of entries) {
 		try {
-			const mod = await import(join(skillsDir, file));
-			const definition = mod.default ?? mod;
-
-			// Validate the skill definition
-			const parsed = SkillDefinitionSchema.safeParse(definition);
-			if (parsed.success) {
-				skills.push({
-					...definition,
-					run: definition.run,
-				});
+			if (entry.isDirectory()) {
+				// Directory-based skill — look for skill.json or index.ts/index.js
+				const skill = await loadDirectorySkill(join(skillsDir, entry.name));
+				if (skill) skills.push(skill);
+			} else if (entry.isFile() && (entry.name.endsWith(".ts") || entry.name.endsWith(".js"))) {
+				// Single-file skill
+				const skill = await loadSingleFileSkill(join(skillsDir, entry.name));
+				if (skill) skills.push(skill);
 			}
 		} catch {
 			// Skip malformed skills
@@ -55,109 +53,40 @@ async function loadInstalledSkills(root: string): Promise<SkillDefinition[]> {
 	return skills;
 }
 
-/**
- * Built-in skills that ship with kib.
- */
-function getBuiltinSkills(): SkillDefinition[] {
-	return [
-		{
-			name: "summarize",
-			version: "1.0.0",
-			description: "Summarize a wiki article or raw source",
-			input: "selection",
-			output: "stdout",
-			llm: {
-				required: true,
-				model: "fast",
-				systemPrompt:
-					"Summarize the following content concisely. Highlight key points, main arguments, and conclusions. Output markdown.",
-				maxTokens: 1024,
-				temperature: 0,
-			},
-			async run(ctx) {
-				const articles = await ctx.vault.readWiki();
-				if (articles.length === 0) {
-					ctx.logger.warn("No articles to summarize.");
-					return {};
-				}
-				const content = articles.map((a) => `# ${a.title}\n\n${a.content}`).join("\n\n---\n\n");
-				const result = await ctx.llm.complete({
-					system: this.llm!.systemPrompt,
-					messages: [{ role: "user", content }],
-					maxTokens: this.llm!.maxTokens,
-					temperature: this.llm!.temperature,
-				});
-				return { content: result.content };
-			},
-		},
-		{
-			name: "flashcards",
-			version: "1.0.0",
-			description: "Generate flashcards from wiki articles",
-			input: "wiki",
-			output: "report",
-			llm: {
-				required: true,
-				model: "default",
-				systemPrompt: `Generate flashcards from the following knowledge base articles.
-Output format:
-Q: [question]
-A: [answer]
+async function loadDirectorySkill(dir: string): Promise<SkillDefinition | null> {
+	// Check for skill.json to find entry point
+	const skillJsonPath = join(dir, "skill.json");
+	let entryPoint = "index.ts";
 
-Create 5-10 flashcards per article. Focus on key concepts, definitions, and relationships.`,
-				maxTokens: 4096,
-				temperature: 0,
-			},
-			async run(ctx) {
-				const articles = await ctx.vault.readWiki();
-				if (articles.length === 0) {
-					ctx.logger.warn("No articles to generate flashcards from.");
-					return {};
-				}
-				const content = articles
-					.slice(0, 5)
-					.map((a) => `# ${a.title}\n\n${a.content}`)
-					.join("\n\n---\n\n");
-				const result = await ctx.llm.complete({
-					system: this.llm!.systemPrompt,
-					messages: [{ role: "user", content }],
-					maxTokens: this.llm!.maxTokens,
-					temperature: this.llm!.temperature,
-				});
-				return { content: result.content };
-			},
-		},
-		{
-			name: "connections",
-			version: "1.0.0",
-			description: "Suggest new connections between existing articles",
-			input: "index",
-			output: "report",
-			llm: {
-				required: true,
-				model: "default",
-				systemPrompt: `Analyze the following wiki index and suggest connections between articles that aren't currently linked.
-For each suggestion, explain why the connection is relevant.
-Output as a markdown list.`,
-				maxTokens: 2048,
-				temperature: 0.3,
-			},
-			async run(ctx) {
-				const index = await ctx.vault.readIndex();
-				const graph = await ctx.vault.readGraph();
-				const result = await ctx.llm.complete({
-					system: this.llm!.systemPrompt,
-					messages: [
-						{
-							role: "user",
-							content: `CURRENT INDEX:\n${index}\n\nCURRENT GRAPH:\n${graph}`,
-						},
-					],
-					maxTokens: this.llm!.maxTokens,
-					temperature: this.llm!.temperature,
-				});
-				return { content: result.content };
-			},
-		},
-	];
+	if (existsSync(skillJsonPath)) {
+		const raw = await readFile(skillJsonPath, "utf-8");
+		const pkg = SkillPackageSchema.safeParse(JSON.parse(raw));
+		if (pkg.success && pkg.data.main) {
+			entryPoint = pkg.data.main;
+		}
+	}
+
+	// Try the entry point, fallback to common alternatives
+	const candidates = [join(dir, entryPoint), join(dir, "index.ts"), join(dir, "index.js")];
+
+	for (const candidate of candidates) {
+		if (existsSync(candidate)) {
+			return loadSingleFileSkill(candidate);
+		}
+	}
+
+	return null;
+}
+
+async function loadSingleFileSkill(filePath: string): Promise<SkillDefinition | null> {
+	const mod = await import(filePath);
+	const definition = mod.default ?? mod;
+
+	const parsed = SkillDefinitionSchema.safeParse(definition);
+	if (!parsed.success) return null;
+
+	return {
+		...definition,
+		run: definition.run,
+	};
 }

@@ -111,6 +111,18 @@ export const VaultConfigSchema = z.object({
 		ttl_hours: z.number().int().positive().default(DEFAULTS.cacheTtlHours),
 		max_size_mb: z.number().positive().default(DEFAULTS.cacheMaxSizeMb),
 	}),
+	skills: z
+		.object({
+			hooks: z
+				.object({
+					"post-compile": z.array(z.string()).default([]),
+					"post-ingest": z.array(z.string()).default([]),
+					"post-lint": z.array(z.string()).default([]),
+				})
+				.default({}),
+			config: z.record(z.string(), z.record(z.string(), z.unknown())).default({}),
+		})
+		.default({}),
 });
 
 // ─── Article Frontmatter ─────────────────────────────────────────
