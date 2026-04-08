@@ -116,11 +116,11 @@ What's built, what's next, and what's deferred.
 ## v0.7.0 — Advanced Search
 
 ### Vector/Semantic Search
-- [ ] Optional embedding-based search alongside BM25
-- [ ] Embedding provider: OpenAI `text-embedding-3-small`, or local via Ollama
-- [ ] Hybrid scoring: combine BM25 + cosine similarity
-- [ ] Store embeddings in `.kb/cache/embeddings.bin`
-- [ ] Rebuild embeddings on compile
+- [x] Optional embedding-based search alongside BM25
+- [x] Embedding provider: OpenAI `text-embedding-3-small`, or local via Ollama
+- [x] Hybrid scoring: combine BM25 + cosine similarity (Reciprocal Rank Fusion)
+- [x] Store embeddings in `.kb/cache/vectors.idx` (binary Float32Array format)
+- [x] Rebuild embeddings on compile
 
 ### Search Improvements
 - [ ] Fuzzy matching for typo tolerance
