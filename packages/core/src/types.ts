@@ -104,6 +104,9 @@ export interface SkillContext {
 		error(msg: string): void;
 	};
 
+	/** Invoke another skill by name (skill-to-skill invocation) */
+	invoke(skillName: string, args?: Record<string, unknown>): Promise<{ content?: string }>;
+
 	args: Record<string, unknown>;
 }
 
@@ -115,6 +118,15 @@ export interface SkillDefinition {
 
 	input: "wiki" | "raw" | "vault" | "selection" | "index" | "none";
 	output: "articles" | "report" | "mutations" | "stdout" | "none";
+
+	/** Skill names this skill depends on (resolved before run) */
+	dependencies?: string[];
+
+	/** Lifecycle hooks — run this skill automatically after these events */
+	hooks?: ("post-compile" | "post-ingest" | "post-lint")[];
+
+	/** Target wiki category for skill output (e.g. "outputs") */
+	category?: string;
 
 	llm?: {
 		required: boolean;

@@ -11,12 +11,16 @@ import type {
 	VaultConfig,
 } from "../types.js";
 import { listRaw, listWiki, loadConfig, loadManifest, readIndex, writeWiki } from "../vault.js";
+import { findSkill } from "./loader.js";
+import { resolveSkillDependencies } from "./registry.js";
 
 export interface RunSkillOptions {
 	/** Additional CLI args */
 	args?: Record<string, unknown>;
 	/** LLM provider (required if skill.llm.required is true) */
 	provider?: LLMProvider;
+	/** Max depth for skill-to-skill invocation (prevents infinite recursion) */
+	maxDepth?: number;
 }
 
 export interface RunSkillResult {
@@ -25,6 +29,7 @@ export interface RunSkillResult {
 
 /**
  * Execute a skill against a vault.
+ * Resolves dependencies and runs them first if needed.
  */
 export async function runSkill(
 	root: string,
@@ -38,6 +43,17 @@ export async function runSkill(
 		throw new Error(`Skill "${skill.name}" requires an LLM provider`);
 	}
 
+	// Resolve and run dependencies first
+	if (skill.dependencies?.length) {
+		const { loadSkills } = await import("./loader.js");
+		const allSkills = await loadSkills(root);
+		const deps = resolveSkillDependencies(skill, allSkills);
+		// Run dependencies (all except the skill itself, which is last)
+		for (const dep of deps.slice(0, -1)) {
+			await runSkill(root, dep, options);
+		}
+	}
+
 	const ctx = buildContext(root, manifest, config, options, skill);
 	return skill.run(ctx);
 }
@@ -48,7 +64,10 @@ function buildContext(
 	config: VaultConfig,
 	options: RunSkillOptions,
 	skill: SkillDefinition,
+	depth = 0,
 ): SkillContext {
+	const maxDepth = options.maxDepth ?? 5;
+
 	return {
 		vault: {
 			async readIndex() {
@@ -119,6 +138,25 @@ function buildContext(
 				if (!loaded) await index.build(root, "wiki");
 				return index.search(term, opts);
 			},
+		},
+
+		async invoke(skillName: string, args?: Record<string, unknown>) {
+			if (depth >= maxDepth) {
+				throw new Error(
+					`Skill invocation depth limit (${maxDepth}) reached. Possible circular invocation.`,
+				);
+			}
+
+			const targetSkill = await findSkill(root, skillName);
+			if (!targetSkill) {
+				throw new Error(`Skill "${skillName}" not found`);
+			}
+
+			return runSkill(root, targetSkill, {
+				...options,
+				args: { ...options.args, ...args },
+				maxDepth: maxDepth - depth,
+			});
 		},
 
 		logger: {

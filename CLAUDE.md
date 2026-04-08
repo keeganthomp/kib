@@ -37,7 +37,7 @@ Manual workflow dispatch via GitHub Actions (`release.yml`). **Critical rules:**
 ## Commands
 
 ```bash
-bun test                              # run tests (258+)
+bun test                              # run tests (354+)
 bun run check                         # biome lint + format
 bun run packages/cli/bin/kib.ts       # run CLI locally
 ```
@@ -49,3 +49,29 @@ bun run packages/cli/bin/kib.ts       # run CLI locally
 - CLI lazy-imports from core to keep cold starts fast
 - LLM providers: Anthropic, OpenAI, Ollama (auto-detected from env vars)
 - Credentials stored at `~/.config/kib/credentials`, loaded on CLI startup
+
+## Skill Ecosystem (v0.8.0)
+
+### Built-in Skills (10)
+`summarize`, `flashcards`, `connections`, `find-contradictions`, `weekly-digest`, `export-slides`, `timeline`, `compare`, `explain`, `suggest-tags`
+
+### Skill Management CLI
+```bash
+kib skill list                            # list all available skills
+kib skill run <name>                      # run a skill
+kib skill install github:user/repo        # install from GitHub
+kib skill install <npm-package>           # install from npm
+kib skill uninstall <name>                # remove an installed skill
+kib skill create <name>                   # scaffold a new skill
+kib skill publish <name>                  # validate for publishing
+kib skill installed                       # list installed skills
+```
+
+### Skill Architecture
+- Skills defined as `SkillDefinition` objects with `run(ctx: SkillContext)` method
+- `SkillContext` provides: vault read/write, LLM (complete/stream), search, logger, args, `invoke()` for skill-to-skill calls
+- Skills live in: `packages/core/src/skills/builtins.ts` (built-in) or `.kb/skills/` (installed)
+- Directory-based skills use `skill.json` for metadata + entry point
+- Dependency resolution with circular dependency detection
+- Hooks system: skills auto-run after compile/ingest/lint via `hooks` field or `[skills.hooks]` in config.toml
+- Config: `[skills]` section in `config.toml` for hooks and per-skill settings

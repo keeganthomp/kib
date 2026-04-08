@@ -134,26 +134,26 @@ What's built, what's next, and what's deferred.
 ## v0.8.0 — Skill Ecosystem
 
 ### Remote Skill Registry
-- [ ] `kib skill install github:user/skill-name` — install from GitHub repo
-- [ ] `kib skill install <npm-package>` — install from npm
-- [ ] Skill dependency resolution (skills can depend on other skills)
-- [ ] `kib skill create <name>` — scaffold a new skill from template
-- [ ] `kib skill publish` — publish to registry
+- [x] `kib skill install github:user/skill-name` — install from GitHub repo
+- [x] `kib skill install <npm-package>` — install from npm
+- [x] Skill dependency resolution (skills can depend on other skills)
+- [x] `kib skill create <name>` — scaffold a new skill from template
+- [x] `kib skill publish` — publish to registry
 
 ### Additional Built-in Skills
-- [ ] `find-contradictions` — detect contradictory claims across articles
-- [ ] `weekly-digest` — generate a weekly summary of new additions
-- [ ] `export-slides` — generate Marp slide deck from articles
-- [ ] `timeline` — generate chronological timeline from articles
-- [ ] `compare` — compare two articles/topics side by side
-- [ ] `explain` — explain a topic at a specified reading level
-- [ ] `suggest-tags` — auto-tag articles based on content analysis
+- [x] `find-contradictions` — detect contradictory claims across articles
+- [x] `weekly-digest` — generate a weekly summary of new additions
+- [x] `export-slides` — generate Marp slide deck from articles
+- [x] `timeline` — generate chronological timeline from articles
+- [x] `compare` — compare two articles/topics side by side
+- [x] `explain` — explain a topic at a specified reading level
+- [x] `suggest-tags` — auto-tag articles based on content analysis
 
 ### Skill API Enhancements
-- [ ] Skill-to-skill invocation (one skill can call another)
-- [ ] Skill hooks: run automatically after compile, ingest, or lint
-- [ ] Skill configuration in `config.toml`
-- [ ] Skill output to specific wiki category
+- [x] Skill-to-skill invocation (one skill can call another)
+- [x] Skill hooks: run automatically after compile, ingest, or lint
+- [x] Skill configuration in `config.toml`
+- [x] Skill output to specific wiki category
 
 ---
 
