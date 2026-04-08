@@ -24,12 +24,13 @@ export async function validateManifestIntegrity(
 
 	// Check source files exist on disk
 	for (const [sourceId, source] of Object.entries(manifest.sources)) {
-		const sourcePath = join(root, RAW_DIR, sourceId);
+		const rawPath = deriveRawPath(source.metadata.title ?? sourceId, source.sourceType);
+		const sourcePath = join(root, RAW_DIR, rawPath);
 		if (!existsSync(sourcePath)) {
 			issues.push({
 				severity: "error",
 				category: "missing_file",
-				message: `Source file missing from disk: ${sourceId}`,
+				message: `Source file missing from disk: ${sourceId} (expected ${rawPath})`,
 				path: sourcePath,
 			});
 		}
@@ -105,6 +106,32 @@ export async function validateManifestIntegrity(
 }
 
 // ─── Helpers ────────────────────────────────────────────────────
+
+/**
+ * Derive the raw file path from source metadata, matching ingest's naming convention.
+ */
+function deriveRawPath(title: string, sourceType: string): string {
+	const slug = title
+		.toLowerCase()
+		.replace(/[^a-z0-9\s-]/g, "")
+		.replace(/\s+/g, "-")
+		.replace(/-+/g, "-")
+		.replace(/^-|-$/g, "")
+		.slice(0, 80);
+
+	const category =
+		sourceType === "pdf"
+			? "papers"
+			: sourceType === "youtube"
+				? "transcripts"
+				: sourceType === "github"
+					? "repos"
+					: sourceType === "image"
+						? "images"
+						: "articles";
+
+	return `${category}/${slug}.md`;
+}
 
 /**
  * Find an article file by slug. Articles can be in any category subdirectory.

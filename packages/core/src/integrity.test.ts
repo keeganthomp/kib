@@ -32,28 +32,25 @@ describe("validateManifestIntegrity", () => {
 		const manifest = await loadManifest(dir);
 
 		// Add a source entry without a file on disk
-		manifest.sources["articles/ghost.md"] = {
+		manifest.sources.src_ghost123 = {
 			hash: "abc123",
 			ingestedAt: new Date().toISOString(),
 			lastCompiled: null,
 			sourceType: "web",
 			producedArticles: [],
-			metadata: { wordCount: 100 },
+			metadata: { title: "Ghost Article", wordCount: 100 },
 		};
 		manifest.stats.totalSources = 1;
 		await saveManifest(dir, manifest);
 
 		const issues = await validateManifestIntegrity(dir, manifest);
-		expect(
-			issues.some((i) => i.category === "missing_file" && i.message.includes("ghost.md")),
-		).toBe(true);
+		expect(issues.some((i) => i.category === "missing_file" && i.severity === "error")).toBe(true);
 	});
 
 	test("detects missing article file", async () => {
 		const dir = await makeTempVault();
 		const manifest = await loadManifest(dir);
 
-		// Add an article entry without a file on disk
 		manifest.articles["ghost-article"] = {
 			hash: "abc123",
 			createdAt: new Date().toISOString(),
@@ -81,14 +78,14 @@ describe("validateManifestIntegrity", () => {
 		const manifest = await loadManifest(dir);
 
 		// Add a source that references a non-existent article
-		await writeRaw(dir, "articles/real.md", "# Real Source");
-		manifest.sources["articles/real.md"] = {
+		await writeRaw(dir, "articles/real-source.md", "# Real Source");
+		manifest.sources.src_real123 = {
 			hash: "abc123",
 			ingestedAt: new Date().toISOString(),
 			lastCompiled: null,
 			sourceType: "web",
 			producedArticles: ["nonexistent-article"],
-			metadata: { wordCount: 50 },
+			metadata: { title: "Real Source", wordCount: 50 },
 		};
 		manifest.stats.totalSources = 1;
 		await saveManifest(dir, manifest);
@@ -105,13 +102,12 @@ describe("validateManifestIntegrity", () => {
 		const dir = await makeTempVault();
 		const manifest = await loadManifest(dir);
 
-		// Add an article that references a non-existent source
 		await writeWiki(dir, "concepts/real-article.md", "# Real Article");
 		manifest.articles["real-article"] = {
 			hash: "abc123",
 			createdAt: new Date().toISOString(),
 			lastUpdated: new Date().toISOString(),
-			derivedFrom: ["articles/nonexistent-source.md"],
+			derivedFrom: ["src_nonexistent"],
 			backlinks: [],
 			forwardLinks: [],
 			tags: [],
@@ -125,9 +121,7 @@ describe("validateManifestIntegrity", () => {
 
 		const issues = await validateManifestIntegrity(dir, manifest);
 		expect(
-			issues.some(
-				(i) => i.category === "broken_reference" && i.message.includes("nonexistent-source"),
-			),
+			issues.some((i) => i.category === "broken_reference" && i.message.includes("nonexistent")),
 		).toBe(true);
 	});
 
@@ -135,7 +129,6 @@ describe("validateManifestIntegrity", () => {
 		const dir = await makeTempVault();
 		const manifest = await loadManifest(dir);
 
-		// Stats say there are sources/articles but there aren't any
 		manifest.stats.totalSources = 5;
 		manifest.stats.totalArticles = 10;
 		manifest.stats.totalWords = 5000;
@@ -143,31 +136,30 @@ describe("validateManifestIntegrity", () => {
 
 		const issues = await validateManifestIntegrity(dir, manifest);
 		const mismatches = issues.filter((i) => i.category === "stats_mismatch");
-		expect(mismatches.length).toBe(3); // sources, articles, words all off
+		expect(mismatches.length).toBe(3);
 	});
 
 	test("passes for consistent vault with files", async () => {
 		const dir = await makeTempVault();
 		const manifest = await loadManifest(dir);
 
-		// Add a source with a real file
+		// Source with a real file — the file path is derived from title
 		await writeRaw(dir, "articles/test-source.md", "# Test Source\n\nSome content here.");
-		manifest.sources["articles/test-source.md"] = {
+		manifest.sources.src_test123 = {
 			hash: "abc123",
 			ingestedAt: new Date().toISOString(),
 			lastCompiled: new Date().toISOString(),
 			sourceType: "web",
 			producedArticles: ["test-article"],
-			metadata: { wordCount: 5 },
+			metadata: { title: "Test Source", wordCount: 5 },
 		};
 
-		// Add an article with a real file
 		await writeWiki(dir, "concepts/test-article.md", "# Test Article\n\nCompiled content.");
 		manifest.articles["test-article"] = {
 			hash: "def456",
 			createdAt: new Date().toISOString(),
 			lastUpdated: new Date().toISOString(),
-			derivedFrom: ["articles/test-source.md"],
+			derivedFrom: ["src_test123"],
 			backlinks: [],
 			forwardLinks: [],
 			tags: ["test"],

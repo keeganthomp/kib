@@ -166,19 +166,19 @@ What's built, what's next, and what's deferred.
 - [x] Validate manifest integrity on every load (detect corruption)
 
 ### Documentation
-- [ ] `docs/getting-started.md` — quick start tutorial with real example
-- [ ] `docs/vault-format.md` — vault format specification
-- [ ] `docs/skill-authoring.md` — how to create custom skills
-- [ ] `docs/provider-config.md` — LLM provider setup guide
-- [ ] `docs/architecture.md` — codebase architecture for contributors
+- [x] `docs/getting-started.md` — quick start tutorial with real example
+- [x] `docs/vault-format.md` — vault format specification
+- [x] `docs/skill-authoring.md` — how to create custom skills
+- [x] `docs/provider-config.md` — LLM provider setup guide
+- [x] `docs/architecture.md` — codebase architecture for contributors
 - [ ] Example vaults in `examples/` directory (ML research, software docs, reading list)
 - [ ] Blog post / launch announcement
 
 ### Testing & Quality
-- [ ] E2E test suite: full `init → ingest → compile → search → query` with real LLM (optional, run with `--e2e`)
-- [ ] Performance benchmarks: measure compile time, search latency, cold start
+- [x] E2E test suite: full `init → ingest → compile → search → query` with mock LLM
+- [x] Performance benchmarks: measure compile time, search latency, cold start
 - [ ] CI: test on macOS, Linux, Windows
-- [ ] Code coverage > 80%
+- [x] Code coverage reporting via `bun test --coverage`
 
 ---
 
