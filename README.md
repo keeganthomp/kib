@@ -252,7 +252,7 @@ You can also set provider via environment variables:
 
 | Provider | Env Variable | Default Model |
 |---|---|---|
-| **Anthropic** | `ANTHROPIC_API_KEY` | claude-sonnet-4-20250514 |
+| **Anthropic** | `ANTHROPIC_API_KEY` | claude-sonnet-4-6 |
 | **OpenAI** | `OPENAI_API_KEY` | gpt-4o |
 | **Ollama** | (auto-detect on localhost:11434) | llama3 |
 

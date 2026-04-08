@@ -48,7 +48,7 @@ The manifest is the source of truth for vault state. Schema version: `"1"`.
     "created": "2024-01-15T10:00:00.000Z",
     "lastCompiled": "2024-01-15T12:00:00.000Z",
     "provider": "anthropic",
-    "model": "claude-sonnet-4-20250514"
+    "model": "claude-sonnet-4-6"
   },
   "sources": {
     "src_a1b2c3d4e5f6": {
@@ -116,7 +116,7 @@ Vault configuration lives at `.kb/config.toml`:
 ```toml
 [provider]
 default = "anthropic"
-model = "claude-sonnet-4-20250514"
+model = "claude-sonnet-4-6"
 fast_model = "claude-haiku-4-5-20251001"
 
 [compile]

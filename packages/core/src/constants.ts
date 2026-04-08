@@ -24,7 +24,7 @@ export const RAW_CATEGORIES = ["articles", "papers", "repos", "images", "transcr
 /** Default config values */
 export const DEFAULTS = {
 	provider: "anthropic",
-	model: "claude-sonnet-4-20250514",
+	model: "claude-sonnet-4-6",
 	fastModel: "claude-haiku-4-5-20251001",
 	maxSourcesPerPass: 10,
 	searchMaxResults: 20,
@@ -34,7 +34,7 @@ export const DEFAULTS = {
 	maxFileSizeMb: 50,
 	compileArticleMinWords: 200,
 	compileArticleMaxWords: 1000,
-	contextWindow: 200_000, // tokens — conservative default for Claude Sonnet
+	contextWindow: 200_000, // tokens — conservative default (Sonnet 4.6 supports 1M)
 	maxSourceTokens: 32_000, // auto-summarize sources larger than this
 	maxParallel: 3, // max concurrent source compilations
 	tokensPerChar: 0.25, // rough estimate: ~4 chars per token
