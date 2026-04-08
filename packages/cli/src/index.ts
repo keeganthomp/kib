@@ -76,6 +76,13 @@ program
 	.option("--limit <n>", "max results", Number.parseInt)
 	.option("--json", "JSON output")
 	.option("--engine <type>", "search engine: builtin, vector, hybrid")
+	.option(
+		"--tag <tag>",
+		"filter by tag (repeatable)",
+		(val: string, prev: string[]) => [...prev, val],
+		[] as string[],
+	)
+	.option("--since <date>", "filter to articles dated on or after (YYYY-MM-DD)")
 	.action(async (term, opts) => {
 		const { search } = await import("./commands/search.js");
 		await search(term, opts);

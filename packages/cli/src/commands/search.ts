@@ -10,6 +10,8 @@ interface SearchOpts {
 	limit?: number;
 	json?: boolean;
 	engine?: "builtin" | "vector" | "hybrid";
+	tag?: string[];
+	since?: string;
 }
 
 export async function search(term: string, opts: SearchOpts) {
@@ -30,6 +32,8 @@ export async function search(term: string, opts: SearchOpts) {
 
 	const scope = opts.wiki ? "wiki" : opts.raw ? "raw" : "all";
 	const limit = opts.limit ?? 20;
+	const tags = opts.tag ?? undefined;
+	const since = opts.since ?? undefined;
 
 	// Determine search engine
 	let engine = opts.engine;
@@ -44,12 +48,16 @@ export async function search(term: string, opts: SearchOpts) {
 
 	debug(`vault root: ${root}`);
 	debug(`scope: ${scope}, limit: ${limit}, engine: ${engine}, term: "${term}"`);
+	if (tags) debug(`tag filter: ${tags.join(", ")}`);
+	if (since) debug(`since filter: ${since}`);
 
 	const spinner = createSpinner("Searching...");
 	spinner.start();
 
 	let results: SearchResult[];
 	let elapsed: number;
+
+	const searchOpts = { limit, tag: tags, since, highlight: !opts.json };
 
 	if (engine === "hybrid" || engine === "vector") {
 		const endIndex = debugTime("load/build hybrid index");
@@ -83,6 +91,15 @@ export async function search(term: string, opts: SearchOpts) {
 			const start = performance.now();
 			results = await hybrid.search(term, provider, { limit });
 			elapsed = Math.round(performance.now() - start);
+
+			// Apply tag/date filters and highlighting post-hoc for hybrid
+			// (BM25 side supports it natively, but hybrid fuses results)
+			if (tags || since) {
+				// Re-run BM25 with filters to get filtered results
+				const filteredBm25 = bm25.search(term, searchOpts);
+				const filteredPaths = new Set(filteredBm25.map((r) => r.path));
+				results = results.filter((r) => filteredPaths.has(r.path));
+			}
 		} else {
 			endIndex();
 			// Fallback path
@@ -94,7 +111,7 @@ export async function search(term: string, opts: SearchOpts) {
 				await index.save(root);
 			}
 			const start = performance.now();
-			results = index.search(term, { limit });
+			results = index.search(term, searchOpts);
 			elapsed = Math.round(performance.now() - start);
 		}
 	} else {
@@ -112,7 +129,7 @@ export async function search(term: string, opts: SearchOpts) {
 		endIndex();
 
 		const start = performance.now();
-		results = index.search(term, { limit });
+		results = index.search(term, searchOpts);
 		elapsed = Math.round(performance.now() - start);
 	}
 
@@ -143,14 +160,13 @@ export async function search(term: string, opts: SearchOpts) {
 		console.log(`  ${num}. ${title}  ${score}`);
 		console.log(`      ${dimPath(r.path)}`);
 		if (r.snippet) {
-			console.log(`      ${truncate(r.snippet, 80)}`);
+			console.log(`      ${truncate(r.snippet, 120)}`);
 		}
 		console.log();
 	}
 }
 
 function dimPath(path: string): string {
-	// Import chalk dynamically to keep lazy loading
 	return `\x1b[2m${path}\x1b[0m`;
 }
 

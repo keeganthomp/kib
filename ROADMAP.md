@@ -116,18 +116,18 @@ What's built, what's next, and what's deferred.
 ## v0.7.0 — Advanced Search
 
 ### Vector/Semantic Search
-- [ ] Optional embedding-based search alongside BM25
-- [ ] Embedding provider: OpenAI `text-embedding-3-small`, or local via Ollama
-- [ ] Hybrid scoring: combine BM25 + cosine similarity
-- [ ] Store embeddings in `.kb/cache/embeddings.bin`
-- [ ] Rebuild embeddings on compile
+- [x] Optional embedding-based search alongside BM25
+- [x] Embedding provider: OpenAI `text-embedding-3-small`, or local via Ollama
+- [x] Hybrid scoring: combine BM25 + cosine similarity (Reciprocal Rank Fusion)
+- [x] Store embeddings in `.kb/cache/vectors.idx` (binary Float32Array format)
+- [x] Rebuild embeddings on compile
 
 ### Search Improvements
-- [ ] Fuzzy matching for typo tolerance
-- [ ] Phrase search with quotes: `kib search '"attention mechanism"'`
-- [ ] Tag-based filtering: `kib search "transformers" --tag deep-learning`
-- [ ] Date range filtering: `kib search --since 2024-01-01`
-- [ ] Search result highlighting in terminal (bold matched terms)
+- [x] Fuzzy matching for typo tolerance (edit distance ≤ 1 for tokens ≥ 4 chars)
+- [x] Phrase search with quotes: `kib search '"attention mechanism"'`
+- [x] Tag-based filtering: `kib search "transformers" --tag deep-learning`
+- [x] Date range filtering: `kib search --since 2024-01-01`
+- [x] Search result highlighting in terminal (bold matched terms)
 
 ---
 

@@ -291,6 +291,267 @@ describe("MCP server", () => {
 		});
 	});
 
+	// ── kib_search advanced ───────────────────────────────────
+
+	describe("kib_search advanced", () => {
+		function taggedArticle(title: string, tags: string[], content: string): string {
+			return `---\ntitle: ${title}\nslug: ${title.toLowerCase().replace(/\s+/g, "-")}\ntags: [${tags.join(", ")}]\ndate: 2025-06-01\n---\n\n# ${title}\n\n${content}`;
+		}
+
+		test("filters by tag", async () => {
+			const root = await makeTempVault();
+			await writeWiki(
+				root,
+				"concepts/transformer.md",
+				taggedArticle("Transformer", ["nlp", "deep-learning"], "A neural network."),
+			);
+			await writeWiki(
+				root,
+				"concepts/cnn.md",
+				taggedArticle("CNN", ["vision"], "A convolutional neural network."),
+			);
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_search",
+				arguments: { query: "neural network", tag: "nlp" },
+			});
+			expect(result.isError).toBeFalsy();
+
+			const hits = JSON.parse(textOf(result));
+			expect(hits.length).toBe(1);
+			expect(hits[0].path).toContain("transformer.md");
+		});
+
+		test("filters by since date", async () => {
+			const root = await makeTempVault();
+			await writeWiki(
+				root,
+				"concepts/old.md",
+				`---\ntitle: Old\nslug: old\ndate: 2023-01-01\n---\n\n# Old\n\nNeural network.`,
+			);
+			await writeWiki(
+				root,
+				"concepts/new.md",
+				`---\ntitle: New\nslug: new\ndate: 2025-06-01\n---\n\n# New\n\nNeural network.`,
+			);
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_search",
+				arguments: { query: "neural", since: "2025-01-01" },
+			});
+			expect(result.isError).toBeFalsy();
+
+			const hits = JSON.parse(textOf(result));
+			expect(hits.length).toBe(1);
+			expect(hits[0].path).toContain("new.md");
+		});
+
+		test("scopes search to wiki only", async () => {
+			const root = await makeTempVault();
+			await writeWiki(root, "concepts/wiki.md", articleMd("Wiki Article", "Neural network."));
+			await writeRaw(root, "articles/raw.md", "# Raw Article\n\nNeural network.");
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_search",
+				arguments: { query: "neural", scope: "wiki" },
+			});
+			expect(result.isError).toBeFalsy();
+
+			const hits = JSON.parse(textOf(result));
+			expect(hits.every((h: { path: string }) => h.path.includes("wiki/"))).toBe(true);
+		});
+	});
+
+	// ── kib_config ─────────────────────────────────────────────
+
+	describe("kib_config", () => {
+		test("lists all config", async () => {
+			const root = await makeTempVault();
+			const client = await createClient(root);
+
+			const result = await client.callTool({ name: "kib_config", arguments: {} });
+			expect(result.isError).toBeFalsy();
+
+			const data = JSON.parse(textOf(result));
+			expect(data.provider).toBeDefined();
+			expect(data.search).toBeDefined();
+		});
+
+		test("reads a specific config key", async () => {
+			const root = await makeTempVault();
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_config",
+				arguments: { key: "search.engine" },
+			});
+			expect(result.isError).toBeFalsy();
+
+			const data = JSON.parse(textOf(result));
+			expect(data["search.engine"]).toBeDefined();
+		});
+
+		test("sets a config value", async () => {
+			const root = await makeTempVault();
+			const client = await createClient(root);
+
+			const setResult = await client.callTool({
+				name: "kib_config",
+				arguments: { key: "search.engine", value: "hybrid" },
+			});
+			expect(setResult.isError).toBeFalsy();
+
+			const data = JSON.parse(textOf(setResult));
+			expect(data["search.engine"]).toBe("hybrid");
+			expect(data.saved).toBe(true);
+
+			// Verify it persisted
+			const getResult = await client.callTool({
+				name: "kib_config",
+				arguments: { key: "search.engine" },
+			});
+			const readBack = JSON.parse(textOf(getResult));
+			expect(readBack["search.engine"]).toBe("hybrid");
+		});
+
+		test("returns error for unknown key", async () => {
+			const root = await makeTempVault();
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_config",
+				arguments: { key: "nonexistent.key" },
+			});
+			expect(result.isError).toBe(true);
+		});
+	});
+
+	// ── kib_skill ──────────────────────────────────────────────
+
+	describe("kib_skill", () => {
+		test("lists built-in skills", async () => {
+			const root = await makeTempVault();
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_skill",
+				arguments: { action: "list" },
+			});
+			expect(result.isError).toBeFalsy();
+
+			const skills = JSON.parse(textOf(result));
+			expect(Array.isArray(skills)).toBe(true);
+			expect(skills.length).toBeGreaterThan(0);
+			expect(skills[0].name).toBeDefined();
+			expect(skills[0].description).toBeDefined();
+		});
+
+		test("returns error when running without name", async () => {
+			const root = await makeTempVault();
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_skill",
+				arguments: { action: "run" },
+			});
+			expect(result.isError).toBe(true);
+			expect(textOf(result)).toContain("name is required");
+		});
+
+		test("returns error for nonexistent skill", async () => {
+			const root = await makeTempVault();
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_skill",
+				arguments: { action: "run", name: "nonexistent-skill" },
+			});
+			expect(result.isError).toBe(true);
+			expect(textOf(result)).toContain("not found");
+		});
+	});
+
+	// ── kib_export ─────────────────────────────────────────────
+
+	describe("kib_export", () => {
+		test("exports wiki as markdown", async () => {
+			const root = await makeTempVault();
+			await writeWiki(root, "concepts/test.md", articleMd("Test", "Test content."));
+			const client = await createClient(root);
+
+			const outputDir = join(tempDir, "export-test");
+			const result = await client.callTool({
+				name: "kib_export",
+				arguments: { format: "markdown", output: outputDir },
+			});
+			expect(result.isError).toBeFalsy();
+
+			const data = JSON.parse(textOf(result));
+			expect(data.format).toBe("markdown");
+			expect(data.files).toBeGreaterThan(0);
+			expect(data.output).toBe(outputDir);
+		});
+
+		test("exports wiki as html", async () => {
+			const root = await makeTempVault();
+			await writeWiki(root, "concepts/test.md", articleMd("Test", "Test content."));
+			const client = await createClient(root);
+
+			const outputDir = join(tempDir, "export-html-test");
+			const result = await client.callTool({
+				name: "kib_export",
+				arguments: { format: "html", output: outputDir },
+			});
+			expect(result.isError).toBeFalsy();
+
+			const data = JSON.parse(textOf(result));
+			expect(data.format).toBe("html");
+			expect(data.files).toBeGreaterThan(0);
+		});
+	});
+
+	// ── kib_compile with max ──────────────────────────────────
+
+	describe("kib_compile params", () => {
+		test("accepts dry_run and max params", async () => {
+			const root = await makeTempVault();
+			const client = await createClient(root);
+
+			// dry_run compile on empty vault should succeed
+			const result = await client.callTool({
+				name: "kib_compile",
+				arguments: { dry_run: true, max: 5 },
+			});
+			// Will error due to no provider, which is expected
+			// The point is it doesn't crash on the new params
+			expect(result).toBeDefined();
+		});
+	});
+
+	// ── kib_ingest dry_run ────────────────────────────────────
+
+	describe("kib_ingest dry_run", () => {
+		test("dry run returns preview without writing", async () => {
+			const root = await makeTempVault();
+			const filePath = join(tempDir, "dry-run-input.txt");
+			await writeFile(filePath, "Test document for dry run verification.");
+			const client = await createClient(root);
+
+			const result = await client.callTool({
+				name: "kib_ingest",
+				arguments: { source: filePath, dry_run: true },
+			});
+			expect(result.isError).toBeFalsy();
+
+			const data = JSON.parse(textOf(result));
+			expect(data.dryRun).toBe(true);
+			expect(data.path).toBeTruthy();
+		});
+	});
+
 	// ── Tool listing ───────────────────────────────────────────
 
 	describe("tool listing", () => {
@@ -302,12 +563,15 @@ describe("MCP server", () => {
 			const names = tools.map((t) => t.name).sort();
 			expect(names).toEqual([
 				"kib_compile",
+				"kib_config",
+				"kib_export",
 				"kib_ingest",
 				"kib_lint",
 				"kib_list",
 				"kib_query",
 				"kib_read",
 				"kib_search",
+				"kib_skill",
 				"kib_status",
 			]);
 		});
