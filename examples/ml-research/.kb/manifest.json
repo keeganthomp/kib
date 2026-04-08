@@ -1,0 +1,146 @@
+{
+  "version": "1",
+  "vault": {
+    "name": "ml-research",
+    "created": "2026-03-01T09:00:00.000Z",
+    "lastCompiled": "2026-03-15T14:30:00.000Z",
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-20250514"
+  },
+  "sources": {
+    "src_att001": {
+      "hash": "a1b2c3d4e5f60001",
+      "ingestedAt": "2026-03-01T09:05:00.000Z",
+      "lastCompiled": "2026-03-15T14:30:00.000Z",
+      "sourceType": "web",
+      "originalUrl": "https://arxiv.org/abs/1706.03762",
+      "producedArticles": ["attention-mechanism", "transformer-architecture", "vaswani-et-al"],
+      "metadata": {
+        "title": "Attention Is All You Need",
+        "author": "Vaswani et al.",
+        "date": "2017-06-12",
+        "wordCount": 9200
+      }
+    },
+    "src_rl002": {
+      "hash": "a1b2c3d4e5f60002",
+      "ingestedAt": "2026-03-05T11:00:00.000Z",
+      "lastCompiled": "2026-03-15T14:30:00.000Z",
+      "sourceType": "web",
+      "originalUrl": "https://lilianweng.github.io/posts/2018-02-19-rl-overview/",
+      "producedArticles": ["reinforcement-learning", "markov-decision-process"],
+      "metadata": {
+        "title": "A (Long) Peek into Reinforcement Learning",
+        "author": "Lilian Weng",
+        "date": "2018-02-19",
+        "wordCount": 12000
+      }
+    },
+    "src_bp003": {
+      "hash": "a1b2c3d4e5f60003",
+      "ingestedAt": "2026-03-10T08:30:00.000Z",
+      "lastCompiled": "2026-03-15T14:30:00.000Z",
+      "sourceType": "pdf",
+      "originalUrl": "https://www.nature.com/articles/323533a0",
+      "producedArticles": ["backpropagation", "gradient-descent"],
+      "metadata": {
+        "title": "Learning representations by back-propagating errors",
+        "author": "Rumelhart, Hinton, Williams",
+        "date": "1986-10-09",
+        "wordCount": 4500
+      }
+    }
+  },
+  "articles": {
+    "attention-mechanism": {
+      "hash": "wiki_hash_0001",
+      "createdAt": "2026-03-15T14:30:00.000Z",
+      "lastUpdated": "2026-03-15T14:30:00.000Z",
+      "derivedFrom": ["src_att001"],
+      "backlinks": ["transformer-architecture"],
+      "forwardLinks": ["transformer-architecture", "backpropagation"],
+      "tags": ["deep-learning", "nlp", "attention"],
+      "summary": "Mechanism that lets models dynamically focus on relevant parts of the input",
+      "wordCount": 380,
+      "category": "concept"
+    },
+    "backpropagation": {
+      "hash": "wiki_hash_0002",
+      "createdAt": "2026-03-15T14:30:00.000Z",
+      "lastUpdated": "2026-03-15T14:30:00.000Z",
+      "derivedFrom": ["src_bp003"],
+      "backlinks": ["attention-mechanism", "gradient-descent"],
+      "forwardLinks": ["gradient-descent"],
+      "tags": ["optimization", "neural-networks", "training"],
+      "summary": "Algorithm for computing gradients in neural networks via the chain rule",
+      "wordCount": 350,
+      "category": "concept"
+    },
+    "gradient-descent": {
+      "hash": "wiki_hash_0003",
+      "createdAt": "2026-03-15T14:30:00.000Z",
+      "lastUpdated": "2026-03-15T14:30:00.000Z",
+      "derivedFrom": ["src_bp003"],
+      "backlinks": ["backpropagation"],
+      "forwardLinks": ["backpropagation"],
+      "tags": ["optimization", "training"],
+      "summary": "Iterative optimization algorithm that follows the negative gradient to minimize loss",
+      "wordCount": 290,
+      "category": "concept"
+    },
+    "transformer-architecture": {
+      "hash": "wiki_hash_0004",
+      "createdAt": "2026-03-15T14:30:00.000Z",
+      "lastUpdated": "2026-03-15T14:30:00.000Z",
+      "derivedFrom": ["src_att001"],
+      "backlinks": ["attention-mechanism"],
+      "forwardLinks": ["attention-mechanism", "reinforcement-learning"],
+      "tags": ["deep-learning", "nlp", "architecture"],
+      "summary": "Neural network architecture based entirely on self-attention, replacing recurrence and convolutions",
+      "wordCount": 520,
+      "category": "topic"
+    },
+    "reinforcement-learning": {
+      "hash": "wiki_hash_0005",
+      "createdAt": "2026-03-15T14:30:00.000Z",
+      "lastUpdated": "2026-03-15T14:30:00.000Z",
+      "derivedFrom": ["src_rl002"],
+      "backlinks": ["transformer-architecture"],
+      "forwardLinks": ["markov-decision-process"],
+      "tags": ["reinforcement-learning", "agents", "rewards"],
+      "summary": "Learning paradigm where agents learn optimal behavior through trial-and-error interaction with an environment",
+      "wordCount": 480,
+      "category": "topic"
+    },
+    "markov-decision-process": {
+      "hash": "wiki_hash_0006",
+      "createdAt": "2026-03-15T14:30:00.000Z",
+      "lastUpdated": "2026-03-15T14:30:00.000Z",
+      "derivedFrom": ["src_rl002"],
+      "backlinks": ["reinforcement-learning"],
+      "forwardLinks": ["reinforcement-learning"],
+      "tags": ["reinforcement-learning", "math", "probability"],
+      "summary": "Mathematical framework for modeling sequential decision-making under uncertainty",
+      "wordCount": 310,
+      "category": "concept"
+    },
+    "vaswani-et-al": {
+      "hash": "wiki_hash_0007",
+      "createdAt": "2026-03-15T14:30:00.000Z",
+      "lastUpdated": "2026-03-15T14:30:00.000Z",
+      "derivedFrom": ["src_att001"],
+      "backlinks": [],
+      "forwardLinks": ["attention-mechanism", "transformer-architecture"],
+      "tags": ["researchers", "google-brain"],
+      "summary": "Authors of the 2017 'Attention Is All You Need' paper that introduced the transformer",
+      "wordCount": 200,
+      "category": "reference"
+    }
+  },
+  "stats": {
+    "totalSources": 3,
+    "totalArticles": 7,
+    "totalWords": 2530,
+    "lastLintAt": "2026-03-15T15:00:00.000Z"
+  }
+}

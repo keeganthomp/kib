@@ -1,0 +1,21 @@
+[provider]
+default = "anthropic"
+model = "claude-sonnet-4-20250514"
+fast_model = "claude-haiku-4-5-20251001"
+
+[compile]
+auto_index = true
+auto_graph = true
+max_sources_per_pass = 10
+categories = ["concepts", "topics", "references", "outputs"]
+enrich_cross_refs = true
+
+[search]
+engine = "builtin"
+max_results = 20
+
+[skills]
+[skills.hooks]
+post-compile = ["summarize"]
+post-ingest = []
+post-lint = []

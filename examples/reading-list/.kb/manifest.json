@@ -1,0 +1,191 @@
+{
+  "version": "1",
+  "vault": {
+    "name": "reading-list",
+    "created": "2026-01-05T10:00:00.000Z",
+    "lastCompiled": "2026-04-01T16:00:00.000Z",
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-20250514"
+  },
+  "sources": {
+    "src_tfas001": {
+      "hash": "c1d2e3f4a5b60001",
+      "ingestedAt": "2026-01-05T10:30:00.000Z",
+      "lastCompiled": "2026-04-01T16:00:00.000Z",
+      "sourceType": "file",
+      "producedArticles": ["cognitive-biases", "system-1-and-system-2", "daniel-kahneman"],
+      "metadata": {
+        "title": "Thinking, Fast and Slow — Book Notes",
+        "author": "Daniel Kahneman",
+        "date": "2011-10-25",
+        "wordCount": 8200
+      }
+    },
+    "src_doet002": {
+      "hash": "c1d2e3f4a5b60002",
+      "ingestedAt": "2026-01-20T14:00:00.000Z",
+      "lastCompiled": "2026-04-01T16:00:00.000Z",
+      "sourceType": "file",
+      "producedArticles": ["affordances", "design-principles", "don-norman"],
+      "metadata": {
+        "title": "The Design of Everyday Things — Book Notes",
+        "author": "Don Norman",
+        "date": "1988-01-01",
+        "wordCount": 6500
+      }
+    },
+    "src_mm003": {
+      "hash": "c1d2e3f4a5b60003",
+      "ingestedAt": "2026-02-10T09:00:00.000Z",
+      "lastCompiled": "2026-04-01T16:00:00.000Z",
+      "sourceType": "web",
+      "originalUrl": "https://fs.blog/mental-models/",
+      "producedArticles": ["mental-models", "decision-making"],
+      "metadata": {
+        "title": "Mental Models: The Best Way to Make Intelligent Decisions",
+        "wordCount": 5800
+      }
+    },
+    "src_ato004": {
+      "hash": "c1d2e3f4a5b60004",
+      "ingestedAt": "2026-03-15T11:00:00.000Z",
+      "lastCompiled": "2026-04-01T16:00:00.000Z",
+      "sourceType": "file",
+      "producedArticles": ["habit-formation", "atomic-habits-framework"],
+      "metadata": {
+        "title": "Atomic Habits — Book Notes",
+        "author": "James Clear",
+        "date": "2018-10-16",
+        "wordCount": 5400
+      }
+    }
+  },
+  "articles": {
+    "cognitive-biases": {
+      "hash": "wiki_hash_r001",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_tfas001"],
+      "backlinks": ["system-1-and-system-2", "decision-making"],
+      "forwardLinks": ["system-1-and-system-2", "mental-models", "decision-making"],
+      "tags": ["psychology", "thinking", "biases"],
+      "summary": "Systematic patterns of deviation from rational judgment, rooted in System 1 heuristics",
+      "wordCount": 420,
+      "category": "concept"
+    },
+    "system-1-and-system-2": {
+      "hash": "wiki_hash_r002",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_tfas001"],
+      "backlinks": ["cognitive-biases"],
+      "forwardLinks": ["cognitive-biases", "decision-making"],
+      "tags": ["psychology", "thinking", "kahneman"],
+      "summary": "Kahneman's dual-process theory: fast intuitive System 1 vs slow deliberate System 2",
+      "wordCount": 390,
+      "category": "concept"
+    },
+    "mental-models": {
+      "hash": "wiki_hash_r003",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_mm003"],
+      "backlinks": ["cognitive-biases", "decision-making", "affordances"],
+      "forwardLinks": ["decision-making", "cognitive-biases"],
+      "tags": ["thinking", "frameworks", "decision-making"],
+      "summary": "Simplified representations of how the world works, used as thinking tools for better decisions",
+      "wordCount": 360,
+      "category": "concept"
+    },
+    "affordances": {
+      "hash": "wiki_hash_r004",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_doet002"],
+      "backlinks": ["design-principles"],
+      "forwardLinks": ["design-principles", "mental-models"],
+      "tags": ["design", "ux", "psychology"],
+      "summary": "Properties of an object that suggest how it can be used, bridging perception and action",
+      "wordCount": 310,
+      "category": "concept"
+    },
+    "habit-formation": {
+      "hash": "wiki_hash_r005",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_ato004"],
+      "backlinks": ["atomic-habits-framework"],
+      "forwardLinks": ["atomic-habits-framework", "system-1-and-system-2"],
+      "tags": ["habits", "behavior", "psychology"],
+      "summary": "The neurological loop of cue, craving, response, and reward that creates automatic behaviors",
+      "wordCount": 350,
+      "category": "concept"
+    },
+    "decision-making": {
+      "hash": "wiki_hash_r006",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_mm003"],
+      "backlinks": ["cognitive-biases", "system-1-and-system-2", "mental-models"],
+      "forwardLinks": ["mental-models", "cognitive-biases", "system-1-and-system-2"],
+      "tags": ["thinking", "decision-making", "rationality"],
+      "summary": "The process of choosing between options, improved by mental models and awareness of cognitive biases",
+      "wordCount": 440,
+      "category": "topic"
+    },
+    "design-principles": {
+      "hash": "wiki_hash_r007",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_doet002"],
+      "backlinks": ["affordances"],
+      "forwardLinks": ["affordances"],
+      "tags": ["design", "ux", "usability"],
+      "summary": "Core principles from The Design of Everyday Things for creating intuitive, user-friendly products",
+      "wordCount": 380,
+      "category": "topic"
+    },
+    "atomic-habits-framework": {
+      "hash": "wiki_hash_r008",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_ato004"],
+      "backlinks": ["habit-formation"],
+      "forwardLinks": ["habit-formation"],
+      "tags": ["habits", "behavior", "productivity"],
+      "summary": "James Clear's four laws for building good habits and breaking bad ones",
+      "wordCount": 370,
+      "category": "topic"
+    },
+    "daniel-kahneman": {
+      "hash": "wiki_hash_r009",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_tfas001"],
+      "backlinks": [],
+      "forwardLinks": ["system-1-and-system-2", "cognitive-biases"],
+      "tags": ["people", "psychology", "nobel-prize"],
+      "summary": "Nobel Prize-winning psychologist who pioneered research on cognitive biases and dual-process theory",
+      "wordCount": 220,
+      "category": "reference"
+    },
+    "don-norman": {
+      "hash": "wiki_hash_r010",
+      "createdAt": "2026-04-01T16:00:00.000Z",
+      "lastUpdated": "2026-04-01T16:00:00.000Z",
+      "derivedFrom": ["src_doet002"],
+      "backlinks": [],
+      "forwardLinks": ["affordances", "design-principles"],
+      "tags": ["people", "design", "ux"],
+      "summary": "Cognitive scientist and usability engineer who coined the term 'user experience'",
+      "wordCount": 190,
+      "category": "reference"
+    }
+  },
+  "stats": {
+    "totalSources": 4,
+    "totalArticles": 10,
+    "totalWords": 3430,
+    "lastLintAt": "2026-04-01T16:30:00.000Z"
+  }
+}

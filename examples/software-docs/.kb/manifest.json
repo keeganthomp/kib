@@ -1,0 +1,167 @@
+{
+  "version": "1",
+  "vault": {
+    "name": "software-docs",
+    "created": "2026-02-10T08:00:00.000Z",
+    "lastCompiled": "2026-03-20T10:00:00.000Z",
+    "provider": "openai",
+    "model": "gpt-4o"
+  },
+  "sources": {
+    "src_rest001": {
+      "hash": "b1c2d3e4f5a60001",
+      "ingestedAt": "2026-02-10T08:15:00.000Z",
+      "lastCompiled": "2026-03-20T10:00:00.000Z",
+      "sourceType": "web",
+      "originalUrl": "https://restfulapi.net/rest-api-design-tutorial-with-example/",
+      "producedArticles": ["rest-api", "http-methods", "api-design-patterns"],
+      "metadata": {
+        "title": "REST API Tutorial",
+        "wordCount": 6800
+      }
+    },
+    "src_git002": {
+      "hash": "b1c2d3e4f5a60002",
+      "ingestedAt": "2026-02-15T09:00:00.000Z",
+      "lastCompiled": "2026-03-20T10:00:00.000Z",
+      "sourceType": "github",
+      "originalUrl": "https://github.com/git/git",
+      "producedArticles": ["version-control", "git"],
+      "metadata": {
+        "title": "Git — distributed version control",
+        "wordCount": 5200
+      }
+    },
+    "src_cicd003": {
+      "hash": "b1c2d3e4f5a60003",
+      "ingestedAt": "2026-02-20T14:00:00.000Z",
+      "lastCompiled": "2026-03-20T10:00:00.000Z",
+      "sourceType": "web",
+      "originalUrl": "https://martinfowler.com/articles/continuousIntegration.html",
+      "producedArticles": ["continuous-integration", "continuous-deployment"],
+      "metadata": {
+        "title": "Continuous Integration",
+        "author": "Martin Fowler",
+        "date": "2006-05-01",
+        "wordCount": 9500
+      }
+    },
+    "src_12f004": {
+      "hash": "b1c2d3e4f5a60004",
+      "ingestedAt": "2026-03-01T11:00:00.000Z",
+      "lastCompiled": "2026-03-20T10:00:00.000Z",
+      "sourceType": "web",
+      "originalUrl": "https://12factor.net/",
+      "producedArticles": ["twelve-factor-app"],
+      "metadata": {
+        "title": "The Twelve-Factor App",
+        "author": "Adam Wiggins",
+        "wordCount": 7000
+      }
+    }
+  },
+  "articles": {
+    "rest-api": {
+      "hash": "wiki_hash_s001",
+      "createdAt": "2026-03-20T10:00:00.000Z",
+      "lastUpdated": "2026-03-20T10:00:00.000Z",
+      "derivedFrom": ["src_rest001"],
+      "backlinks": ["api-design-patterns"],
+      "forwardLinks": ["http-methods", "api-design-patterns"],
+      "tags": ["api", "web", "http"],
+      "summary": "Architectural style for designing networked applications using stateless HTTP operations on resources",
+      "wordCount": 410,
+      "category": "concept"
+    },
+    "http-methods": {
+      "hash": "wiki_hash_s002",
+      "createdAt": "2026-03-20T10:00:00.000Z",
+      "lastUpdated": "2026-03-20T10:00:00.000Z",
+      "derivedFrom": ["src_rest001"],
+      "backlinks": ["rest-api"],
+      "forwardLinks": ["rest-api"],
+      "tags": ["api", "http"],
+      "summary": "Standard HTTP verbs (GET, POST, PUT, DELETE) and their semantics in RESTful APIs",
+      "wordCount": 320,
+      "category": "concept"
+    },
+    "version-control": {
+      "hash": "wiki_hash_s003",
+      "createdAt": "2026-03-20T10:00:00.000Z",
+      "lastUpdated": "2026-03-20T10:00:00.000Z",
+      "derivedFrom": ["src_git002"],
+      "backlinks": ["git", "continuous-integration"],
+      "forwardLinks": ["git"],
+      "tags": ["git", "collaboration", "workflow"],
+      "summary": "System for tracking changes to files over time, enabling collaboration and history",
+      "wordCount": 280,
+      "category": "concept"
+    },
+    "git": {
+      "hash": "wiki_hash_s004",
+      "createdAt": "2026-03-20T10:00:00.000Z",
+      "lastUpdated": "2026-03-20T10:00:00.000Z",
+      "derivedFrom": ["src_git002"],
+      "backlinks": ["version-control"],
+      "forwardLinks": ["version-control", "continuous-integration"],
+      "tags": ["git", "tools"],
+      "summary": "Distributed version control system created by Linus Torvalds for Linux kernel development",
+      "wordCount": 350,
+      "category": "reference"
+    },
+    "continuous-integration": {
+      "hash": "wiki_hash_s005",
+      "createdAt": "2026-03-20T10:00:00.000Z",
+      "lastUpdated": "2026-03-20T10:00:00.000Z",
+      "derivedFrom": ["src_cicd003"],
+      "backlinks": ["git", "continuous-deployment"],
+      "forwardLinks": ["version-control", "continuous-deployment", "twelve-factor-app"],
+      "tags": ["ci-cd", "devops", "automation"],
+      "summary": "Practice of frequently merging code changes into a shared repository with automated build and test verification",
+      "wordCount": 450,
+      "category": "topic"
+    },
+    "continuous-deployment": {
+      "hash": "wiki_hash_s006",
+      "createdAt": "2026-03-20T10:00:00.000Z",
+      "lastUpdated": "2026-03-20T10:00:00.000Z",
+      "derivedFrom": ["src_cicd003"],
+      "backlinks": ["continuous-integration"],
+      "forwardLinks": ["continuous-integration", "twelve-factor-app"],
+      "tags": ["ci-cd", "devops", "automation"],
+      "summary": "Practice of automatically releasing every change that passes CI to production",
+      "wordCount": 330,
+      "category": "topic"
+    },
+    "api-design-patterns": {
+      "hash": "wiki_hash_s007",
+      "createdAt": "2026-03-20T10:00:00.000Z",
+      "lastUpdated": "2026-03-20T10:00:00.000Z",
+      "derivedFrom": ["src_rest001"],
+      "backlinks": ["rest-api"],
+      "forwardLinks": ["rest-api", "http-methods"],
+      "tags": ["api", "patterns", "design"],
+      "summary": "Common patterns for building well-structured, consistent, and developer-friendly APIs",
+      "wordCount": 380,
+      "category": "topic"
+    },
+    "twelve-factor-app": {
+      "hash": "wiki_hash_s008",
+      "createdAt": "2026-03-20T10:00:00.000Z",
+      "lastUpdated": "2026-03-20T10:00:00.000Z",
+      "derivedFrom": ["src_12f004"],
+      "backlinks": ["continuous-integration", "continuous-deployment"],
+      "forwardLinks": ["continuous-integration"],
+      "tags": ["architecture", "cloud", "best-practices"],
+      "summary": "Methodology for building modern, portable, cloud-native applications",
+      "wordCount": 390,
+      "category": "topic"
+    }
+  },
+  "stats": {
+    "totalSources": 4,
+    "totalArticles": 8,
+    "totalWords": 2910,
+    "lastLintAt": "2026-03-20T10:30:00.000Z"
+  }
+}
