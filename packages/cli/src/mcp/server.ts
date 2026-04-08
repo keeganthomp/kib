@@ -1,6 +1,7 @@
 import {
 	compileVault,
 	createProvider,
+	fixLintIssues,
 	ingestSource,
 	type LLMProvider,
 	lintVault,
@@ -15,6 +16,7 @@ import {
 	readRaw,
 	readWiki,
 	SearchIndex,
+	saveConfig,
 	type VaultConfig,
 } from "@kibhq/core";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -147,7 +149,7 @@ export function createMcpServer(root: string) {
 		},
 	);
 
-	// ── kib_read ──────────────────────────────────────────────
+	// ── kib_read ─────────────────────────────��────────────────
 
 	server.tool(
 		"kib_read",
@@ -186,10 +188,18 @@ export function createMcpServer(root: string) {
 				.string()
 				.optional()
 				.describe("Filter to articles dated on or after this date (YYYY-MM-DD)"),
+			scope: z
+				.enum(["wiki", "raw", "all"])
+				.default("all")
+				.describe("Search scope: wiki articles, raw sources, or all"),
 		},
-		async ({ query, limit, tag, since }) => {
+		async ({ query, limit, tag, since, scope }) => {
 			try {
-				const index = await ctx.getSearchIndex();
+				// Rebuild index with requested scope if not 'all'
+				const index = scope === "all" ? await ctx.getSearchIndex() : new SearchIndex();
+				if (scope !== "all") {
+					await index.build(root, scope);
+				}
 				const results = index.search(query, { limit, tag, since });
 				const prefix = `${root}/`;
 				return json(
@@ -252,13 +262,28 @@ export function createMcpServer(root: string) {
 				.optional()
 				.describe("Raw subdirectory override (e.g. 'papers', 'articles')"),
 			tags: z.string().optional().describe("Comma-separated tags"),
+			dry_run: z
+				.boolean()
+				.default(false)
+				.describe("Preview what would be ingested without writing"),
 		},
-		async ({ source, category, tags }) => {
+		async ({ source, category, tags, dry_run }) => {
 			try {
 				const result = await ingestSource(root, source, {
 					category,
 					tags: tags?.split(",").map((t) => t.trim()),
+					dryRun: dry_run,
 				});
+
+				if (dry_run) {
+					return json({
+						dryRun: true,
+						path: result.path,
+						title: result.title,
+						wordCount: result.wordCount,
+						skipped: result.skipped,
+					});
+				}
 
 				// Auto-compile after ingest so content is immediately queryable
 				let compiled = null;
@@ -317,8 +342,14 @@ export function createMcpServer(root: string) {
 			force: z.boolean().default(false).describe("Recompile all sources"),
 			source: z.string().optional().describe("Compile only a specific source"),
 			dry_run: z.boolean().default(false).describe("Preview without writing"),
+			max: z
+				.number()
+				.int()
+				.positive()
+				.optional()
+				.describe("Limit number of sources to compile per pass"),
 		},
-		async ({ force, source, dry_run }) => {
+		async ({ force, source, dry_run, max }) => {
 			try {
 				const provider = await ctx.getProvider();
 				const config = await ctx.getConfig();
@@ -326,6 +357,7 @@ export function createMcpServer(root: string) {
 					force,
 					dryRun: dry_run,
 					sourceFilter: source,
+					maxSources: max,
 				});
 				ctx.invalidateSearch();
 				return json({
@@ -345,7 +377,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_lint",
-		"Run health checks on the wiki and report issues",
+		"Run health checks on the wiki and report issues. Use fix=true to auto-fix fixable issues (recompile stale sources, create missing articles).",
 		{
 			rule: z
 				.string()
@@ -353,17 +385,158 @@ export function createMcpServer(root: string) {
 				.describe(
 					"Run only a specific rule: orphan, stale, missing, broken-link, frontmatter, contradiction",
 				),
+			fix: z
+				.boolean()
+				.default(false)
+				.describe("Auto-fix fixable issues (recompile stale, create missing articles)"),
 		},
-		async ({ rule }) => {
+		async ({ rule, fix }) => {
 			try {
 				const provider = await ctx.getProvider().catch(() => undefined);
 				const result = await lintVault(root, { ruleFilter: rule, provider });
+
+				if (fix) {
+					const fixable = result.diagnostics.filter((d) => d.fixable);
+					if (fixable.length > 0) {
+						let fixProvider: LLMProvider | undefined;
+						let config: VaultConfig | undefined;
+						const hasStale = fixable.some((d) => d.rule === "stale");
+						if (hasStale) {
+							try {
+								config = await ctx.getConfig();
+								fixProvider = await ctx.getProvider();
+							} catch {
+								// Provider not available — stale fixes will be skipped
+							}
+						}
+						const fixResult = await fixLintIssues(root, result.diagnostics, fixProvider, config);
+						ctx.invalidateSearch();
+						return json({
+							diagnostics: result.diagnostics,
+							errors: result.errors,
+							warnings: result.warnings,
+							infos: result.infos,
+							fixed: fixResult.fixed,
+							fixSkipped: fixResult.skipped,
+							fixErrors: fixResult.errors,
+						});
+					}
+				}
+
 				return json({
 					errors: result.errors,
 					warnings: result.warnings,
 					infos: result.infos,
 					diagnostics: result.diagnostics,
 				});
+			} catch (e) {
+				return err((e as Error).message);
+			}
+		},
+	);
+
+	// ── kib_config ────────────────────────────────────────────
+
+	server.tool(
+		"kib_config",
+		"Get or set vault configuration. Call with no arguments to list all config. Pass key to read a value, pass key+value to set it.",
+		{
+			key: z
+				.string()
+				.optional()
+				.describe(
+					"Dot-separated config key (e.g. 'provider.default', 'provider.model', 'search.engine')",
+				),
+			value: z.string().optional().describe("Value to set. Omit to read the current value."),
+		},
+		async ({ key, value }) => {
+			try {
+				const config = await loadConfig(root);
+
+				// List all config
+				if (!key) {
+					return json(config);
+				}
+
+				// Get a value
+				if (!value) {
+					const val = getNestedValue(config, key);
+					if (val === undefined) return err(`Unknown config key: ${key}`);
+					return json({ [key]: val });
+				}
+
+				// Set a value
+				const parsed = parseConfigValue(value);
+				const updated = setNestedValue(config, key, parsed);
+				if (!updated) return err(`Unknown config key: ${key}`);
+				await saveConfig(root, config);
+				return json({ [key]: parsed, saved: true });
+			} catch (e) {
+				return err((e as Error).message);
+			}
+		},
+	);
+
+	// ── kib_skill ─────────────────────────��───────────────────
+
+	server.tool(
+		"kib_skill",
+		"List or run vault skills. Skills are reusable LLM-powered operations (summarize, flashcards, connections, etc).",
+		{
+			action: z
+				.enum(["list", "run"])
+				.describe("'list' to see available skills, 'run' to execute one"),
+			name: z.string().optional().describe("Skill name to run (required when action is 'run')"),
+		},
+		async ({ action, name }) => {
+			try {
+				const { loadSkills, findSkill, runSkill } = await import("@kibhq/core");
+
+				if (action === "list") {
+					const skills = await loadSkills(root);
+					return json(skills.map((s) => ({ name: s.name, description: s.description })));
+				}
+
+				// action === "run"
+				if (!name) return err("Skill name is required. Use action='list' to see available skills.");
+
+				const skill = await findSkill(root, name);
+				if (!skill)
+					return err(`Skill "${name}" not found. Use action='list' to see available skills.`);
+
+				let provider: LLMProvider | undefined;
+				if (skill.llm?.required) {
+					const config = await ctx.getConfig();
+					const modelKey = skill.llm.model === "fast" ? "fast_model" : "model";
+					const model = config.provider[modelKey as keyof typeof config.provider] as string;
+					provider = await createProvider(config.provider.default, model);
+				}
+
+				const result = await runSkill(root, skill, { provider });
+				return json({ skill: skill.name, content: result.content ?? null });
+			} catch (e) {
+				return err((e as Error).message);
+			}
+		},
+	);
+
+	// ── kib_export ────────────────────────────────────────────
+
+	server.tool(
+		"kib_export",
+		"Export the wiki as a clean markdown bundle or static HTML site. Returns the output directory path and file count.",
+		{
+			format: z
+				.enum(["markdown", "html"])
+				.default("markdown")
+				.describe("Export format: 'markdown' (clean, no frontmatter) or 'html' (static site)"),
+			output: z.string().optional().describe("Output directory path. Defaults to <vault>/export"),
+		},
+		async ({ format, output }) => {
+			try {
+				const { exportVault } = await import("./export-helper.js");
+				const result = await exportVault(root, format, output);
+				return json(result);
 			} catch (e) {
 				return err((e as Error).message);
 			}
@@ -395,6 +568,45 @@ export function createMcpServer(root: string) {
 	});
 
 	return server;
+}
+
+// ─── Config Helpers ─────────────────────────────────────────────
+
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+	const parts = path.split(".");
+	let current: unknown = obj;
+	for (const part of parts) {
+		if (current == null || typeof current !== "object") return undefined;
+		current = (current as Record<string, unknown>)[part];
+	}
+	return current;
+}
+
+function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): boolean {
+	const parts = path.split(".");
+	let current: unknown = obj;
+	for (let i = 0; i < parts.length - 1; i++) {
+		if (current == null || typeof current !== "object") return false;
+		current = (current as Record<string, unknown>)[parts[i]!];
+	}
+	const lastKey = parts[parts.length - 1]!;
+	if (
+		current == null ||
+		typeof current !== "object" ||
+		!(lastKey in (current as Record<string, unknown>))
+	) {
+		return false;
+	}
+	(current as Record<string, unknown>)[lastKey] = value;
+	return true;
+}
+
+function parseConfigValue(val: string): unknown {
+	if (val === "true") return true;
+	if (val === "false") return false;
+	const num = Number(val);
+	if (!Number.isNaN(num) && val.trim() !== "") return num;
+	return val;
 }
 
 export async function startMcpServer(root: string) {
