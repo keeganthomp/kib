@@ -33,7 +33,7 @@ kib config provider.model gpt-4o
 
 | Feature | Anthropic | OpenAI | Ollama |
 |---------|-----------|--------|--------|
-| Default model | claude-sonnet-4-6-20250514 | gpt-4o | llama3 |
+| Default model | claude-sonnet-4-6 | gpt-4o | llama3 |
 | Fast model | claude-haiku-4-5-20251001 | gpt-4o | llama3 |
 | Vision (image ingest) | Yes | Yes | No |
 | Embeddings (vector search) | No | Yes (text-embedding-3-small) | Yes (nomic-embed-text) |
@@ -72,7 +72,7 @@ Run `kib init` and follow the prompts to select a provider and enter your API ke
 Used for heavy operations (compile, query, chat):
 
 ```bash
-kib config provider.model claude-sonnet-4-6-20250514
+kib config provider.model claude-sonnet-4-6
 ```
 
 ### Fast model
@@ -92,7 +92,7 @@ Override the model for specific operations:
 kib config compile.model gpt-4o
 
 # Use a different model for queries
-kib config query.model claude-sonnet-4-6-20250514
+kib config query.model claude-sonnet-4-6
 ```
 
 These override `provider.model` for that specific operation only.
@@ -104,7 +104,7 @@ All provider settings live in `.kb/config.toml`:
 ```toml
 [provider]
 default = "anthropic"
-model = "claude-sonnet-4-6-20250514"
+model = "claude-sonnet-4-6"
 fast_model = "claude-haiku-4-5-20251001"
 
 [compile]

@@ -348,11 +348,7 @@ async function compileSingleSource(
 					tags: Array.isArray(frontmatter.tags) ? (frontmatter.tags as string[]) : [],
 					summary: (frontmatter.summary as string) ?? "",
 					wordCount: countWords(body),
-					category: ((frontmatter.category as string) ?? "topic") as
-						| "concept"
-						| "topic"
-						| "reference"
-						| "output",
+					category: normalizeCategory((frontmatter.category as string) ?? "topic"),
 				};
 
 				const articleTitle = (frontmatter.title as string) ?? articleSlug;
@@ -570,11 +566,13 @@ async function compileVaultInner(
 					const msg = (result.reason as Error).message ?? String(result.reason);
 					if (
 						msg.includes("401") ||
+						msg.includes("404") ||
 						msg.includes("authentication") ||
 						msg.includes("No LLM provider")
 					) {
 						throw result.reason;
 					}
+					allWarnings.push(`Failed to compile ${sourcePath}: ${msg}`);
 					options.onProgress?.(`Failed to compile ${sourcePath}: ${msg}`);
 				}
 			}
@@ -629,11 +627,13 @@ async function compileVaultInner(
 				const msg = (err as Error).message ?? String(err);
 				if (
 					msg.includes("401") ||
+					msg.includes("404") ||
 					msg.includes("authentication") ||
 					msg.includes("No LLM provider")
 				) {
 					throw err;
 				}
+				allWarnings.push(`Failed to compile ${sourcePath}: ${msg}`);
 				options.onProgress?.(`Failed to compile ${sourcePath}: ${msg}`);
 			}
 		}
@@ -714,7 +714,7 @@ async function compileVaultInner(
 	const totalOutputTokens = perSourceUsage.reduce((sum, u) => sum + u.outputTokens, 0);
 
 	return {
-		sourcesCompiled: sourcesToCompile.length,
+		sourcesCompiled: perSourceUsage.length,
 		articlesCreated: totalCreated,
 		articlesUpdated: totalUpdated,
 		articlesDeleted: totalDeleted,
@@ -791,6 +791,23 @@ function categoryForSourceType(sourceType: string): string {
 		default:
 			return "articles";
 	}
+}
+
+type ArticleCategory = "concept" | "topic" | "reference" | "output";
+
+/** Normalize category from plural directory name to singular schema value */
+function normalizeCategory(raw: string): ArticleCategory {
+	const map: Record<string, ArticleCategory> = {
+		concepts: "concept",
+		concept: "concept",
+		topics: "topic",
+		topic: "topic",
+		references: "reference",
+		reference: "reference",
+		outputs: "output",
+		output: "output",
+	};
+	return map[raw.toLowerCase()] ?? "topic";
 }
 
 /**
