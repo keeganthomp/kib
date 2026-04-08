@@ -4,7 +4,7 @@ What's built, what's next, and what's deferred.
 
 ---
 
-## Shipped (v0.4.x)
+## Shipped (v1.0.0)
 
 ### Core (v0.2.0)
 - `kib init` — vault creation with auto-detected LLM provider
@@ -30,14 +30,14 @@ What's built, what's next, and what's deferred.
 - Published to npm as `@kibhq/core` and `@kibhq/cli`
 - Standalone binaries for macOS/Linux via `bun build --compile`
 - Release Please: auto-versioning, changelogs, npm publish, binary builds
-- CI: Biome lint + 412 tests on every push
+- CI: Biome lint + 402 tests on PRs to main
 
 ### MCP Server (v0.2.0)
 - `kib serve` — expose vault as MCP tools over stdio
 - `kib init` auto-configures MCP in Claude Code, Claude Desktop, and Cursor
 - `kib mcp` to re-configure MCP clients independently
-- 8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
-- 2 resources: `wiki://index`, `wiki://graph`
+- 11 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`, `kib_config`, `kib_skill`, `kib_export`
+- 3 resources: `wiki://index`, `wiki://graph`, `wiki://log`
 
 ### CLI Polish (v0.3.0)
 - `--json` flag working consistently across all commands

@@ -1,10 +1,12 @@
 import { Command } from "commander";
 import { setVerbose } from "./ui/debug.js";
 
+const { version } = require("../package.json");
+
 const program = new Command()
 	.name("kib")
 	.description("The Headless Knowledge Compiler")
-	.version("0.1.0")
+	.version(version)
 	.option("-v, --verbose", "enable debug output")
 	.hook("preAction", (_thisCommand, actionCommand) => {
 		const rootOpts = actionCommand.optsWithGlobals();
@@ -156,7 +158,7 @@ program
 program
 	.command("export")
 	.description("Export wiki to other formats")
-	.option("--format <type>", "output format: markdown, html, pdf", "markdown")
+	.option("--format <type>", "output format: markdown, html", "markdown")
 	.option("--output <path>", "output directory")
 	.option("--json", "JSON output")
 	.action(async (opts) => {

@@ -61,7 +61,7 @@ INTEGRATION
 
 MANAGEMENT
   config [key] [val]  Get or set configuration
-  skill <sub> [name]  Manage skills (list, run)
+  skill <sub> [name]  Manage skills (install, list, run, create)
   export              Export wiki to markdown or HTML
 ```
 
@@ -83,7 +83,7 @@ On first use, kib walks you through provider setup interactively. Or set via env
 
 | Provider | Env Variable | Default Model |
 |----------|-------------|---------------|
-| Anthropic | `ANTHROPIC_API_KEY` | claude-sonnet-4-20250514 |
+| Anthropic | `ANTHROPIC_API_KEY` | claude-sonnet-4-6-20250514 |
 | OpenAI | `OPENAI_API_KEY` | gpt-4o |
 | Ollama | (auto-detect localhost:11434) | llama3 |
 
@@ -119,7 +119,9 @@ Already have a vault? Run `kib mcp` to configure MCP clients without re-initiali
 
 Restart your AI client and it can search, query, ingest, and compile your vault.
 
-8 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`
+11 tools: `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`, `kib_config`, `kib_skill`, `kib_export`
+
+3 resources: `wiki://index`, `wiki://graph`, `wiki://log`
 
 <details>
 <summary>Manual setup (other clients)</summary>

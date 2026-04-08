@@ -31,13 +31,13 @@ Manual workflow dispatch via GitHub Actions (`release.yml`). **Critical rules:**
 
 - Never push directly to `main` — always branch + PR
 - Conventional Commits: `feat:`, `fix:`, `chore:`, `ci:`, `docs:`
-- `ci.yml`: runs lint + tests on branch pushes and PRs to main
+- `ci.yml`: runs lint + tests on PRs to main
 - `release.yml`: manual workflow dispatch from main — creates tag, GitHub release, publishes to npm, builds binaries
 
 ## Commands
 
 ```bash
-bun test                              # run tests (354+)
+bun test                              # run tests (402+)
 bun run check                         # biome lint + format
 bun run packages/cli/bin/kib.ts       # run CLI locally
 ```
