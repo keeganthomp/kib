@@ -16,7 +16,7 @@ export { ALL_RULES } from "./lint/rules.js";
 export { createProvider, detectProvider } from "./providers/router.js";
 export { queryVault } from "./query/query.js";
 export * from "./schemas.js";
-export { SearchIndex } from "./search/engine.js";
+export { highlightSnippet, parseQuery, SearchIndex } from "./search/engine.js";
 export { HybridSearch } from "./search/hybrid.js";
 export { VectorIndex } from "./search/vector.js";
 export { findSkill, loadSkills } from "./skills/loader.js";

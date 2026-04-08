@@ -165,16 +165,20 @@ interface Document {
 	tokens: string[];
 	tokenCount: number;
 	termFreqs: Map<string, number>;
+	tags: string[];
+	date: string | null;
 }
 
 interface SerializedIndex {
-	version: 1;
+	version: 2;
 	documents: {
 		path: string;
 		title: string;
 		snippet: string;
 		tokenCount: number;
 		termFreqs: [string, number][];
+		tags: string[];
+		date: string | null;
 	}[];
 	idf: [string, number][];
 	avgDl: number;
@@ -210,6 +214,20 @@ export class SearchIndex {
 			const title =
 				(frontmatter.title as string) ?? filePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
 
+			// Extract tags from frontmatter
+			const rawTags = frontmatter.tags;
+			const tags: string[] = Array.isArray(rawTags)
+				? rawTags.map((t: unknown) => String(t).toLowerCase())
+				: [];
+
+			// Extract date from frontmatter (try common field names)
+			const rawDate =
+				(frontmatter.date as string) ??
+				(frontmatter.created as string) ??
+				(frontmatter.ingested as string) ??
+				null;
+			const date = rawDate && !Number.isNaN(Date.parse(String(rawDate))) ? String(rawDate) : null;
+
 			const tokens = tokenize(`${title} ${title} ${body}`); // title gets extra weight
 			const termFreqs = new Map<string, number>();
 			for (const token of tokens) {
@@ -223,6 +241,8 @@ export class SearchIndex {
 				tokens,
 				tokenCount: tokens.length,
 				termFreqs,
+				tags,
+				date,
 			});
 		}
 
@@ -254,32 +274,90 @@ export class SearchIndex {
 	}
 
 	/**
-	 * Search the index using BM25 scoring.
+	 * Search the index using BM25 scoring with fuzzy matching, phrase search,
+	 * tag filtering, date filtering, and optional highlighting.
 	 */
-	search(query: string, opts: { limit?: number; threshold?: number } = {}): SearchResult[] {
+	search(
+		query: string,
+		opts: {
+			limit?: number;
+			threshold?: number;
+			tag?: string | string[];
+			since?: string;
+			highlight?: boolean;
+		} = {},
+	): SearchResult[] {
 		const limit = opts.limit ?? 20;
 		const threshold = opts.threshold ?? 0;
-		const queryTokens = tokenize(query);
+		const highlight = opts.highlight ?? false;
 
-		if (queryTokens.length === 0 || this.documents.length === 0) {
+		// Parse tag filter
+		const tagFilter: string[] | null = opts.tag
+			? (Array.isArray(opts.tag) ? opts.tag : [opts.tag]).map((t) => t.toLowerCase())
+			: null;
+
+		// Parse date filter
+		const sinceTs = opts.since ? Date.parse(opts.since) : null;
+
+		// Parse phrases (quoted strings) and remaining terms
+		const { phrases, terms } = parseQuery(query);
+		const queryTokens = terms.flatMap((t) => tokenize(t));
+
+		if ((queryTokens.length === 0 && phrases.length === 0) || this.documents.length === 0) {
 			return [];
 		}
 
 		const scores: { doc: Document; score: number }[] = [];
 
 		for (const doc of this.documents) {
+			// Tag filter: skip docs that don't have all required tags
+			if (tagFilter && !tagFilter.every((t) => doc.tags.includes(t))) {
+				continue;
+			}
+
+			// Date filter: skip docs older than --since
+			if (sinceTs && doc.date) {
+				const docTs = Date.parse(doc.date);
+				if (!Number.isNaN(docTs) && docTs < sinceTs) continue;
+			}
+
+			// Phrase filter: skip docs that don't contain all exact phrases
+			if (phrases.length > 0) {
+				const lowerContent = `${doc.title} ${doc.content}`.toLowerCase();
+				if (!phrases.every((p) => lowerContent.includes(p.toLowerCase()))) {
+					continue;
+				}
+			}
+
 			let score = 0;
 			const dl = doc.tokenCount;
 
 			for (const qt of queryTokens) {
-				const tf = doc.termFreqs.get(qt) ?? 0;
+				// Exact match first
+				let tf = doc.termFreqs.get(qt) ?? 0;
+
+				// Fuzzy match: if no exact hit, check edit distance ≤ 1 for tokens ≥ 4 chars
+				if (tf === 0 && qt.length >= 4) {
+					for (const [docToken, freq] of doc.termFreqs) {
+						if (editDistance1(qt, docToken)) {
+							tf = Math.ceil(freq * 0.8); // discount fuzzy matches slightly
+							break;
+						}
+					}
+				}
+
 				if (tf === 0) continue;
 
-				const idfVal = this.idf.get(qt) ?? 0;
+				const idfVal = this.idf.get(qt) ?? this.computeFuzzyIdf(qt);
 				const tfNorm =
 					(tf * (this.k1 + 1)) / (tf + this.k1 * (1 - this.b + this.b * (dl / this.avgDl)));
 
 				score += idfVal * tfNorm;
+			}
+
+			// Give a bonus for phrase matches (phrases already filtered above)
+			if (phrases.length > 0) {
+				score += phrases.length * 2.0;
 			}
 
 			if (score > threshold) {
@@ -290,12 +368,32 @@ export class SearchIndex {
 		// Sort by score descending
 		scores.sort((a, b) => b.score - a.score);
 
+		// Collect all terms for highlighting (query tokens + phrase words)
+		const highlightTerms = highlight
+			? [...queryTokens, ...phrases.flatMap((p) => tokenize(p))]
+			: [];
+
 		return scores.slice(0, limit).map(({ doc, score }) => ({
 			path: doc.path,
 			score: Math.round(score * 100) / 100,
-			snippet: extractSnippet(doc.content, queryTokens),
+			snippet: highlight
+				? highlightSnippet(
+						extractSnippet(doc.content, [...queryTokens, ...phrases]),
+						highlightTerms,
+					)
+				: extractSnippet(doc.content, [...queryTokens, ...phrases]),
 			title: doc.title || undefined,
 		}));
+	}
+
+	/**
+	 * Compute approximate IDF for a fuzzy-matched term by finding the closest known term.
+	 */
+	private computeFuzzyIdf(token: string): number {
+		for (const [term, idf] of this.idf) {
+			if (editDistance1(token, term)) return idf * 0.8;
+		}
+		return 0;
 	}
 
 	/**
@@ -303,13 +401,15 @@ export class SearchIndex {
 	 */
 	serialize(): string {
 		const data: SerializedIndex = {
-			version: 1,
+			version: 2,
 			documents: this.documents.map((d) => ({
 				path: d.path,
 				title: d.title,
 				snippet: d.content.slice(0, 200),
 				tokenCount: d.tokens.length,
 				termFreqs: [...d.termFreqs.entries()],
+				tags: d.tags,
+				date: d.date,
 			})),
 			idf: [...this.idf.entries()],
 			avgDl: this.avgDl,
@@ -336,9 +436,9 @@ export class SearchIndex {
 
 		try {
 			const raw = await readFile(path, "utf-8");
-			const data = JSON.parse(raw) as SerializedIndex;
+			const data = JSON.parse(raw) as SerializedIndex & { version: number };
 
-			if (data.version !== 1) return false;
+			if (data.version !== 1 && data.version !== 2) return false;
 
 			this.documents = data.documents.map((d) => ({
 				path: d.path,
@@ -347,6 +447,8 @@ export class SearchIndex {
 				tokens: [], // Not needed for search — termFreqs is enough
 				tokenCount: d.tokenCount,
 				termFreqs: new Map(d.termFreqs),
+				tags: (d as { tags?: string[] }).tags ?? [],
+				date: (d as { date?: string | null }).date ?? null,
 			}));
 			this.idf = new Map(data.idf);
 			this.avgDl = data.avgDl;
@@ -387,4 +489,84 @@ function extractSnippet(content: string, queryTokens: string[], maxLength = 150)
 	if (end < content.length) snippet = `${snippet}...`;
 
 	return snippet;
+}
+
+// ─── Query Parser ───────────────────────────────────────────────
+
+/**
+ * Parse a search query into exact phrases (quoted) and remaining terms.
+ * Example: `"attention mechanism" transformer` → phrases: ["attention mechanism"], terms: ["transformer"]
+ */
+export function parseQuery(query: string): { phrases: string[]; terms: string[] } {
+	const phrases: string[] = [];
+	const remaining = query.replace(/"([^"]+)"/g, (_match, phrase: string) => {
+		phrases.push(phrase);
+		return "";
+	});
+	const terms = remaining
+		.split(/\s+/)
+		.map((t) => t.trim())
+		.filter(Boolean);
+	return { phrases, terms };
+}
+
+// ─── Fuzzy Matching ─────────────────────────────────────────────
+
+/**
+ * Check if two strings have edit distance ≤ 1 (substitution, insertion, or deletion).
+ * Optimized: avoids full DP matrix by bailing early.
+ */
+export function editDistance1(a: string, b: string): boolean {
+	const lenDiff = a.length - b.length;
+	if (lenDiff > 1 || lenDiff < -1) return false;
+
+	if (a.length === b.length) {
+		// Check for exactly one substitution
+		let diffs = 0;
+		for (let i = 0; i < a.length; i++) {
+			if (a[i] !== b[i]) {
+				diffs++;
+				if (diffs > 1) return false;
+			}
+		}
+		return diffs === 1;
+	}
+
+	// One is longer by 1: check for single insertion/deletion
+	const longer = a.length > b.length ? a : b;
+	const shorter = a.length > b.length ? b : a;
+	let i = 0;
+	let j = 0;
+	let diffs = 0;
+	while (i < longer.length && j < shorter.length) {
+		if (longer[i] !== shorter[j]) {
+			diffs++;
+			if (diffs > 1) return false;
+			i++; // skip the extra char in the longer string
+		} else {
+			i++;
+			j++;
+		}
+	}
+	return true;
+}
+
+// ─── Highlighting ───────────────────────────────────────────────
+
+/**
+ * Highlight matched terms in a snippet using ANSI bold.
+ * Matches stemmed forms so "transformers" highlights when searching for "transformer".
+ */
+export function highlightSnippet(snippet: string, queryTokens: string[]): string {
+	if (queryTokens.length === 0) return snippet;
+
+	// Build a regex that matches any word whose stem matches a query token
+	// We match whole words and check stems
+	return snippet.replace(/[a-zA-Z0-9]+/g, (word) => {
+		const stemmed = stem(word.toLowerCase());
+		if (queryTokens.some((qt) => stemmed === qt || editDistance1(stemmed, qt))) {
+			return `\x1b[1m${word}\x1b[22m`; // ANSI bold
+		}
+		return word;
+	});
 }

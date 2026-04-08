@@ -123,11 +123,11 @@ What's built, what's next, and what's deferred.
 - [x] Rebuild embeddings on compile
 
 ### Search Improvements
-- [ ] Fuzzy matching for typo tolerance
-- [ ] Phrase search with quotes: `kib search '"attention mechanism"'`
-- [ ] Tag-based filtering: `kib search "transformers" --tag deep-learning`
-- [ ] Date range filtering: `kib search --since 2024-01-01`
-- [ ] Search result highlighting in terminal (bold matched terms)
+- [x] Fuzzy matching for typo tolerance (edit distance ≤ 1 for tokens ≥ 4 chars)
+- [x] Phrase search with quotes: `kib search '"attention mechanism"'`
+- [x] Tag-based filtering: `kib search "transformers" --tag deep-learning`
+- [x] Date range filtering: `kib search --since 2024-01-01`
+- [x] Search result highlighting in terminal (bold matched terms)
 
 ---
 
