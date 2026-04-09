@@ -95,6 +95,18 @@ export const VaultConfigSchema = z.object({
 		inbox_path: z.string().default("inbox"),
 		auto_compile: z.boolean().default(true),
 		poll_interval_ms: z.number().int().positive().default(DEFAULTS.watchPollIntervalMs),
+		auto_compile_threshold: z.number().int().positive().default(DEFAULTS.autoCompileThreshold),
+		auto_compile_delay_ms: z.number().int().nonnegative().default(DEFAULTS.autoCompileDelayMs),
+		log_max_mb: z.number().positive().default(DEFAULTS.watchLogMaxMb),
+		folders: z
+			.array(
+				z.object({
+					path: z.string(),
+					glob: z.string().default("*"),
+					recursive: z.boolean().default(false),
+				}),
+			)
+			.default([]),
 	}),
 	search: z.object({
 		engine: z.enum(["builtin", "vector", "hybrid"]).default("builtin"),
