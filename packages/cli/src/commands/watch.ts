@@ -151,6 +151,7 @@ async function startWatch(root: string, config: VaultConfig): Promise<() => void
 		CompileScheduler,
 		startFolderWatchers,
 		compileVault,
+		createProvider,
 		isLocked,
 	} = await import("@kibhq/core");
 
@@ -185,7 +186,9 @@ async function startWatch(root: string, config: VaultConfig): Promise<() => void
 			}
 			emit("info", "Auto-compiling...");
 			try {
-				const result = await compileVault(root);
+				const compileModel = config.compile.model ?? config.provider.model;
+				const provider = await createProvider(config.provider.default, compileModel);
+				const result = await compileVault(root, provider, config);
 				emit(
 					"info",
 					`Compiled ${result.sourcesCompiled} sources → ${result.articlesCreated} created, ${result.articlesUpdated} updated.`,
@@ -242,10 +245,15 @@ async function startWatch(root: string, config: VaultConfig): Promise<() => void
 
 	const processed = new Set<string>();
 
-	// Seed with existing files
+	// Enqueue existing inbox files (may have been added while daemon was off).
+	// Ingest dedup handles already-ingested content, so this is safe.
 	try {
 		const existing = await readdir(inboxPath);
-		for (const f of existing) processed.add(f);
+		for (const f of existing) {
+			if (f.startsWith(".")) continue;
+			processed.add(f);
+			await enqueue(root, join(inboxPath, f), "inbox");
+		}
 	} catch {
 		// inbox might not exist yet
 	}
@@ -339,7 +347,14 @@ function startHttpServer(
 
 				if (req.method === "POST" && url.pathname === "/ingest") {
 					try {
-						const body = (await req.json()) as { content: string; url?: string; title?: string };
+						const body = (await req.json()) as { content?: string; url?: string; title?: string };
+
+						if (!body.content || typeof body.content !== "string") {
+							return new Response(JSON.stringify({ error: "Missing required field: content" }), {
+								status: 400,
+								headers: { "Content-Type": "application/json" },
+							});
+						}
 
 						const slug = (body.title ?? "untitled")
 							.toLowerCase()

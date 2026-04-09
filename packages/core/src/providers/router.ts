@@ -17,8 +17,8 @@ export function detectProvider(): DetectedProvider {
 	if (process.env.OPENAI_API_KEY) {
 		return { name: "openai", model: "gpt-4o" };
 	}
-	// Ollama detection is async — handled in createProvider
-	return { name: "ollama", model: "llama3" };
+	// Default to anthropic — most common provider. User just needs to set the API key.
+	return { name: DEFAULTS.provider, model: DEFAULTS.model };
 }
 
 /**
@@ -33,14 +33,14 @@ export async function createProvider(providerName?: string, model?: string): Pro
 	switch (name) {
 		case "anthropic": {
 			if (!process.env.ANTHROPIC_API_KEY) {
-				throw new NoProviderError();
+				throw new NoProviderError("anthropic");
 			}
 			const { createAnthropicProvider } = await import("./anthropic.js");
 			return createAnthropicProvider(selectedModel);
 		}
 		case "openai": {
 			if (!process.env.OPENAI_API_KEY) {
-				throw new NoProviderError();
+				throw new NoProviderError("openai");
 			}
 			const { createOpenAIProvider } = await import("./openai.js");
 			return createOpenAIProvider(selectedModel);
@@ -51,12 +51,12 @@ export async function createProvider(providerName?: string, model?: string): Pro
 				const res = await fetch("http://localhost:11434/api/tags");
 				if (!res.ok) throw new Error("Not running");
 			} catch {
-				throw new NoProviderError();
+				throw new NoProviderError("ollama");
 			}
 			const { createOllamaProvider } = await import("./ollama.js");
 			return createOllamaProvider(selectedModel);
 		}
 		default:
-			throw new NoProviderError();
+			throw new NoProviderError(name);
 	}
 }

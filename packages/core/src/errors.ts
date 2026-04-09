@@ -35,9 +35,17 @@ export class ProviderError extends KibError {
 }
 
 export class NoProviderError extends KibError {
-	constructor() {
+	constructor(provider?: string) {
+		const messages: Record<string, string> = {
+			anthropic:
+				"No Anthropic API key found. Set ANTHROPIC_API_KEY in your environment or add it to ~/.config/kib/credentials",
+			openai:
+				"No OpenAI API key found. Set OPENAI_API_KEY in your environment or add it to ~/.config/kib/credentials",
+			ollama: "Ollama is not running. Start it with: ollama serve",
+		};
 		super(
-			"No LLM provider found. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or start Ollama.",
+			messages[provider ?? ""] ??
+				"No LLM provider configured. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or start Ollama.",
 			"NO_PROVIDER",
 		);
 		this.name = "NoProviderError";

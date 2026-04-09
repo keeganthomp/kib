@@ -120,58 +120,64 @@ export async function initVault(
 }
 
 function generateClaudeMd(name: string, provider: string, model: string): string {
-	return `# ${name}
+	const envKey =
+		provider === "anthropic"
+			? "ANTHROPIC_API_KEY"
+			: provider === "openai"
+				? "OPENAI_API_KEY"
+				: null;
 
-This is a [kib](https://github.com/keeganthomp/kib) vault — an AI-compiled knowledge base.
-kib ingests raw sources (URLs, PDFs, YouTube, GitHub repos, local files, images) and compiles them into a structured wiki using an LLM.
+	const apiKeySection = envKey
+		? `
+## API Key Required
 
-## Commands
+kib uses its own LLM API key for compile and query (MCP tools cannot use the host LLM).
+To enable full functionality, the user must set \`${envKey}\`:
 
 \`\`\`bash
-kib status                        # Vault health dashboard
-kib ingest <source>               # Ingest URLs, PDFs, YouTube, GitHub repos, local files, images
-kib ingest <source> --dry-run     # Preview what would be ingested
-kib compile                       # Compile raw sources into wiki articles via LLM
-kib compile --force               # Recompile all sources
-kib compile --source <path>       # Recompile a specific source
-kib compile --dry-run             # Preview compile diff without writing
-kib search <term>                 # BM25 full-text search across the vault
-kib query <question>              # RAG query with cited answers
-kib chat                          # Interactive REPL with conversation history
-kib lint                          # Run health checks on the wiki
-kib lint --fix                    # Auto-fix issues (recompile stale, create missing)
-kib skill list                    # List available skills
-kib skill run <name>              # Run a skill
-kib export --format html          # Export wiki as static HTML site
-kib config --list                 # Show vault configuration
+# Option 1: environment variable
+export ${envKey}=sk-...
+
+# Option 2: credentials file (persists across sessions)
+echo "${envKey}=sk-..." >> ~/.config/kib/credentials
 \`\`\`
 
-## Vault Structure
+Or use the \`kib_config\` tool to change provider: \`kib_config(key="provider.default", value="openai")\`
+`
+		: "";
 
-- \`raw/\` — ingested source material, organized by type. **Never modified by compile.**
-  - \`articles/\` — web pages, text content
-  - \`papers/\` — academic papers, PDFs
-  - \`repos/\` — GitHub repository summaries
-  - \`images/\` — image descriptions (extracted via vision model)
-  - \`transcripts/\` — YouTube/video transcripts
-- \`wiki/\` — LLM-compiled articles with frontmatter, plus INDEX.md and GRAPH.md
-  - \`concepts/\` — core concept articles
-  - \`topics/\` — topic overviews
-  - \`references/\` — reference material
-  - \`outputs/\` — query results filed as articles
-- \`inbox/\` — drop zone for \`kib watch\` (auto-ingested)
-- \`.kb/\` — internal state (manifest.json, config.toml, cache, logs)
+	return `# ${name} — kib vault
 
-## Workflow
+This directory is a [kib](https://github.com/keeganthomp/kib) vault — an AI-compiled knowledge base.
+kib ingests sources (URLs, PDFs, YouTube, GitHub repos, files, images) and compiles them into a structured, searchable wiki.
 
-1. **Ingest** sources: \`kib ingest <url-or-file>\` adds raw material
-2. **Compile**: \`kib compile\` processes new sources into wiki articles
-3. **Query**: \`kib query "your question"\` or \`kib search "term"\` to retrieve knowledge
-4. **Maintain**: \`kib lint --fix\` keeps the wiki healthy
+**First step:** Call the \`kib_status\` tool to check vault state and whether the LLM provider is ready.
 
-## MCP Server
+## MCP Tools Available
 
-\`kib serve\` exposes this vault as MCP tools over stdio. Tools: kib_status, kib_list, kib_read, kib_search, kib_query, kib_ingest, kib_compile, kib_lint. Resources: wiki://index, wiki://graph.
+**Work immediately (no API key needed):**
+- \`kib_status\` — vault state, provider status, and setup instructions
+- \`kib_search\` — full-text BM25 search across all articles
+- \`kib_list\` — list wiki articles or raw sources
+- \`kib_read\` — read a specific article or source
+- \`kib_ingest\` — ingest URLs, files, PDFs, YouTube, repos, images (saves to raw/)
+- \`kib_export\` — export wiki as markdown or HTML
+- \`kib_lint\` — health checks on the wiki
+- \`kib_config\` — get/set vault configuration
+
+**Require an LLM API key:**
+- \`kib_compile\` — compile raw sources into wiki articles via LLM
+- \`kib_query\` — ask questions with RAG (retrieval-augmented generation)
+- \`kib_skill\` — run skills (summarize, flashcards, connections, etc.)
+
+Note: \`kib_ingest\` auto-compiles after ingesting if a provider is configured. Without a key, sources are saved but not compiled.
+${apiKeySection}
+## Vault Layout
+
+- \`raw/\` — ingested source material (articles, papers, repos, images, transcripts)
+- \`wiki/\` — compiled articles with \`INDEX.md\` and \`GRAPH.md\`
+- \`inbox/\` — drop files here for auto-ingestion (via \`kib watch\` daemon)
+- \`.kb/\` — config, manifest, cache, logs
 
 ## Provider
 

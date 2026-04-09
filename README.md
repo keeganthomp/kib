@@ -201,6 +201,61 @@ kib skill run flashcards
 kib skill run connections
 ```
 
+### Watch Daemon (Passive Learning)
+
+Run a background daemon that monitors your inbox, watched folders, and an HTTP endpoint — automatically ingesting new content and compiling it into your wiki.
+
+```bash
+# Start in foreground (logs to terminal)
+kib watch
+
+# Start as background daemon
+kib watch --daemon
+
+# Check daemon status
+kib watch --status
+
+# Stop the daemon
+kib watch --stop
+
+# Install as system service (auto-start on login)
+kib watch --install    # macOS: launchd, Linux: systemd
+kib watch --uninstall
+```
+
+**Three ingestion channels run simultaneously:**
+
+1. **Inbox folder** — drop any file into `inbox/` and it's auto-ingested. Files already in the inbox when the daemon starts are picked up too.
+2. **HTTP endpoint** — `POST http://localhost:4747/ingest` accepts JSON `{ content, title?, url? }`. Built for browser extensions.
+3. **Folder watchers** — monitor external directories with glob filtering (e.g., watch `~/Downloads` for `*.pdf`).
+
+**Auto-compile** triggers automatically after N new sources (default: 5) or after idle timeout (default: 30 min).
+
+Configure in `.kb/config.toml`:
+
+```toml
+[watch]
+enabled = true
+inbox_path = "inbox"
+auto_compile = true
+poll_interval_ms = 2_000
+auto_compile_threshold = 5         # compile after 5 new sources
+auto_compile_delay_ms = 1_800_000  # or after 30 min idle
+
+# Watch external folders
+[[watch.folders]]
+path = "~/Downloads"
+glob = "*.pdf"
+recursive = false
+
+[[watch.folders]]
+path = "~/Documents/notes"
+glob = "*.{md,txt}"
+recursive = true
+```
+
+Failed ingestions retry up to 3 times before moving to the failed queue. Logs are written to `.kb/logs/watch.log` with automatic rotation at 10 MB.
+
 ### Export
 
 ```bash
