@@ -8,6 +8,7 @@ export { extractWikilinks, parseCompileOutput, parseFrontmatter } from "./compil
 export { enrichCrossReferences } from "./compile/enrichment.js";
 export { computeStats, generateIndexMd } from "./compile/index-manager.js";
 export * from "./constants.js";
+export * from "./daemon/index.js";
 export * from "./errors.js";
 export * from "./hash.js";
 export { ingestSource } from "./ingest/ingest.js";

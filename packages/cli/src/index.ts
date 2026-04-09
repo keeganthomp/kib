@@ -132,10 +132,15 @@ program
 
 program
 	.command("watch")
-	.description("Watch inbox/ and auto-ingest")
-	.action(async () => {
+	.description("Watch inbox/ and auto-ingest (passive learning daemon)")
+	.option("--daemon", "run in background as a daemon")
+	.option("--stop", "stop the running daemon")
+	.option("--status", "check if the daemon is running")
+	.option("--install", "install as a system service (launchd/systemd)")
+	.option("--uninstall", "remove the system service")
+	.action(async (opts) => {
 		const { watch } = await import("./commands/watch.js");
-		await watch();
+		await watch(opts);
 	});
 
 program

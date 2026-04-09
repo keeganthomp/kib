@@ -32,6 +32,9 @@ export const DEFAULTS = {
 	cacheMaxSizeMb: 500,
 	watchPollIntervalMs: 2000,
 	maxFileSizeMb: 50,
+	autoCompileThreshold: 5, // compile after N new sources
+	autoCompileDelayMs: 30 * 60 * 1000, // 30 min idle → auto-compile
+	watchLogMaxMb: 10,
 	compileArticleMinWords: 200,
 	compileArticleMaxWords: 1000,
 	contextWindow: 200_000, // tokens — conservative default (Sonnet 4.6 supports 1M)
