@@ -101,7 +101,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_status",
-		"Get vault status: source count, article count, provider config, and whether the LLM provider is ready. If providerConfigured is false, tell the user to run `kib config` or set an API key environment variable before compile/query will work.",
+		"Call this first. Returns vault state, provider readiness, and setup instructions. Use the output to greet the user and guide them through any needed setup.",
 		{},
 		async () => {
 			try {
@@ -111,7 +111,14 @@ export function createMcpServer(root: string) {
 					.getProvider()
 					.then(() => true)
 					.catch(() => false);
-				return json({
+
+				const envKeys: Record<string, string> = {
+					anthropic: "ANTHROPIC_API_KEY",
+					openai: "OPENAI_API_KEY",
+					ollama: "(Ollama must be running on localhost:11434)",
+				};
+
+				const result: Record<string, unknown> = {
 					name: manifest.vault.name,
 					provider: config.provider.default,
 					model: config.provider.model,
@@ -121,7 +128,27 @@ export function createMcpServer(root: string) {
 					totalWords: manifest.stats.totalWords,
 					lastCompiled: manifest.vault.lastCompiled,
 					lastLint: manifest.stats.lastLintAt,
-				});
+					availableNow: [
+						"kib_search",
+						"kib_list",
+						"kib_read",
+						"kib_ingest",
+						"kib_export",
+						"kib_lint",
+						"kib_config",
+					],
+					requiresProvider: ["kib_compile", "kib_query", "kib_skill"],
+				};
+
+				if (!providerConfigured) {
+					const envKey = envKeys[config.provider.default] ?? "an API key";
+					result.setupInstructions =
+						config.provider.default === "ollama"
+							? "Start Ollama with: ollama serve"
+							: `Set ${envKey} in the environment or add it to ~/.config/kib/credentials. kib_ingest still works — sources are saved but not compiled until the key is set.`;
+				}
+
+				return json(result);
 			} catch (e) {
 				return err((e as Error).message);
 			}
@@ -132,7 +159,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_list",
-		"List all wiki articles or raw sources in the knowledge base",
+		"List all wiki articles or raw sources in the knowledge base. No API key needed.",
 		{
 			scope: z.enum(["wiki", "raw"]).default("wiki").describe("List wiki articles or raw sources"),
 		},
@@ -153,7 +180,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_read",
-		"Read a specific wiki article or raw source from the knowledge base",
+		"Read a specific wiki article or raw source from the knowledge base. No API key needed.",
 		{
 			path: z.string().describe("Relative path, e.g. 'concepts/attention.md'"),
 			scope: z.enum(["wiki", "raw"]).default("wiki").describe("Read from wiki/ or raw/"),
@@ -172,7 +199,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_search",
-		"Search the knowledge base using full-text BM25 search. Supports fuzzy matching, phrase search (wrap in quotes), tag filtering, and date filtering.",
+		"Search the knowledge base using full-text BM25 search. No API key needed. Supports fuzzy matching, phrase search (wrap in quotes), tag filtering, and date filtering.",
 		{
 			query: z
 				.string()
@@ -220,7 +247,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_query",
-		"Ask a question against the knowledge base using RAG (retrieval-augmented generation)",
+		"Ask a question against the knowledge base using RAG (retrieval-augmented generation). Requires a configured LLM provider.",
 		{
 			question: z.string().describe("Question to ask"),
 			max_articles: z
@@ -254,7 +281,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_ingest",
-		"Ingest a source (URL or file path) into the knowledge base. Auto-compiles after ingest if an LLM provider is configured. If compileError is returned, tell the user what's needed.",
+		"Ingest a source (URL or file path) into the knowledge base. No API key needed for ingestion. Auto-compiles after ingest if an LLM provider is configured; otherwise sources are saved but not compiled.",
 		{
 			source: z.string().describe("URL or file path to ingest"),
 			category: z
@@ -337,7 +364,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_compile",
-		"Compile pending raw sources into wiki articles using the configured LLM",
+		"Compile pending raw sources into wiki articles. Requires a configured LLM provider.",
 		{
 			force: z.boolean().default(false).describe("Recompile all sources"),
 			source: z.string().optional().describe("Compile only a specific source"),
@@ -377,7 +404,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_lint",
-		"Run health checks on the wiki and report issues. Use fix=true to auto-fix fixable issues (recompile stale sources, create missing articles).",
+		"Run health checks on the wiki and report issues. No API key needed for checks. Use fix=true to auto-fix fixable issues (requires LLM provider for stale source recompilation).",
 		{
 			rule: z
 				.string()
@@ -439,7 +466,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_config",
-		"Get or set vault configuration. Call with no arguments to list all config. Pass key to read a value, pass key+value to set it.",
+		"Get or set vault configuration. No API key needed. Call with no arguments to list all config. Pass key to read a value, pass key+value to set it. Useful keys: provider.default, provider.model.",
 		{
 			key: z
 				.string()
@@ -481,7 +508,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_skill",
-		"List or run vault skills. Skills are reusable LLM-powered operations (summarize, flashcards, connections, etc).",
+		"List or run vault skills. Most skills require a configured LLM provider. Skills are reusable operations (summarize, flashcards, connections, etc).",
 		{
 			action: z
 				.enum(["list", "run"])
@@ -524,7 +551,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_export",
-		"Export the wiki as a clean markdown bundle or static HTML site. Returns the output directory path and file count.",
+		"Export the wiki as a clean markdown bundle or static HTML site. No API key needed. Returns the output directory path and file count.",
 		{
 			format: z
 				.enum(["markdown", "html"])

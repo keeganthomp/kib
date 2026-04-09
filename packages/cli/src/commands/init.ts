@@ -38,15 +38,27 @@ export async function init(dir: string | undefined, opts: InitOpts) {
 		log.success("Created inbox/");
 		log.success("Created CLAUDE.md");
 
+		const hasKey =
+			(provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
+			(provider === "openai" && !!process.env.OPENAI_API_KEY);
+
 		const providerLabel =
 			provider === "anthropic"
-				? `anthropic (ANTHROPIC_API_KEY)`
+				? `anthropic (ANTHROPIC_API_KEY${hasKey ? "" : " — not set yet"})`
 				: provider === "openai"
-					? `openai (OPENAI_API_KEY)`
+					? `openai (OPENAI_API_KEY${hasKey ? "" : " — not set yet"})`
 					: `ollama (localhost:11434)`;
 
-		log.success(`Detected provider: ${providerLabel}`);
+		log.success(`Provider: ${providerLabel}`);
 		log.success(`Model: ${model}`);
+
+		if (!hasKey && provider !== "ollama") {
+			const envKey = provider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
+			log.blank();
+			log.warn(
+				`Set ${envKey} to enable compile and query. Ingest, search, and read work without it.`,
+			);
+		}
 
 		// Auto-configure MCP in all detected AI clients
 		log.blank();

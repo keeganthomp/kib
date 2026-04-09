@@ -95,6 +95,21 @@ describe("listPending", () => {
 		const items = await listPending(root, 3);
 		expect(items.length).toBe(3);
 	});
+
+	test("does not include items in the failed/ subdirectory", async () => {
+		const root = await makeTempVault();
+		const id1 = await enqueue(root, "/good.md", "inbox");
+		const id2 = await enqueue(root, "/bad.md", "inbox");
+
+		// Fail id2 completely
+		await markFailed(root, id2, "err");
+		await markFailed(root, id2, "err");
+		await markFailed(root, id2, "err");
+
+		const pending = await listPending(root);
+		expect(pending.length).toBe(1);
+		expect(pending[0].id).toBe(id1);
+	});
 });
 
 describe("dequeue", () => {
@@ -153,6 +168,20 @@ describe("markFailed", () => {
 		const result = await markFailed(root, "ghost", "error");
 		expect(result).toBe(false);
 	});
+
+	test("preserves error message from each failure", async () => {
+		const root = await makeTempVault();
+		const id = await enqueue(root, "/file.md", "inbox");
+
+		await markFailed(root, id, "timeout");
+		let item = await readItem(root, id);
+		expect(item!.lastError).toBe("timeout");
+
+		await markFailed(root, id, "DNS failure");
+		item = await readItem(root, id);
+		expect(item!.lastError).toBe("DNS failure");
+		expect(item!.retries).toBe(2);
+	});
 });
 
 describe("queueDepth", () => {
@@ -168,6 +197,19 @@ describe("queueDepth", () => {
 		expect(await queueDepth(root)).toBe(2);
 
 		await dequeue(root, id1);
+		expect(await queueDepth(root)).toBe(1);
+	});
+
+	test("does not count failed items in depth", async () => {
+		const root = await makeTempVault();
+		const id = await enqueue(root, "/a.md", "inbox");
+		await enqueue(root, "/b.md", "inbox");
+
+		// Fail one completely
+		await markFailed(root, id, "err");
+		await markFailed(root, id, "err");
+		await markFailed(root, id, "err");
+
 		expect(await queueDepth(root)).toBe(1);
 	});
 });
@@ -193,6 +235,28 @@ describe("clearFailed", () => {
 	test("returns 0 when no failed items", async () => {
 		const root = await makeTempVault();
 		expect(await clearFailed(root)).toBe(0);
+	});
+});
+
+describe("concurrent operations", () => {
+	test("parallel enqueues produce unique items", async () => {
+		const root = await makeTempVault();
+		const promises = Array.from({ length: 50 }, (_, i) =>
+			enqueue(root, `/parallel-${i}.md`, "inbox"),
+		);
+		const ids = await Promise.all(promises);
+		expect(new Set(ids).size).toBe(50);
+		expect(await queueDepth(root)).toBe(50);
+	});
+
+	test("all source types are accepted", async () => {
+		const root = await makeTempVault();
+		const sources = ["inbox", "http", "folder", "clipboard"] as const;
+		for (const src of sources) {
+			const id = await enqueue(root, `/file-${src}`, src);
+			const item = await readItem(root, id);
+			expect(item!.source).toBe(src);
+		}
 	});
 });
 

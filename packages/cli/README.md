@@ -57,7 +57,7 @@ CORE
 INTEGRATION
   serve               Start MCP server for AI tool integration
   mcp                 Configure MCP in AI clients (auto-runs on init)
-  watch               Watch inbox/ and auto-ingest new files
+  watch               Passive learning daemon — auto-ingest and compile
 
 MANAGEMENT
   config [key] [val]  Get or set configuration
@@ -76,6 +76,26 @@ kib export --format html
 ```
 
 HTML export includes image assets with proper relative paths and generates a browsable image gallery page.
+
+### Watch Daemon
+
+Run a background daemon that monitors your inbox, external folders, and an HTTP endpoint for new content — automatically ingesting and compiling it.
+
+```bash
+kib watch               # foreground (logs to terminal)
+kib watch --daemon      # background daemon
+kib watch --status      # check if running
+kib watch --stop        # stop daemon
+kib watch --install     # install as system service (launchd/systemd)
+kib watch --uninstall   # remove system service
+```
+
+**Ingestion channels:**
+- **Inbox** — drop files into `inbox/` (picks up files added while daemon was off)
+- **HTTP** — `POST localhost:4747/ingest` with `{ content, title?, url? }`
+- **Folder watchers** — monitor external directories with glob patterns
+
+**Auto-compile** triggers after a configurable number of new sources or idle timeout. Configure via `[watch]` section in `.kb/config.toml`.
 
 ## LLM Providers
 

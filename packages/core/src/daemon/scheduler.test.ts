@@ -131,4 +131,43 @@ describe("CompileScheduler", () => {
 		await new Promise((r) => setTimeout(r, 20));
 		expect(compiled).toBe(false);
 	});
+
+	test("handles compile failure gracefully — resets state for next trigger", async () => {
+		let callCount = 0;
+		scheduler = new CompileScheduler({
+			threshold: 1,
+			delayMs: 0,
+			onCompile: async () => {
+				callCount++;
+				if (callCount === 1) throw new Error("LLM provider unavailable");
+			},
+		});
+
+		scheduler.recordIngest(); // triggers, will fail
+		await new Promise((r) => setTimeout(r, 20));
+		expect(callCount).toBe(1);
+		expect(scheduler.isCompiling()).toBe(false);
+		expect(scheduler.pendingCount()).toBe(0);
+
+		// Second compile should still work
+		scheduler.recordIngest();
+		await new Promise((r) => setTimeout(r, 20));
+		expect(callCount).toBe(2);
+	});
+
+	test("logs threshold progress via onLog callback", async () => {
+		const logs: string[] = [];
+		scheduler = new CompileScheduler({
+			threshold: 3,
+			delayMs: 60_000,
+			onCompile: async () => {},
+			onLog: (msg) => logs.push(msg),
+		});
+
+		scheduler.recordIngest();
+		scheduler.recordIngest();
+		expect(logs.length).toBe(2);
+		expect(logs[0]).toContain("1/3");
+		expect(logs[1]).toContain("2/3");
+	});
 });
