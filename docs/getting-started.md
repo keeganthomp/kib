@@ -176,6 +176,34 @@ kib export --format markdown
 kib export --format html --output ./site
 ```
 
+## Watch daemon
+
+Set up passive ingestion — the daemon watches for new files and auto-ingests them:
+
+```bash
+# Run in foreground (see what's happening)
+kib watch
+
+# Or run as a background daemon
+kib watch --daemon
+
+# Install as a system service (starts on login)
+kib watch --install
+```
+
+Drop files into `inbox/` and they get ingested automatically. Configure additional folders to watch:
+
+```toml
+# In .kb/config.toml
+[[watch.folders]]
+path = "/home/user/Downloads"
+glob = "*.pdf"
+```
+
+The daemon auto-compiles after 5 new sources or 30 minutes idle. It also runs an HTTP server on port 4747 for browser extensions.
+
+See [daemon.md](daemon.md) for full details.
+
 ## MCP server
 
 Give AI assistants direct access to your vault. `kib init` auto-configures Claude Code, Claude Desktop, and Cursor:
@@ -228,5 +256,6 @@ git add -A && git commit -m "add onboarding docs"
 
 - [Vault Format](vault-format.md) — understand the file structure
 - [Provider Config](provider-config.md) — configure LLM providers and models
+- [Watch Daemon](daemon.md) — passive ingestion, auto-compile, system services
 - [Skill Authoring](skill-authoring.md) — create custom skills
 - [Architecture](architecture.md) — how kib works under the hood

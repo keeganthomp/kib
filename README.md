@@ -263,6 +263,44 @@ kib config provider.default openai
 kib config provider.model gpt-4o
 ```
 
+## Watch Daemon
+
+The watch daemon monitors your inbox, configured folders, and an HTTP endpoint — automatically ingesting and compiling new files hands-free.
+
+```bash
+# Foreground (live logs)
+kib watch
+
+# Background daemon
+kib watch --daemon
+
+# Check status / stop
+kib watch --status
+kib watch --stop
+
+# Install as system service (starts on login)
+kib watch --install
+```
+
+Configure watched folders in `config.toml`:
+
+```toml
+[[watch.folders]]
+path = "/home/user/Downloads"
+glob = "*.pdf"
+recursive = false
+```
+
+The daemon also runs an HTTP server on port 4747 for browser extensions and scripts:
+
+```bash
+curl -X POST http://localhost:4747/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"content": "...", "title": "Page Title", "url": "https://..."}'
+```
+
+See [docs/daemon.md](docs/daemon.md) for full configuration, auto-compile settings, queue system, and service installation.
+
 ## MCP Server
 
 Give your AI assistant direct access to your knowledge base. `kib init` auto-configures Claude Code, Claude Desktop, and Cursor:

@@ -142,6 +142,15 @@ enabled = false
 inbox_path = "inbox"
 auto_compile = true
 poll_interval_ms = 2000
+auto_compile_threshold = 5        # compile after N new sources
+auto_compile_delay_ms = 1800000   # or after 30 min idle
+log_max_mb = 10                   # max log size before rotation
+
+# Watch additional folders
+# [[watch.folders]]
+# path = "/home/user/Downloads"
+# glob = "*.pdf"
+# recursive = false
 
 [search]
 engine = "builtin"             # "builtin" (BM25), "vector", or "hybrid"

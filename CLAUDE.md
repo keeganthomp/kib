@@ -50,6 +50,19 @@ bun run packages/cli/bin/kib.ts       # run CLI locally
 - LLM providers: Anthropic, OpenAI, Ollama (auto-detected from env vars)
 - Credentials stored at `~/.config/kib/credentials`, loaded on CLI startup
 
+## Watch Daemon
+
+- `kib watch` — foreground watcher with live logs
+- `kib watch --daemon` — background daemon (PID in `.kb/watch.pid`)
+- `kib watch --stop` / `--status` — manage daemon
+- `kib watch --install` / `--uninstall` — system service (launchd/systemd)
+- Monitors `inbox/` dir, configured `[[watch.folders]]`, HTTP server on port 4747
+- Ingest queue with retry (3x), failed items in `.kb/queue/failed/`
+- Auto-compile: after 5 sources or 30 min idle (configurable in `[watch]` config)
+- Logs: `.kb/logs/watch.log` with rotation
+- Core daemon modules: `packages/core/src/daemon/` (pid, queue, scheduler, folder-watcher, log, service)
+- CLI command: `packages/cli/src/commands/watch.ts`
+
 ## Skill Ecosystem (v0.8.0)
 
 ### Built-in Skills (10)
