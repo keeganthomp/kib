@@ -1,6 +1,6 @@
 /**
  * Background service worker.
- * Handles keyboard shortcuts and dwell-time auto-capture.
+ * Handles keyboard shortcuts, dwell-time auto-capture, and history scanning.
  */
 
 const KIB_URL = "http://localhost:4747";
@@ -10,9 +10,21 @@ interface AutoCaptureSettings {
 	dwellSeconds: number;
 }
 
+interface HistoryScanSettings {
+	enabled: boolean;
+	scanIntervalMinutes: number;
+	lookbackMinutes: number;
+}
+
 const DEFAULT_SETTINGS: AutoCaptureSettings = {
 	enabled: false,
 	dwellSeconds: 30,
+};
+
+const DEFAULT_HISTORY_SETTINGS: HistoryScanSettings = {
+	enabled: false,
+	scanIntervalMinutes: 15,
+	lookbackMinutes: 60,
 };
 
 // ── State ──
@@ -31,6 +43,15 @@ async function getSettings(): Promise<AutoCaptureSettings> {
 		return { ...DEFAULT_SETTINGS, ...(result.autoCapture ?? {}) };
 	} catch {
 		return DEFAULT_SETTINGS;
+	}
+}
+
+async function getHistorySettings(): Promise<HistoryScanSettings> {
+	try {
+		const result = await chrome.storage.local.get("historyScan");
+		return { ...DEFAULT_HISTORY_SETTINGS, ...(result.historyScan ?? {}) };
+	} catch {
+		return DEFAULT_HISTORY_SETTINGS;
 	}
 }
 
@@ -198,6 +219,127 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
 	}
 });
 
+// ── History scanning ──
+
+/** URLs already sent from history (persisted to storage to survive SW restarts) */
+let historySentUrls = new Set<string>();
+let historyScanTimer: ReturnType<typeof setInterval> | null = null;
+
+async function loadHistorySentUrls(): Promise<void> {
+	try {
+		const result = await chrome.storage.local.get("historySentUrls");
+		const urls: string[] = result.historySentUrls ?? [];
+		historySentUrls = new Set(urls);
+	} catch {
+		// ignore
+	}
+}
+
+async function persistHistorySentUrls(): Promise<void> {
+	// Keep only the most recent 5000 URLs to avoid unbounded growth
+	const urls = [...historySentUrls].slice(-5000);
+	await chrome.storage.local.set({ historySentUrls: urls });
+}
+
+/** URLs to skip: search engines, login pages, internal pages, etc. */
+function isSkippableUrl(url: string): boolean {
+	try {
+		const u = new URL(url);
+		// Skip non-http
+		if (u.protocol !== "http:" && u.protocol !== "https:") return true;
+		// Skip localhost
+		if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return true;
+		// Skip common non-content pages
+		const skipPatterns = [
+			/^https?:\/\/(www\.)?google\.\w+\/(search|maps)/,
+			/^https?:\/\/(www\.)?bing\.com\/search/,
+			/^https?:\/\/duckduckgo\.com\/\?/,
+			/^https?:\/\/.*\/(login|signin|signup|auth|oauth|callback)/i,
+			/^https?:\/\/accounts\./,
+			/^https?:\/\/mail\./,
+			/^https?:\/\/(www\.)?youtube\.com\/(watch|shorts)/,
+		];
+		return skipPatterns.some((p) => p.test(url));
+	} catch {
+		return true;
+	}
+}
+
+async function scanHistory(): Promise<void> {
+	const settings = await getHistorySettings();
+	if (!settings.enabled) return;
+
+	if (!(await isKibRunning())) return;
+
+	const startTime = Date.now() - settings.lookbackMinutes * 60 * 1000;
+
+	try {
+		const items = await chrome.history.search({
+			text: "",
+			startTime,
+			maxResults: 200,
+		});
+
+		let sent = 0;
+		for (const item of items) {
+			if (!item.url || !item.title) continue;
+
+			const normalized = normalizeUrl(item.url);
+			if (historySentUrls.has(normalized)) continue;
+			if (capturedUrls.has(normalized)) continue;
+			if (isSkippableUrl(item.url)) continue;
+
+			// Send URL to kib for web extraction
+			try {
+				const res = await fetch(`${KIB_URL}/ingest`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						url: item.url,
+						title: item.title,
+						source: "history",
+					}),
+				});
+				if (res.ok) {
+					historySentUrls.add(normalized);
+					capturedUrls.add(normalized);
+					sent++;
+				}
+			} catch {
+				// kib not reachable, stop scanning
+				break;
+			}
+		}
+
+		if (sent > 0) {
+			await persistHistorySentUrls();
+		}
+	} catch {
+		// History API error
+	}
+}
+
+function clearHistoryScanTimer() {
+	if (historyScanTimer) {
+		clearInterval(historyScanTimer);
+		historyScanTimer = null;
+	}
+}
+
+async function startHistoryScanner() {
+	clearHistoryScanTimer();
+	const settings = await getHistorySettings();
+	if (!settings.enabled) return;
+
+	await loadHistorySentUrls();
+
+	// Run initial scan after a short delay (don't block startup)
+	setTimeout(() => scanHistory(), 5000);
+
+	// Set up periodic scanning
+	historyScanTimer = setInterval(() => scanHistory(), settings.scanIntervalMinutes * 60 * 1000);
+}
+
 // ── Keyboard shortcut ──
 
 chrome.commands?.onCommand?.addListener(async (command) => {
@@ -210,9 +352,13 @@ chrome.commands?.onCommand?.addListener(async (command) => {
 
 chrome.runtime.onInstalled.addListener(() => {
 	chrome.action.setBadgeText({ text: "" });
+	startHistoryScanner();
 });
 
-// ── Listen for settings changes to update badge ──
+// Start history scanner on service worker startup (covers restarts)
+startHistoryScanner();
+
+// ── Listen for settings changes ──
 
 chrome.storage.onChanged.addListener((changes) => {
 	if (changes.autoCapture) {
@@ -222,5 +368,8 @@ chrome.storage.onChanged.addListener((changes) => {
 		} else if (activeTabId && activeUrl && isCapturableUrl(activeUrl)) {
 			startDwellTimer(activeTabId, activeUrl);
 		}
+	}
+	if (changes.historyScan) {
+		startHistoryScanner();
 	}
 });

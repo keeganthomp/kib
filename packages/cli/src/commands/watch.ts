@@ -417,13 +417,31 @@ function startHttpServer(
 
 				if (req.method === "POST" && url.pathname === "/ingest") {
 					try {
-						const body = (await req.json()) as { content?: string; url?: string; title?: string };
+						const body = (await req.json()) as {
+							content?: string;
+							url?: string;
+							title?: string;
+							source?: string;
+						};
 
-						if (!body.content || typeof body.content !== "string") {
-							return new Response(JSON.stringify({ error: "Missing required field: content" }), {
-								status: 400,
+						// URL-only mode: enqueue the URL directly for web extraction
+						if (!body.content && body.url && typeof body.url === "string") {
+							const source = (body.source as "history" | "http") || "http";
+							await enqueue(root, body.url, source, { title: body.title });
+							await consumeQueue();
+							return new Response(JSON.stringify({ ok: true }), {
 								headers: { "Content-Type": "application/json" },
 							});
+						}
+
+						if (!body.content || typeof body.content !== "string") {
+							return new Response(
+								JSON.stringify({ error: "Missing required field: content or url" }),
+								{
+									status: 400,
+									headers: { "Content-Type": "application/json" },
+								},
+							);
 						}
 
 						const slug = (body.title ?? "untitled")

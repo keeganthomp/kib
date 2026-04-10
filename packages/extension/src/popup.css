@@ -397,6 +397,14 @@ header {
 	transform: scale(1.2);
 }
 
+.settings-row-gap {
+	margin-top: 12px;
+}
+
+.dwell-label-gap {
+	margin-top: 8px;
+}
+
 /* ── Hidden utility ── */
 
 [hidden] {

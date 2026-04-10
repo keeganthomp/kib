@@ -9,7 +9,7 @@ const MAX_RETRIES = 3;
 export interface QueueItem {
 	id: string;
 	uri: string;
-	source: "inbox" | "http" | "folder" | "clipboard" | "screenshot";
+	source: "inbox" | "http" | "folder" | "clipboard" | "screenshot" | "history";
 	timestamp: string;
 	options?: {
 		title?: string;
