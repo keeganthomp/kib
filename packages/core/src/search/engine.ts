@@ -406,7 +406,7 @@ export class SearchIndex {
 				path: d.path,
 				title: d.title,
 				snippet: d.content.slice(0, 200),
-				tokenCount: d.tokens.length,
+				tokenCount: d.tokenCount,
 				termFreqs: [...d.termFreqs.entries()],
 				tags: d.tags,
 				date: d.date,
@@ -436,9 +436,10 @@ export class SearchIndex {
 
 		try {
 			const raw = await readFile(path, "utf-8");
-			const data = JSON.parse(raw) as SerializedIndex & { version: number };
+			const data = JSON.parse(raw) as SerializedIndex;
+			const version = data.version as number;
 
-			if (data.version !== 1 && data.version !== 2) return false;
+			if (version !== 1 && version !== 2) return false;
 
 			this.documents = data.documents.map((d) => ({
 				path: d.path,
@@ -507,12 +508,10 @@ export class SearchIndex {
 		const docFreq = new Map<string, number>();
 
 		for (const doc of this.documents) {
-			const seen = new Set<string>();
-			for (const token of doc.tokens) {
-				if (!seen.has(token)) {
-					docFreq.set(token, (docFreq.get(token) ?? 0) + 1);
-					seen.add(token);
-				}
+			// Use termFreqs.keys() instead of tokens — loaded docs have tokens: []
+			// but termFreqs is always populated (from serialization or addDocument)
+			for (const term of doc.termFreqs.keys()) {
+				docFreq.set(term, (docFreq.get(term) ?? 0) + 1);
 			}
 		}
 

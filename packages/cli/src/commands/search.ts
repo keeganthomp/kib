@@ -135,6 +135,12 @@ export async function search(term: string, opts: SearchOpts) {
 
 	spinner.stop();
 
+	// Filter results by scope when loaded from cache (cache contains all scopes)
+	if (scope !== "all") {
+		const scopeDir = scope === "wiki" ? "/wiki/" : "/raw/";
+		results = results.filter((r) => r.path.includes(scopeDir));
+	}
+
 	if (opts.json) {
 		console.log(JSON.stringify(results, null, 2));
 		return;

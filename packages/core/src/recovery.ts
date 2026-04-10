@@ -145,7 +145,7 @@ export async function repairVault(root: string): Promise<RecoveryIssue[]> {
 						.sort()
 						.reverse();
 
-					if (backups.length > 0) {
+					if (backups[0]) {
 						const latest = join(backupsDir, backups[0]);
 						try {
 							const backup = await readFile(latest, "utf-8");
