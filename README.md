@@ -128,7 +128,7 @@ CORE COMMANDS
 INTEGRATION
   serve               Start MCP server for AI tool integration
   mcp                 Configure MCP in AI clients (auto-runs on init)
-  watch               Watch inbox/ and auto-ingest new files
+  watch               Passive learning daemon (inbox, folders, clipboard, screenshots)
 
 MANAGEMENT
   config [key] [val]  Get or set configuration
@@ -203,7 +203,7 @@ kib skill run connections
 
 ### Watch Daemon (Passive Learning)
 
-Run a background daemon that monitors your inbox, watched folders, and an HTTP endpoint — automatically ingesting new content and compiling it into your wiki.
+Run a background daemon that silently absorbs knowledge from multiple sources — inbox, folders, clipboard, screenshots, and the browser. Content is automatically ingested and compiled into your wiki.
 
 ```bash
 # Start in foreground (logs to terminal)
@@ -221,15 +221,24 @@ kib watch --stop
 # Install as system service (auto-start on login)
 kib watch --install    # macOS: launchd, Linux: systemd
 kib watch --uninstall
+
+# Enable clipboard/screenshot watchers via CLI flags
+kib watch --clipboard --screenshots
 ```
 
-**Three ingestion channels run simultaneously:**
+**Five ingestion channels run simultaneously:**
 
 1. **Inbox folder** — drop any file into `inbox/` and it's auto-ingested. Files already in the inbox when the daemon starts are picked up too.
-2. **HTTP endpoint** — `POST http://localhost:4747/ingest` accepts JSON `{ content, title?, url? }`. Built for browser extensions.
+2. **HTTP endpoint** — `POST http://localhost:4747/ingest` accepts JSON `{ content, title?, url? }`. Supports URL-only requests for web extraction. Built for browser extensions.
 3. **Folder watchers** — monitor external directories with glob filtering (e.g., watch `~/Downloads` for `*.pdf`).
+4. **Clipboard watcher** — polls the system clipboard and auto-ingests meaningful text (macOS, Linux, Windows). Deduplicates via hash.
+5. **Screenshot watcher** — monitors your OS screenshots folder, auto-ingests new images through the vision pipeline. Auto-detects the default screenshot directory per platform.
 
 **Auto-compile** triggers automatically after N new sources (default: 5) or after idle timeout (default: 30 min).
+
+**Chrome extension** adds two more passive learning modes:
+- **Auto-capture** — automatically saves pages you spend 30+ seconds reading (configurable dwell time)
+- **History sync** — periodically scans browser history and sends recently visited pages to kib
 
 Configure in `.kb/config.toml`:
 
@@ -252,6 +261,18 @@ recursive = false
 path = "~/Documents/notes"
 glob = "*.{md,txt}"
 recursive = true
+
+# Clipboard watching (off by default)
+[watch.clipboard]
+enabled = true
+min_length = 100          # ignore clips shorter than 100 chars
+poll_interval_ms = 2_000
+
+# Screenshot watching (off by default)
+[watch.screenshots]
+enabled = true
+path = "~/Pictures/Screenshots"  # optional — auto-detected per OS
+glob = "*.{png,jpg,jpeg,webp,gif,bmp,tiff}"
 ```
 
 Failed ingestions retry up to 3 times before moving to the failed queue. Logs are written to `.kb/logs/watch.log` with automatic rotation at 10 MB.

@@ -92,8 +92,12 @@ kib watch --uninstall   # remove system service
 
 **Ingestion channels:**
 - **Inbox** — drop files into `inbox/` (picks up files added while daemon was off)
-- **HTTP** — `POST localhost:4747/ingest` with `{ content, title?, url? }`
+- **HTTP** — `POST localhost:4747/ingest` with `{ content, title?, url? }` (supports URL-only for web extraction)
 - **Folder watchers** — monitor external directories with glob patterns
+- **Clipboard** — polls system clipboard, auto-ingests meaningful text (`--clipboard`)
+- **Screenshots** — watches your OS screenshots folder, ingests via vision model (`--screenshots`)
+
+The **Chrome extension** adds auto-capture (saves pages after configurable dwell time) and browser history sync.
 
 **Auto-compile** triggers after a configurable number of new sources or idle timeout. Configure via `[watch]` section in `.kb/config.toml`.
 

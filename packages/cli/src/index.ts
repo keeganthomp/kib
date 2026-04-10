@@ -132,7 +132,7 @@ program
 
 program
 	.command("watch")
-	.description("Watch inbox/ and auto-ingest (passive learning daemon)")
+	.description("Passive learning daemon — inbox, folders, clipboard, screenshots, auto-compile")
 	.option("--daemon", "run in background as a daemon")
 	.option("--stop", "stop the running daemon")
 	.option("--status", "check if the daemon is running")

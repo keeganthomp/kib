@@ -75,3 +75,25 @@ kib skill installed                       # list installed skills
 - Dependency resolution with circular dependency detection
 - Hooks system: skills auto-run after compile/ingest/lint via `hooks` field or `[skills.hooks]` in config.toml
 - Config: `[skills]` section in `config.toml` for hooks and per-skill settings
+
+## Passive Learning Daemon
+
+### Watch Sources
+- **Inbox folder** — auto-ingest files dropped into `inbox/`
+- **HTTP endpoint** — `POST localhost:4747/ingest` (content or URL-only)
+- **Folder watchers** — configurable multi-folder with glob patterns
+- **Clipboard watcher** — polls system clipboard, dedup via hash, configurable min length
+- **Screenshot watcher** — watches OS screenshot folder via vision pipeline, auto-detects per platform
+
+### Chrome Extension
+- **Manual save** — "Save to kib" button with content extraction via Readability
+- **Auto-capture** — dwell time tracking, configurable threshold (10–120s), toggle in popup
+- **History sync** — periodic browser history scan, configurable interval and lookback, URL dedup
+
+### CLI Flags
+```bash
+kib watch --clipboard       # enable clipboard watching
+kib watch --no-clipboard    # disable clipboard watching
+kib watch --screenshots     # enable screenshot watching
+kib watch --no-screenshots  # disable screenshot watching
+```
