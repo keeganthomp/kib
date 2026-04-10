@@ -1,4 +1,9 @@
 export {
+	type ClipboardWatcherOptions,
+	readClipboard,
+	startClipboardWatcher,
+} from "./clipboard-watcher.js";
+export {
 	type FolderWatcherOptions,
 	matchGlob,
 	scanFolder,
@@ -20,6 +25,11 @@ export {
 	readItem,
 } from "./queue.js";
 export { CompileScheduler, type SchedulerOptions } from "./scheduler.js";
+export {
+	detectScreenshotDir,
+	type ScreenshotWatcherOptions,
+	startScreenshotWatcher,
+} from "./screenshot-watcher.js";
 export {
 	detectPlatform,
 	type InstallResult,

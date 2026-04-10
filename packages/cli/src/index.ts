@@ -138,6 +138,10 @@ program
 	.option("--status", "check if the daemon is running")
 	.option("--install", "install as a system service (launchd/systemd)")
 	.option("--uninstall", "remove the system service")
+	.option("--clipboard", "enable clipboard watching")
+	.option("--no-clipboard", "disable clipboard watching")
+	.option("--screenshots", "enable screenshot watching")
+	.option("--no-screenshots", "disable screenshot watching")
 	.action(async (opts) => {
 		const { watch } = await import("./commands/watch.js");
 		await watch(opts);

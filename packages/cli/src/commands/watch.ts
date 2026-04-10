@@ -11,6 +11,8 @@ interface WatchOptions {
 	status?: boolean;
 	install?: boolean;
 	uninstall?: boolean;
+	clipboard?: boolean;
+	screenshots?: boolean;
 }
 
 export async function watch(opts: WatchOptions = {}) {
@@ -112,7 +114,10 @@ export async function watch(opts: WatchOptions = {}) {
 	const config = await loadConfig(root);
 	await writePid(root);
 
-	const cleanup = await startWatch(root, config);
+	const cleanup = await startWatch(root, config, {
+		clipboard: opts.clipboard,
+		screenshots: opts.screenshots,
+	});
 
 	const shutdown = async () => {
 		cleanup();
@@ -128,17 +133,28 @@ export async function watch(opts: WatchOptions = {}) {
 	process.on("SIGTERM", shutdown);
 }
 
+interface WatchOverrides {
+	clipboard?: boolean;
+	screenshots?: boolean;
+}
+
 /**
  * Core watch loop. Sets up:
  * 1. Inbox file watcher
  * 2. HTTP server for browser extension
  * 3. Multi-folder watchers (from config)
- * 4. Ingest queue consumer
- * 5. Auto-compile scheduler
+ * 4. Clipboard watcher (if enabled)
+ * 5. Screenshot watcher (if enabled)
+ * 6. Ingest queue consumer
+ * 7. Auto-compile scheduler
  *
  * Returns a cleanup function.
  */
-async function startWatch(root: string, config: VaultConfig): Promise<() => void> {
+async function startWatch(
+	root: string,
+	config: VaultConfig,
+	overrides: WatchOverrides = {},
+): Promise<() => void> {
 	const {
 		ingestSource,
 		enqueue,
@@ -150,6 +166,8 @@ async function startWatch(root: string, config: VaultConfig): Promise<() => void
 		appendWatchLog,
 		CompileScheduler,
 		startFolderWatchers,
+		startClipboardWatcher,
+		startScreenshotWatcher,
 		compileVault,
 		createProvider,
 		isLocked,
@@ -295,6 +313,48 @@ async function startWatch(root: string, config: VaultConfig): Promise<() => void
 		emit("info", `Watching ${config.watch.folders.length} additional folder(s).`);
 	}
 
+	// ── Clipboard watcher ───────────────────────────────────────
+
+	const clipboardEnabled = overrides.clipboard ?? config.watch.clipboard.enabled;
+	let clipboardCleanup: { stop: () => void } | null = null;
+	if (clipboardEnabled) {
+		const slug = () => `clipboard-${Date.now()}`;
+		clipboardCleanup = startClipboardWatcher({
+			minLength: config.watch.clipboard.min_length,
+			pollIntervalMs: config.watch.clipboard.poll_interval_ms,
+			onText: async (text) => {
+				const tmpPath = join(root, "inbox", `${slug()}.md`);
+				await Bun.write(tmpPath, text);
+				emit("info", `Clipboard captured (${text.length} chars)`);
+				await enqueue(root, tmpPath, "clipboard");
+				await consumeQueue();
+			},
+		});
+		emit("info", `Clipboard watcher active (min ${config.watch.clipboard.min_length} chars).`);
+	}
+
+	// ── Screenshot watcher ──────────────────────────────────────
+
+	const screenshotsEnabled = overrides.screenshots ?? config.watch.screenshots.enabled;
+	let screenshotCleanup: { stop: () => void } | null = null;
+	if (screenshotsEnabled) {
+		const result = await startScreenshotWatcher({
+			path: config.watch.screenshots.path,
+			glob: config.watch.screenshots.glob,
+			onFile: async (filePath) => {
+				emit("info", `Screenshot detected: ${filePath}`);
+				await enqueue(root, filePath, "screenshot");
+				await consumeQueue();
+			},
+		});
+		if (result) {
+			screenshotCleanup = result;
+			emit("info", `Screenshot watcher active: ${result.dir}`);
+		} else {
+			emit("warn", "Screenshot watcher: could not detect screenshot directory.");
+		}
+	}
+
 	// ── Process any items already in the queue ───────────────────
 
 	const initialDepth = await queueDepth(root);
@@ -313,6 +373,14 @@ async function startWatch(root: string, config: VaultConfig): Promise<() => void
 				log.dim(`  + ${f.path} (${f.glob}${f.recursive ? ", recursive" : ""})`);
 			}
 		}
+		if (clipboardEnabled) {
+			log.dim(
+				`  + clipboard (min ${config.watch.clipboard.min_length} chars, poll ${config.watch.clipboard.poll_interval_ms}ms)`,
+			);
+		}
+		if (screenshotCleanup) {
+			log.dim(`  + screenshots (${config.watch.screenshots.path ?? "auto-detected"})`);
+		}
 		log.dim(
 			`Auto-compile: after ${config.watch.auto_compile_threshold} sources or ${Math.round(config.watch.auto_compile_delay_ms / 60000)} min idle.`,
 		);
@@ -328,6 +396,8 @@ async function startWatch(root: string, config: VaultConfig): Promise<() => void
 		inboxWatcher.close();
 		server?.stop();
 		folderCleanup?.stop();
+		clipboardCleanup?.stop();
+		screenshotCleanup?.stop();
 		scheduler.stop();
 		clearInterval(queuePollInterval);
 		emit("info", "Daemon stopped.");
