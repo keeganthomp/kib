@@ -71,6 +71,51 @@
         </button>
       </div>
     </main>
+
+    <!-- Settings -->
+    <footer id="settings" class="settings">
+      <div class="settings-divider"></div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-title">Auto-capture</span>
+          <span id="dwell-desc" class="settings-desc">Save pages after 30s</span>
+        </div>
+        <label class="toggle">
+          <input id="toggle-autocapture" type="checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div id="dwell-config" class="dwell-config" hidden>
+        <label class="dwell-label" for="dwell-input">
+          Dwell time
+          <span class="dwell-value"><span id="dwell-display">30</span>s</span>
+        </label>
+        <input id="dwell-input" type="range" min="10" max="120" step="5" value="30" class="dwell-slider">
+      </div>
+
+      <div class="settings-row settings-row-gap">
+        <div class="settings-label">
+          <span class="settings-title">History sync</span>
+          <span id="history-desc" class="settings-desc">Off</span>
+        </div>
+        <label class="toggle">
+          <input id="toggle-history" type="checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div id="history-config" class="dwell-config" hidden>
+        <label class="dwell-label" for="history-interval-input">
+          Scan every
+          <span class="dwell-value"><span id="history-interval-display">15</span> min</span>
+        </label>
+        <input id="history-interval-input" type="range" min="5" max="60" step="5" value="15" class="dwell-slider">
+        <label class="dwell-label dwell-label-gap" for="history-lookback-input">
+          Look back
+          <span class="dwell-value"><span id="history-lookback-display">60</span> min</span>
+        </label>
+        <input id="history-lookback-input" type="range" min="15" max="480" step="15" value="60" class="dwell-slider">
+      </div>
+    </footer>
   </div>
 
   <script src="popup.js"></script>

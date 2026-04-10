@@ -3,7 +3,7 @@
 	"name": "kib",
 	"description": "Save any webpage to your knowledge base",
 	"version": "0.6.0",
-	"permissions": ["activeTab", "scripting"],
+	"permissions": ["activeTab", "scripting", "tabs", "storage", "history"],
 	"host_permissions": ["http://localhost:4747/*"],
 	"action": {
 		"default_popup": "popup.html",

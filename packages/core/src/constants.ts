@@ -41,6 +41,9 @@ export const DEFAULTS = {
 	maxSourceTokens: 32_000, // auto-summarize sources larger than this
 	maxParallel: 3, // max concurrent source compilations
 	tokensPerChar: 0.25, // rough estimate: ~4 chars per token
+	clipboardPollIntervalMs: 2000,
+	clipboardMinLength: 100, // ignore clipboard text shorter than this
+	screenshotGlob: "*.{png,jpg,jpeg,webp,gif,bmp,tiff}",
 } as const;
 
 /** Manifest version */

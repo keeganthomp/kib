@@ -23,7 +23,7 @@ npm i @kibhq/core
 | **Query** | RAG engine — retrieves relevant articles and generates cited answers |
 | **Lint** | 5 health-check rules (orphan articles, broken links, stale sources, etc.) |
 | **Skills** | Skill loader and runner for extensible vault operations |
-| **Daemon** | Watch daemon primitives — FIFO queue, folder watchers, auto-compile scheduler, PID management, log rotation, system service installer (launchd/systemd) |
+| **Daemon** | Watch daemon primitives — FIFO queue, folder watchers, clipboard watcher, screenshot watcher, auto-compile scheduler, PID management, log rotation, system service installer (launchd/systemd) |
 | **Providers** | LLM adapters for Anthropic Claude, OpenAI, and Ollama |
 
 ## Usage

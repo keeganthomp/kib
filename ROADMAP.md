@@ -188,10 +188,10 @@ The features that take kib from "cool tool" to "can't live without it."
 
 ### Passive Learning Daemon
 kib should silently learn from everything you read without you thinking about it.
-- [ ] Chrome extension: "Send to KB" button + optional auto-capture of pages you spend >30s on
-- [ ] `kib watch` as a background daemon (launchd/systemd) — not just inbox, but browser history, clipboard, screenshots
-- [ ] OS-level integration: watch a folder of PDFs, auto-ingest Kindle highlights, Readwise sync
-- [ ] Zero-friction ingest: no commands, no thinking, it just absorbs
+- [x] Chrome extension: "Send to KB" button + optional auto-capture of pages you spend >30s on
+- [x] `kib watch` as a background daemon (launchd/systemd) — not just inbox, but browser history, clipboard, screenshots
+- [ ] OS-level integration: auto-ingest Kindle highlights, Readwise sync
+- [x] Zero-friction ingest: no commands, no thinking, it just absorbs
 
 ### Instant Value Without Compile
 Most of kib's value is locked behind `kib compile`. That's wrong — value should be immediate on ingest.

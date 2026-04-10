@@ -107,6 +107,20 @@ export const VaultConfigSchema = z.object({
 				}),
 			)
 			.default([]),
+		clipboard: z
+			.object({
+				enabled: z.boolean().default(false),
+				min_length: z.number().int().positive().default(DEFAULTS.clipboardMinLength),
+				poll_interval_ms: z.number().int().positive().default(DEFAULTS.clipboardPollIntervalMs),
+			})
+			.default({}),
+		screenshots: z
+			.object({
+				enabled: z.boolean().default(false),
+				path: z.string().optional(),
+				glob: z.string().default(DEFAULTS.screenshotGlob),
+			})
+			.default({}),
 	}),
 	search: z.object({
 		engine: z.enum(["builtin", "vector", "hybrid"]).default("builtin"),
