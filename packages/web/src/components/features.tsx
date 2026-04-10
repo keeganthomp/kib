@@ -23,11 +23,6 @@ export function Features() {
 				{features.map((f) => (
 					<div key={f.title} className="border-b border-border py-4">
 						<span className="font-mono text-sm font-medium">{f.title}</span>
-						{"soon" in f && f.soon && (
-							<span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-								coming soon
-							</span>
-						)}
 						<span className="font-sans text-sm text-muted"> — {f.detail}</span>
 					</div>
 				))}
