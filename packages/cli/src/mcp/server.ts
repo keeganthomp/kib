@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import {
 	compileVault,
 	createProvider,
@@ -247,7 +248,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_query",
-		"Ask a question against the knowledge base using RAG (retrieval-augmented generation). Requires a configured LLM provider.",
+		"Ask a question against the knowledge base using RAG (retrieval-augmented generation). Searches both raw sources and compiled wiki articles, so it works immediately after ingest — no compile needed. Requires a configured LLM provider.",
 		{
 			question: z.string().describe("Question to ask"),
 			max_articles: z
@@ -256,16 +257,24 @@ export function createMcpServer(root: string) {
 				.positive()
 				.max(10)
 				.default(5)
-				.describe("Max articles to use as context"),
+				.describe("Max sources/articles to use as context"),
+			source: z
+				.string()
+				.optional()
+				.describe(
+					"Path to a specific source to query against (e.g. 'raw/articles/my-source.md'). Skips search and uses only this source as context.",
+				),
 		},
-		async ({ question, max_articles }) => {
+		async ({ question, max_articles, source }) => {
 			try {
 				const provider = await ctx.getProvider();
 				const config = await ctx.getConfig();
+				const sourcePath = source ? join(root, source) : undefined;
 				const result = await queryVault(root, question, provider, {
 					maxArticles: max_articles,
 					autoFile: config.query.auto_file,
 					autoFileThreshold: config.query.auto_file_threshold,
+					source: sourcePath,
 				});
 				const filed = result.filedTo ? `\nFiled to: ${result.filedTo}` : "";
 				return ok(
@@ -281,7 +290,7 @@ export function createMcpServer(root: string) {
 
 	server.tool(
 		"kib_ingest",
-		"Ingest a source (URL or file path) into the knowledge base. No API key needed for ingestion. Auto-compiles after ingest if an LLM provider is configured; otherwise sources are saved but not compiled.",
+		"Ingest a source (URL or file path) into the knowledge base. No API key needed for ingestion. Sources are immediately searchable and queryable after ingest. Auto-compiles into wiki articles if an LLM provider is configured.",
 		{
 			source: z.string().describe("URL or file path to ingest"),
 			category: z
@@ -332,9 +341,10 @@ export function createMcpServer(root: string) {
 							title: result.title,
 							wordCount: result.wordCount,
 							skipped: result.skipped,
+							searchable: true,
 							compiled: null,
 							compileError: isProviderErr
-								? "No LLM provider configured. The source was saved but not compiled. Tell the user to set ANTHROPIC_API_KEY, OPENAI_API_KEY, or start Ollama, then run `kib compile`."
+								? "No LLM provider configured. Source is searchable and queryable immediately. To compile into wiki articles, set ANTHROPIC_API_KEY, OPENAI_API_KEY, or start Ollama, then run `kib compile`."
 								: msg,
 						});
 					}
@@ -347,6 +357,7 @@ export function createMcpServer(root: string) {
 					wordCount: result.wordCount,
 					skipped: result.skipped,
 					skipReason: result.skipReason,
+					searchable: !result.skipped,
 					compiled: compiled
 						? {
 								articlesCreated: compiled.articlesCreated,
