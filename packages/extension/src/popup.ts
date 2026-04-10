@@ -16,6 +16,13 @@ const selectionHint = $("selection-hint");
 const resultDetail = $("result-detail");
 const errorDetail = $("error-detail");
 
+// Settings elements
+const toggleAutocapture = $("toggle-autocapture") as HTMLInputElement;
+const dwellConfig = $("dwell-config");
+const dwellInput = $("dwell-input") as HTMLInputElement;
+const dwellDisplay = $("dwell-display");
+const dwellDesc = $("dwell-desc");
+
 let currentTab: chrome.tabs.Tab | null = null;
 
 // ── Views ──
@@ -140,6 +147,35 @@ function displayUrl(url: string): string {
 	}
 }
 
+// ── Settings ──
+
+function updateDwellDesc(seconds: number, enabled: boolean) {
+	dwellDesc.textContent = enabled ? `Save pages after ${seconds}s` : "Off";
+}
+
+async function loadSettings() {
+	try {
+		const result = await chrome.storage.local.get("autoCapture");
+		const settings = result.autoCapture ?? { enabled: false, dwellSeconds: 30 };
+		toggleAutocapture.checked = settings.enabled;
+		dwellInput.value = String(settings.dwellSeconds);
+		dwellDisplay.textContent = String(settings.dwellSeconds);
+		dwellConfig.hidden = !settings.enabled;
+		updateDwellDesc(settings.dwellSeconds, settings.enabled);
+	} catch {
+		// Storage not available
+	}
+}
+
+async function saveSettings() {
+	const settings = {
+		enabled: toggleAutocapture.checked,
+		dwellSeconds: Number.parseInt(dwellInput.value, 10),
+	};
+	await chrome.storage.local.set({ autoCapture: settings });
+	updateDwellDesc(settings.dwellSeconds, settings.enabled);
+}
+
 // ── Init ──
 
 async function init() {
@@ -151,6 +187,9 @@ async function init() {
 		pageTitleEl.textContent = tab.title || "Untitled";
 		pageUrlEl.textContent = displayUrl(tab.url || "");
 	}
+
+	// Load settings
+	await loadSettings();
 
 	// Check kib health
 	const healthy = await checkHealth();
@@ -190,6 +229,22 @@ $("btn-copy-cmd").addEventListener("click", async () => {
 	setTimeout(() => {
 		label.textContent = "copy";
 	}, 1500);
+});
+
+// Settings: toggle auto-capture
+toggleAutocapture.addEventListener("change", () => {
+	dwellConfig.hidden = !toggleAutocapture.checked;
+	saveSettings();
+});
+
+// Settings: dwell time slider
+dwellInput.addEventListener("input", () => {
+	dwellDisplay.textContent = dwellInput.value;
+	updateDwellDesc(Number.parseInt(dwellInput.value, 10), toggleAutocapture.checked);
+});
+
+dwellInput.addEventListener("change", () => {
+	saveSettings();
 });
 
 // Keyboard: Enter to save

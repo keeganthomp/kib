@@ -71,6 +71,28 @@
         </button>
       </div>
     </main>
+
+    <!-- Settings -->
+    <footer id="settings" class="settings">
+      <div class="settings-divider"></div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-title">Auto-capture</span>
+          <span id="dwell-desc" class="settings-desc">Save pages after 30s</span>
+        </div>
+        <label class="toggle">
+          <input id="toggle-autocapture" type="checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div id="dwell-config" class="dwell-config" hidden>
+        <label class="dwell-label" for="dwell-input">
+          Dwell time
+          <span class="dwell-value"><span id="dwell-display">30</span>s</span>
+        </label>
+        <input id="dwell-input" type="range" min="10" max="120" step="5" value="30" class="dwell-slider">
+      </div>
+    </footer>
   </div>
 
   <script src="popup.js"></script>
