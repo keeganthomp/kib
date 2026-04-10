@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SearchIndex } from "../search/engine.js";
+import { VectorIndex } from "../search/vector.js";
 import type { LLMProvider } from "../types.js";
 import { initVault, listImageAssets, loadManifest } from "../vault.js";
 import { ingestSource } from "./ingest.js";
@@ -277,6 +278,83 @@ describe("ingestSource", () => {
 		const dlResults = index.search("deep learning neural");
 		expect(dlResults.length).toBeGreaterThan(0);
 		expect(dlResults[0]!.title).toBe("Deep Learning");
+	});
+
+	test("ingest updates vector index when provider has embed()", async () => {
+		const root = await makeTempVault();
+
+		// Mock provider with embed support
+		const embedProvider: LLMProvider = {
+			name: "mock-embed",
+			async complete() {
+				return {
+					content: "",
+					usage: { inputTokens: 0, outputTokens: 0 },
+					stopReason: "end_turn" as const,
+				};
+			},
+			async *stream() {},
+			async embed(texts: string[]): Promise<Float32Array[]> {
+				return texts.map((text) => {
+					const vec = new Float32Array(32);
+					const lower = text.toLowerCase();
+					for (let i = 0; i < 32; i++) {
+						const char = String.fromCharCode(97 + (i % 26));
+						vec[i] = (lower.match(new RegExp(char, "g")) ?? []).length / lower.length;
+					}
+					return vec;
+				});
+			},
+		};
+
+		const testFile = join(root, "quantum-ml.md");
+		await writeFile(
+			testFile,
+			"# Quantum Machine Learning\n\nQuantum computing applied to machine learning tasks.",
+		);
+
+		await ingestSource(root, testFile, { provider: embedProvider });
+
+		// Verify the vector index was updated
+		const vectorIndex = new VectorIndex();
+		const loaded = await vectorIndex.load(root);
+		expect(loaded).toBe(true);
+		expect(vectorIndex.documentCount).toBe(1);
+
+		const results = await vectorIndex.search("quantum machine learning", embedProvider);
+		expect(results.length).toBe(1);
+		expect(results[0]!.title).toBe("Quantum Machine Learning");
+	});
+
+	test("ingest skips vector index when provider lacks embed()", async () => {
+		const root = await makeTempVault();
+
+		// Provider without embed
+		const noEmbedProvider: LLMProvider = {
+			name: "no-embed",
+			async complete() {
+				return {
+					content: "",
+					usage: { inputTokens: 0, outputTokens: 0 },
+					stopReason: "end_turn" as const,
+				};
+			},
+			async *stream() {},
+		};
+
+		const testFile = join(root, "test-no-embed.md");
+		await writeFile(testFile, "# No Embed\n\nContent without embeddings.");
+
+		await ingestSource(root, testFile, { provider: noEmbedProvider });
+
+		// BM25 index should exist
+		const bm25 = new SearchIndex();
+		expect(await bm25.load(root)).toBe(true);
+		expect(bm25.documentCount).toBe(1);
+
+		// Vector index should NOT exist (no embed support)
+		const vectorIndex = new VectorIndex();
+		expect(await vectorIndex.load(root)).toBe(false);
 	});
 
 	test("image ingest saves binary to wiki/images/", async () => {
