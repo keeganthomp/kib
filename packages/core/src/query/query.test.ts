@@ -10,7 +10,7 @@ import type {
 	Message,
 	StreamChunk,
 } from "../types.js";
-import { initVault, writeWiki } from "../vault.js";
+import { initVault, writeRaw, writeWiki } from "../vault.js";
 import { queryVault } from "./query.js";
 
 let tempDir: string;
@@ -167,5 +167,75 @@ describe("queryVault", () => {
 		expect(receivedMessages[0]!.content).toBe("previous question");
 		expect(receivedMessages[1]!.content).toBe("previous answer");
 		expect(receivedMessages[2]!.content).toContain("follow up question");
+	});
+
+	test("queries raw sources when no wiki articles exist", async () => {
+		const root = await makeTempVault();
+
+		// Write a raw source (no wiki articles)
+		await writeRaw(
+			root,
+			"articles/quantum.md",
+			"---\ntitle: Quantum Computing\nslug: quantum-computing\nsource_type: file\n---\n\n# Quantum Computing\n\nQuantum computers use qubits.",
+		);
+
+		// Build search index over all (raw + wiki)
+		const index = new SearchIndex();
+		await index.build(root, "all");
+		await index.save(root);
+
+		const provider = mockProvider(
+			"Quantum computers use qubits for computation [Quantum Computing].",
+		);
+
+		const result = await queryVault(root, "How do quantum computers work?", provider);
+
+		expect(result.answer).toContain("qubits");
+		expect(result.sourcePaths.length).toBeGreaterThan(0);
+		expect(result.sourcePaths[0]).toContain("raw/");
+	});
+
+	test("single-source query loads specific file directly", async () => {
+		const root = await makeTempVault();
+
+		// Write two raw sources
+		await writeRaw(
+			root,
+			"articles/ml.md",
+			"---\ntitle: Machine Learning\nslug: machine-learning\n---\n\n# Machine Learning\n\nML uses statistical models.",
+		);
+		await writeRaw(
+			root,
+			"articles/dl.md",
+			"---\ntitle: Deep Learning\nslug: deep-learning\n---\n\n# Deep Learning\n\nDeep learning uses neural networks.",
+		);
+
+		// Track what context gets sent to the LLM
+		let receivedContent = "";
+		const provider: LLMProvider = {
+			name: "mock",
+			async complete(params: CompletionParams): Promise<CompletionResult> {
+				receivedContent = params.messages[params.messages.length - 1]!.content;
+				return {
+					content: "Deep learning uses neural networks.",
+					usage: { inputTokens: 100, outputTokens: 50 },
+					stopReason: "end_turn",
+				};
+			},
+			async *stream(): AsyncIterable<StreamChunk> {
+				yield { type: "text", text: "stream" };
+			},
+		};
+
+		const sourcePath = join(root, "raw/articles/dl.md");
+		const result = await queryVault(root, "What is deep learning?", provider, {
+			source: sourcePath,
+		});
+
+		// Should only include the specified source, not ML
+		expect(receivedContent).toContain("Deep Learning");
+		expect(receivedContent).not.toContain("Machine Learning");
+		expect(result.sourcePaths).toHaveLength(1);
+		expect(result.sourcePaths[0]).toContain("dl.md");
 	});
 });

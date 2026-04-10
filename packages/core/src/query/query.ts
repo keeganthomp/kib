@@ -18,6 +18,10 @@ export interface QueryOptions {
 	autoFile?: boolean;
 	/** Minimum sources cited to trigger auto-file (default 3) */
 	autoFileThreshold?: number;
+	/** Search scope: "wiki" for compiled articles only, "raw" for sources only, "all" for both (default: "all") */
+	scope?: "wiki" | "raw" | "all";
+	/** Path to a specific source file to query (skips search, loads this file directly) */
+	source?: string;
 }
 
 export interface QueryResult {
@@ -28,12 +32,12 @@ export interface QueryResult {
 	filedTo?: string;
 }
 
-const QUERY_SYSTEM_PROMPT = `You are a knowledge assistant for a personal wiki. Answer questions using ONLY the information provided in the articles below.
+const QUERY_SYSTEM_PROMPT = `You are a knowledge assistant for a personal knowledge base. Answer questions using ONLY the information provided in the sources below.
 
 RULES:
-- Base your answer strictly on the provided articles
-- Cite sources using [Article Title] notation when referencing specific information
-- If the answer is not in the provided articles, say so clearly
+- Base your answer strictly on the provided sources
+- Cite sources using [Source Title] notation when referencing specific information
+- If the answer is not in the provided sources, say so clearly
 - Be concise and direct
 - Use markdown formatting for readability`;
 
@@ -51,64 +55,83 @@ export async function queryVault(
 	options: QueryOptions = {},
 ): Promise<QueryResult> {
 	const maxArticles = options.maxArticles ?? 5;
+	const scope = options.scope ?? "all";
 
-	// Determine search engine from vault config
-	let searchEngine: "builtin" | "vector" | "hybrid" = "builtin";
-	try {
-		const config = await loadConfig(root);
-		searchEngine = config.search.engine;
-	} catch {
-		// Default to builtin
-	}
-
-	// Search for relevant articles
-	let searchResults: SearchResult[];
-
-	if (searchEngine === "hybrid" || searchEngine === "vector") {
-		const bm25 = new SearchIndex();
-		const vector = new VectorIndex();
-		const hybrid = new HybridSearch(bm25, vector);
-		const loaded = await hybrid.load(root);
-		if (!loaded.bm25) {
-			await hybrid.build(root, provider, "wiki");
-			await hybrid.save(root);
-		}
-		searchResults = await hybrid.search(question, provider, { limit: maxArticles });
-	} else {
-		const index = new SearchIndex();
-		const loaded = await index.load(root);
-		if (!loaded) {
-			await index.build(root, "wiki");
-		}
-		searchResults = index.search(question, { limit: maxArticles });
-	}
-
-	// Load the full articles
+	// Load the full source/article documents
 	const articles: { title: string; path: string; content: string }[] = [];
 
-	for (const result of searchResults) {
+	if (options.source) {
+		// Single-source query: skip search, load the specified file directly
 		try {
-			const content = await readFile(result.path, "utf-8");
+			const content = await readFile(options.source, "utf-8");
 			const { frontmatter, body } = parseFrontmatter(content);
 			articles.push({
-				title: (frontmatter.title as string) ?? result.title ?? result.path,
-				path: result.path,
+				title:
+					(frontmatter.title as string) ??
+					options.source.split("/").pop()?.replace(/\.md$/, "") ??
+					options.source,
+				path: options.source,
 				content: body,
 			});
 		} catch {
-			// File might have been deleted
+			// File not found — fall through to empty context handling
 		}
-	}
+	} else {
+		// Determine search engine from vault config
+		let searchEngine: "builtin" | "vector" | "hybrid" = "builtin";
+		try {
+			const config = await loadConfig(root);
+			searchEngine = config.search.engine;
+		} catch {
+			// Default to builtin
+		}
 
-	// If no articles found, try using INDEX.md as fallback context
-	if (articles.length === 0) {
-		const indexContent = await readIndex(root);
-		if (indexContent) {
-			articles.push({
-				title: "Knowledge Base Index",
-				path: "wiki/INDEX.md",
-				content: indexContent,
-			});
+		// Search for relevant sources/articles
+		let searchResults: SearchResult[];
+
+		if (searchEngine === "hybrid" || searchEngine === "vector") {
+			const bm25 = new SearchIndex();
+			const vector = new VectorIndex();
+			const hybrid = new HybridSearch(bm25, vector);
+			const loaded = await hybrid.load(root);
+			if (!loaded.bm25) {
+				await hybrid.build(root, provider, scope);
+				await hybrid.save(root);
+			}
+			searchResults = await hybrid.search(question, provider, { limit: maxArticles });
+		} else {
+			const index = new SearchIndex();
+			const loaded = await index.load(root);
+			if (!loaded) {
+				await index.build(root, scope);
+			}
+			searchResults = index.search(question, { limit: maxArticles });
+		}
+
+		for (const result of searchResults) {
+			try {
+				const content = await readFile(result.path, "utf-8");
+				const { frontmatter, body } = parseFrontmatter(content);
+				articles.push({
+					title: (frontmatter.title as string) ?? result.title ?? result.path,
+					path: result.path,
+					content: body,
+				});
+			} catch {
+				// File might have been deleted
+			}
+		}
+
+		// If no articles found, try using INDEX.md as fallback context
+		if (articles.length === 0) {
+			const indexContent = await readIndex(root);
+			if (indexContent) {
+				articles.push({
+					title: "Knowledge Base Index",
+					path: "wiki/INDEX.md",
+					content: indexContent,
+				});
+			}
 		}
 	}
 

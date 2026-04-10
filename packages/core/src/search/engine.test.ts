@@ -229,6 +229,127 @@ describe("SearchIndex", () => {
 	});
 });
 
+// ─── Incremental Indexing (addDocument) ─────────────────────────
+
+describe("addDocument", () => {
+	test("adds a new document to an empty index", () => {
+		const index = new SearchIndex();
+		index.addDocument({
+			path: "/tmp/test/raw/articles/test.md",
+			title: "Machine Learning",
+			content: "Machine learning is a subset of artificial intelligence.",
+		});
+
+		expect(index.documentCount).toBe(1);
+		const results = index.search("machine learning");
+		expect(results.length).toBe(1);
+		expect(results[0]!.title).toBe("Machine Learning");
+	});
+
+	test("adds to an existing index built from files", async () => {
+		const root = await makeTempVault();
+		await writeWiki(
+			root,
+			"concepts/transformers.md",
+			articleMd("Transformer Architecture", "The transformer is a neural network architecture."),
+		);
+
+		const index = new SearchIndex();
+		await index.build(root, "wiki");
+		expect(index.documentCount).toBe(1);
+
+		// Add a new document incrementally
+		index.addDocument({
+			path: join(root, "raw/articles/attention.md"),
+			title: "Attention Mechanisms",
+			content: "Attention mechanisms compute weighted sums over value vectors.",
+		});
+
+		expect(index.documentCount).toBe(2);
+
+		// Both documents should be searchable
+		const transformerResults = index.search("transformer");
+		expect(transformerResults.length).toBeGreaterThan(0);
+		expect(transformerResults[0]!.title).toBe("Transformer Architecture");
+
+		const attentionResults = index.search("attention");
+		expect(attentionResults.length).toBeGreaterThan(0);
+		expect(attentionResults[0]!.title).toBe("Attention Mechanisms");
+	});
+
+	test("replaces existing document with same path", () => {
+		const index = new SearchIndex();
+		const path = "/tmp/test/raw/articles/test.md";
+
+		index.addDocument({
+			path,
+			title: "Old Title",
+			content: "Old content about quantum physics.",
+		});
+		expect(index.documentCount).toBe(1);
+
+		// Re-add same path with different content
+		index.addDocument({
+			path,
+			title: "New Title",
+			content: "New content about machine learning.",
+		});
+
+		expect(index.documentCount).toBe(1);
+		const results = index.search("machine learning");
+		expect(results.length).toBe(1);
+		expect(results[0]!.title).toBe("New Title");
+
+		// Old content should not be found
+		const oldResults = index.search("quantum physics");
+		expect(oldResults).toHaveLength(0);
+	});
+
+	test("preserves tags and date", () => {
+		const index = new SearchIndex();
+		index.addDocument({
+			path: "/tmp/test/raw/articles/test.md",
+			title: "Tagged Doc",
+			content: "Some content about testing.",
+			tags: ["ml", "nlp"],
+			date: "2025-06-01",
+		});
+
+		// Tag filter should work
+		const tagResults = index.search("testing", { tag: "ml" });
+		expect(tagResults.length).toBe(1);
+
+		// Date filter should work
+		const dateResults = index.search("testing", { since: "2025-01-01" });
+		expect(dateResults.length).toBe(1);
+
+		// Non-matching tag should filter out
+		const noResults = index.search("testing", { tag: "vision" });
+		expect(noResults).toHaveLength(0);
+	});
+
+	test("save and load round-trip after addDocument", async () => {
+		const root = await makeTempVault();
+
+		const index1 = new SearchIndex();
+		index1.addDocument({
+			path: join(root, "raw/articles/test.md"),
+			title: "Incremental Doc",
+			content: "This document was added incrementally without a full build.",
+		});
+		await index1.save(root);
+
+		const index2 = new SearchIndex();
+		const loaded = await index2.load(root);
+		expect(loaded).toBe(true);
+		expect(index2.documentCount).toBe(1);
+
+		const results = index2.search("incrementally");
+		expect(results.length).toBe(1);
+		expect(results[0]!.title).toBe("Incremental Doc");
+	});
+});
+
 // ─── Fuzzy Matching ─────────────────────────────────────────────
 
 describe("editDistance1", () => {

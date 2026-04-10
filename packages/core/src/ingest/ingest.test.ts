@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { SearchIndex } from "../search/engine.js";
 import type { LLMProvider } from "../types.js";
 import { initVault, listImageAssets, loadManifest } from "../vault.js";
 import { ingestSource } from "./ingest.js";
@@ -226,6 +227,56 @@ describe("ingestSource", () => {
 		expect(rawContent).toContain('title: "My Great Article"');
 		expect(rawContent).toContain("source_type: file");
 		expect(rawContent).toContain("word_count:");
+	});
+
+	test("ingest updates search index so source is immediately searchable", async () => {
+		const root = await makeTempVault();
+
+		const testFile = join(root, "quantum-computing.md");
+		await writeFile(
+			testFile,
+			"# Quantum Computing\n\nQuantum computers use qubits and superposition to solve problems.",
+		);
+
+		await ingestSource(root, testFile);
+
+		// Load the search index and verify the source is searchable
+		const index = new SearchIndex();
+		const loaded = await index.load(root);
+		expect(loaded).toBe(true);
+		expect(index.documentCount).toBeGreaterThan(0);
+
+		const results = index.search("quantum computing");
+		expect(results.length).toBeGreaterThan(0);
+		expect(results[0]!.title).toBe("Quantum Computing");
+	});
+
+	test("multiple ingests build up the search index incrementally", async () => {
+		const root = await makeTempVault();
+
+		const file1 = join(root, "first.md");
+		const file2 = join(root, "second.md");
+		await writeFile(file1, "# Machine Learning\n\nML uses statistical models to learn from data.");
+		await writeFile(
+			file2,
+			"# Deep Learning\n\nDeep learning uses neural networks with many layers.",
+		);
+
+		await ingestSource(root, file1);
+		await ingestSource(root, file2);
+
+		const index = new SearchIndex();
+		const loaded = await index.load(root);
+		expect(loaded).toBe(true);
+		expect(index.documentCount).toBe(2);
+
+		// Both should be searchable
+		const mlResults = index.search("machine learning");
+		expect(mlResults.length).toBeGreaterThan(0);
+
+		const dlResults = index.search("deep learning neural");
+		expect(dlResults.length).toBeGreaterThan(0);
+		expect(dlResults[0]!.title).toBe("Deep Learning");
 	});
 
 	test("image ingest saves binary to wiki/images/", async () => {

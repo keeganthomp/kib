@@ -1,5 +1,8 @@
+import { join } from "node:path";
+import { RAW_DIR } from "../constants.js";
 import { hash } from "../hash.js";
 import { withLock } from "../lockfile.js";
+import { SearchIndex } from "../search/engine.js";
 import type { IngestResult, LLMProvider, Manifest, SourceEntry, SourceType } from "../types.js";
 import { appendLog, loadManifest, saveManifest, writeImageAsset, writeRaw } from "../vault.js";
 import type { Extractor } from "./extractors/interface.js";
@@ -153,6 +156,22 @@ export async function ingestSource(
 
 		await saveManifest(root, manifest);
 		await appendLog(root, "ingest", `"${extracted.title}" (${sourceType}) → raw/${relativePath}`);
+
+		// Incrementally update the search index so the source is immediately searchable
+		try {
+			const index = new SearchIndex();
+			await index.load(root); // Load existing index (or start empty)
+			index.addDocument({
+				path: join(root, RAW_DIR, relativePath),
+				title: extracted.title,
+				content: extracted.content,
+				tags: options.tags,
+				date: now,
+			});
+			await index.save(root);
+		} catch {
+			// Index update is best-effort — don't fail the ingest
+		}
 
 		return {
 			sourceId,

@@ -459,6 +459,73 @@ export class SearchIndex {
 		}
 	}
 
+	/**
+	 * Add a single document to the index incrementally (no full rebuild needed).
+	 * Recomputes IDF after insertion. Call save() to persist.
+	 */
+	addDocument(opts: {
+		path: string;
+		title: string;
+		content: string;
+		tags?: string[];
+		date?: string | null;
+	}): void {
+		// Remove existing document with same path (re-ingest of same source)
+		this.documents = this.documents.filter((d) => d.path !== opts.path);
+
+		const tokens = tokenize(`${opts.title} ${opts.title} ${opts.content}`);
+		const termFreqs = new Map<string, number>();
+		for (const token of tokens) {
+			termFreqs.set(token, (termFreqs.get(token) ?? 0) + 1);
+		}
+
+		const tags = opts.tags?.map((t) => t.toLowerCase()) ?? [];
+		const date =
+			opts.date && !Number.isNaN(Date.parse(String(opts.date))) ? String(opts.date) : null;
+
+		this.documents.push({
+			path: opts.path,
+			title: opts.title,
+			content: opts.content,
+			tokens,
+			tokenCount: tokens.length,
+			termFreqs,
+			tags,
+			date,
+		});
+
+		// Recompute IDF with the updated document set
+		this.recomputeIdf();
+	}
+
+	/**
+	 * Recompute IDF values and average document length from current documents.
+	 */
+	private recomputeIdf(): void {
+		this.idf.clear();
+		const N = this.documents.length;
+		const docFreq = new Map<string, number>();
+
+		for (const doc of this.documents) {
+			const seen = new Set<string>();
+			for (const token of doc.tokens) {
+				if (!seen.has(token)) {
+					docFreq.set(token, (docFreq.get(token) ?? 0) + 1);
+					seen.add(token);
+				}
+			}
+		}
+
+		for (const [term, df] of docFreq) {
+			this.idf.set(term, Math.log((N - df + 0.5) / (df + 0.5) + 1));
+		}
+
+		this.avgDl =
+			this.documents.length > 0
+				? this.documents.reduce((sum, d) => sum + d.tokenCount, 0) / this.documents.length
+				: 0;
+	}
+
 	get documentCount(): number {
 		return this.documents.length;
 	}
