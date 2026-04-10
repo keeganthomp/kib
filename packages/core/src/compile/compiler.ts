@@ -700,6 +700,35 @@ async function compileVaultInner(
 
 		await saveManifest(root, manifest);
 
+		// Update search index with newly compiled wiki articles
+		try {
+			const { SearchIndex } = await import("../search/engine.js");
+			const searchIndex = new SearchIndex();
+			await searchIndex.load(root);
+			for (const op of allOperations) {
+				if ((op.op === "create" || op.op === "update") && op.content) {
+					const { frontmatter, body } = parseFrontmatter(op.content);
+					const title =
+						(frontmatter.title as string) ?? op.path.split("/").pop()?.replace(/\.md$/, "") ?? "";
+					const tags = Array.isArray(frontmatter.tags) ? (frontmatter.tags as string[]) : [];
+					const date =
+						(frontmatter.created as string) ??
+						(frontmatter.updated as string) ??
+						new Date().toISOString().slice(0, 10);
+					searchIndex.addDocument({
+						path: join(root, op.path),
+						title,
+						content: body,
+						tags,
+						date,
+					});
+				}
+			}
+			await searchIndex.save(root);
+		} catch {
+			// Search index update is best-effort — don't fail the compile
+		}
+
 		// Log compile activity
 		const parts = [`${sourcesToCompile.length} sources compiled`];
 		if (totalCreated > 0) parts.push(`${totalCreated} articles created`);

@@ -25,14 +25,14 @@ export function matchGlob(filename: string, pattern: string): boolean {
 
 	// Handle *.{ext1,ext2} pattern
 	const braceMatch = pattern.match(/^\*\.\{(.+)\}$/);
-	if (braceMatch) {
+	if (braceMatch?.[1]) {
 		const extensions = braceMatch[1].split(",").map((e) => `.${e.trim()}`);
 		return extensions.includes(extname(filename).toLowerCase());
 	}
 
 	// Handle *.ext pattern
 	const extMatch = pattern.match(/^\*(\..+)$/);
-	if (extMatch) {
+	if (extMatch?.[1]) {
 		return extname(filename).toLowerCase() === extMatch[1].toLowerCase();
 	}
 
@@ -105,7 +105,7 @@ export async function scanFolder(folder: WatchFolder): Promise<string[]> {
 	try {
 		const files = await readdir(absPath, { recursive: folder.recursive });
 		for (const file of files) {
-			const name = typeof file === "string" ? file : file.toString();
+			const name = String(file);
 			const base = name.includes("/") ? name.split("/").pop()! : name;
 			if (!base.startsWith(".") && matchGlob(base, folder.glob)) {
 				matches.push(join(absPath, name));

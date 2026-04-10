@@ -235,13 +235,13 @@ async function installFromGitHub(
 	skillsDir: string,
 ): Promise<InstallResult> {
 	// repo format: "user/repo" or "user/repo#branch"
-	const [repoPath, branch] = repo.split("#");
+	const [repoPath, branch] = repo.split("#") as [string, string | undefined];
 	const parts = repoPath.split("/");
-	if (parts.length !== 2) {
+	if (parts.length !== 2 || !parts[1]) {
 		throw new Error(`Invalid GitHub repo format: "${repo}". Expected "user/repo"`);
 	}
 
-	const repoName = parts[1];
+	const repoName: string = parts[1];
 	const destDir = join(skillsDir, repoName);
 
 	if (existsSync(destDir)) {

@@ -57,7 +57,10 @@ describe("watch: HTTP server /ingest", () => {
 	});
 
 	test("builds correct markdown without url", () => {
-		const body = { content: "Body text", title: "Title Only" };
+		const body: { content: string; title: string; url?: string } = {
+			content: "Body text",
+			title: "Title Only",
+		};
 		const fullContent = body.title
 			? `# ${body.title}\n\n${body.url ? `Source: ${body.url}\n\n` : ""}${body.content}`
 			: body.content;
