@@ -157,20 +157,20 @@ kib ingests sources (URLs, PDFs, YouTube, GitHub repos, files, images) and compi
 
 **Work immediately (no API key needed):**
 - \`kib_status\` — vault state, provider status, and setup instructions
-- \`kib_search\` — full-text BM25 search across all articles
+- \`kib_search\` — full-text search across all sources and articles (works immediately after ingest)
 - \`kib_list\` — list wiki articles or raw sources
 - \`kib_read\` — read a specific article or source
-- \`kib_ingest\` — ingest URLs, files, PDFs, YouTube, repos, images (saves to raw/)
+- \`kib_ingest\` — ingest URLs, files, PDFs, YouTube, repos, images (immediately searchable)
 - \`kib_export\` — export wiki as markdown or HTML
 - \`kib_lint\` — health checks on the wiki
 - \`kib_config\` — get/set vault configuration
 
 **Require an LLM API key:**
-- \`kib_compile\` — compile raw sources into wiki articles via LLM
-- \`kib_query\` — ask questions with RAG (retrieval-augmented generation)
+- \`kib_compile\` — compile raw sources into wiki articles via LLM (optional enrichment)
+- \`kib_query\` — ask questions with RAG — works over raw sources and wiki articles, use \`source\` param to query a specific file
 - \`kib_skill\` — run skills (summarize, flashcards, connections, etc.)
 
-Note: \`kib_ingest\` auto-compiles after ingesting if a provider is configured. Without a key, sources are saved but not compiled.
+Note: Sources are searchable and queryable immediately after ingest — no compile needed. \`kib_ingest\` auto-compiles if a provider is configured, creating enriched wiki articles.
 ${apiKeySection}
 ## Vault Layout
 

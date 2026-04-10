@@ -310,6 +310,41 @@ export class VectorIndex {
 		}
 	}
 
+	/**
+	 * Add a single document to the vector index incrementally.
+	 * Requires a provider with embed() support. Call save() to persist.
+	 */
+	async addDocument(
+		opts: { path: string; title: string; content: string },
+		provider: LLMProvider,
+	): Promise<void> {
+		if (!provider.embed) {
+			throw new Error(`Provider "${provider.name}" does not support embeddings`);
+		}
+
+		// Remove existing document with same path (re-ingest)
+		this.documents = this.documents.filter((d) => d.path !== opts.path);
+
+		const contentHash = await hash(opts.content);
+		const text = `${opts.title}\n\n${opts.content}`;
+		const chunks = chunkText(text);
+		const [embedding] = await provider.embed([chunks[0]!]);
+		if (!embedding) return;
+		normalize(embedding);
+
+		if (this.dimensions === 0) {
+			this.dimensions = embedding.length;
+		}
+
+		this.documents.push({
+			path: opts.path,
+			title: opts.title,
+			snippet: opts.content.slice(0, 200),
+			hash: contentHash,
+			embedding,
+		});
+	}
+
 	get documentCount(): number {
 		return this.documents.length;
 	}

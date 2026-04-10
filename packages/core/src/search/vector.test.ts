@@ -293,6 +293,103 @@ describe("VectorIndex", () => {
 		expect(result.total).toBe(1);
 	});
 
+	test("addDocument adds to an empty index", async () => {
+		const root = await makeTempVault();
+		const provider = createMockEmbedProvider();
+
+		const index = new VectorIndex();
+		await index.addDocument(
+			{
+				path: join(root, "raw/articles/ml.md"),
+				title: "Machine Learning",
+				content: "Machine learning uses neural networks for deep learning tasks.",
+			},
+			provider,
+		);
+
+		expect(index.documentCount).toBe(1);
+		const results = await index.search("machine learning neural", provider);
+		expect(results.length).toBe(1);
+		expect(results[0]!.title).toBe("Machine Learning");
+	});
+
+	test("addDocument adds to an existing built index", async () => {
+		const root = await makeTempVault();
+		const provider = createMockEmbedProvider();
+
+		await writeWiki(
+			root,
+			"concepts/transformers.md",
+			articleMd("Transformer Architecture", "The transformer uses self-attention mechanisms."),
+		);
+
+		const index = new VectorIndex();
+		await index.build(root, provider, "wiki");
+		expect(index.documentCount).toBe(1);
+
+		await index.addDocument(
+			{
+				path: join(root, "raw/articles/attention.md"),
+				title: "Attention Mechanisms",
+				content: "Attention mechanisms compute weighted sums in neural network layers.",
+			},
+			provider,
+		);
+
+		expect(index.documentCount).toBe(2);
+
+		const results = await index.search("attention neural", provider);
+		expect(results.length).toBe(2);
+		expect(results[0]!.title).toBe("Attention Mechanisms");
+	});
+
+	test("addDocument replaces existing document with same path", async () => {
+		const provider = createMockEmbedProvider();
+		const path = "/tmp/test/raw/articles/test.md";
+
+		const index = new VectorIndex();
+		await index.addDocument(
+			{ path, title: "Old", content: "Old content about quantum physics." },
+			provider,
+		);
+		expect(index.documentCount).toBe(1);
+
+		await index.addDocument(
+			{ path, title: "New", content: "New content about neural network deep learning." },
+			provider,
+		);
+		expect(index.documentCount).toBe(1);
+
+		const results = await index.search("neural network", provider);
+		expect(results.length).toBe(1);
+		expect(results[0]!.title).toBe("New");
+	});
+
+	test("addDocument save/load round-trip", async () => {
+		const root = await makeTempVault();
+		const provider = createMockEmbedProvider();
+
+		const index1 = new VectorIndex();
+		await index1.addDocument(
+			{
+				path: join(root, "raw/articles/test.md"),
+				title: "Incremental Doc",
+				content: "Neural network deep learning transformer architecture.",
+			},
+			provider,
+		);
+		await index1.save(root);
+
+		const index2 = new VectorIndex();
+		const loaded = await index2.load(root);
+		expect(loaded).toBe(true);
+		expect(index2.documentCount).toBe(1);
+
+		const results = await index2.search("neural transformer", provider);
+		expect(results.length).toBe(1);
+		expect(results[0]!.title).toBe("Incremental Doc");
+	});
+
 	test("throws when provider lacks embed", async () => {
 		const root = await makeTempVault();
 		const provider: LLMProvider = {

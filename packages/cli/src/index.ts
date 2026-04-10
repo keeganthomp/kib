@@ -96,6 +96,7 @@ program
 	.option("--file", "auto-file to wiki/outputs/")
 	.option("--no-file", "never file")
 	.option("--sources", "show which articles were used")
+	.option("--source <path>", "query a specific source file directly")
 	.option("--json", "JSON output")
 	.action(async (question, opts) => {
 		const { query } = await import("./commands/query.js");

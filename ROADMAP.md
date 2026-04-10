@@ -195,10 +195,10 @@ kib should silently learn from everything you read without you thinking about it
 
 ### Instant Value Without Compile
 Most of kib's value is locked behind `kib compile`. That's wrong — value should be immediate on ingest.
-- [ ] Search + query over raw sources directly (no compile required)
-- [ ] Compile becomes an optional enrichment step, not a prerequisite
-- [ ] Incremental indexing: search index updates on ingest, not compile
-- [ ] "Ask about this source" — query a single raw source without compiling the whole vault
+- [x] Search + query over raw sources directly (no compile required)
+- [x] Compile becomes an optional enrichment step, not a prerequisite
+- [x] Incremental indexing: search index updates on ingest, not compile
+- [x] "Ask about this source" — query a single raw source without compiling the whole vault
 
 ### Beyond CLI
 CLI-only means developer-only. The knowledge is valuable to everyone.

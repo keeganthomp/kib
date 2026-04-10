@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import type { LLMProvider } from "@kibhq/core";
 import {
 	createProvider,
@@ -14,6 +15,7 @@ import { createSpinner } from "../ui/spinner.js";
 interface QueryOpts {
 	file?: boolean;
 	sources?: boolean;
+	source?: string;
 	json?: boolean;
 }
 
@@ -47,13 +49,19 @@ export async function query(question: string, opts: QueryOpts) {
 
 	const { queryVault } = await import("@kibhq/core");
 
+	// Resolve --source path to absolute
+	const sourcePath = opts.source ? resolve(opts.source) : undefined;
+
 	debug(`vault root: ${root}`);
 	debug(`provider: ${config.provider.default}, model: ${config.provider.model}`);
 	debug(`question: "${question}"`);
+	if (sourcePath) debug(`source: ${sourcePath}`);
 
-	log.header("querying knowledge base");
+	log.header(sourcePath ? "querying source" : "querying knowledge base");
 
-	const spinner = createSpinner("Searching and generating answer...");
+	const spinner = createSpinner(
+		sourcePath ? "Reading source and generating answer..." : "Searching and generating answer...",
+	);
 	spinner.start();
 	const endQuery = debugTime("queryVault");
 
@@ -62,6 +70,7 @@ export async function query(question: string, opts: QueryOpts) {
 		const result = await queryVault(root, question, provider, {
 			autoFile,
 			autoFileThreshold: config.query.auto_file_threshold,
+			source: sourcePath,
 		});
 		endQuery();
 		debug(`sources used: ${result.sourcePaths.length}`);

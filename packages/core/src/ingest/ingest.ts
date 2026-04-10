@@ -1,5 +1,9 @@
+import { join } from "node:path";
+import { RAW_DIR } from "../constants.js";
 import { hash } from "../hash.js";
 import { withLock } from "../lockfile.js";
+import { SearchIndex } from "../search/engine.js";
+import { VectorIndex } from "../search/vector.js";
 import type { IngestResult, LLMProvider, Manifest, SourceEntry, SourceType } from "../types.js";
 import { appendLog, loadManifest, saveManifest, writeImageAsset, writeRaw } from "../vault.js";
 import type { Extractor } from "./extractors/interface.js";
@@ -153,6 +157,38 @@ export async function ingestSource(
 
 		await saveManifest(root, manifest);
 		await appendLog(root, "ingest", `"${extracted.title}" (${sourceType}) → raw/${relativePath}`);
+
+		// Incrementally update search indexes so the source is immediately searchable
+		const docPath = join(root, RAW_DIR, relativePath);
+		try {
+			const index = new SearchIndex();
+			await index.load(root);
+			index.addDocument({
+				path: docPath,
+				title: extracted.title,
+				content: extracted.content,
+				tags: options.tags,
+				date: now,
+			});
+			await index.save(root);
+		} catch {
+			// BM25 index update is best-effort — don't fail the ingest
+		}
+
+		// Incrementally update vector index if a provider with embed() is available
+		if (options.provider?.embed) {
+			try {
+				const vectorIndex = new VectorIndex();
+				await vectorIndex.load(root);
+				await vectorIndex.addDocument(
+					{ path: docPath, title: extracted.title, content: extracted.content },
+					options.provider,
+				);
+				await vectorIndex.save(root);
+			} catch {
+				// Vector index update is best-effort
+			}
+		}
 
 		return {
 			sourceId,

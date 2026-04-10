@@ -106,7 +106,7 @@ export async function ingest(sources: string[], opts: IngestOpts) {
 			log.dim("(dry run — no files were written)");
 		} else {
 			log.blank();
-			log.dim("run kib compile to update the wiki");
+			log.dim("search and query ready — run kib compile to enrich into wiki articles");
 		}
 	} else if (skipped > 0) {
 		log.dim(`All ${skipped} source${skipped === 1 ? "" : "s"} already ingested`);
