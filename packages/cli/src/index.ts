@@ -58,6 +58,20 @@ program
 	});
 
 program
+	.command("sources")
+	.description("List sources with real-time pipeline status")
+	.option(
+		"--status <status>",
+		"filter by status (queued, ingested, compiling, compiled, enriched, failed)",
+	)
+	.option("--limit <n>", "max sources to show", Number.parseInt)
+	.option("--json", "JSON output")
+	.action(async (opts) => {
+		const { sources } = await import("./commands/sources.js");
+		await sources(opts);
+	});
+
+program
 	.command("compile")
 	.description("Compile raw sources into wiki articles")
 	.option("--force", "recompile all sources")

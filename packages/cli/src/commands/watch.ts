@@ -168,9 +168,10 @@ async function startWatch(
 		startFolderWatchers,
 		startClipboardWatcher,
 		startScreenshotWatcher,
-		compileVault,
 		createProvider,
-		isLocked,
+		openPipelineDB,
+		ingestAndCompile,
+		batchEnrich,
 	} = await import("@kibhq/core");
 
 	const inboxPath = resolve(root, config.watch.inbox_path);
@@ -191,28 +192,38 @@ async function startWatch(
 		}
 	};
 
-	// ── Auto-compile scheduler ───────────────────────────────────
+	// ── Pipeline DB for real-time status tracking ───────────────
+
+	const pipelineDB = openPipelineDB(root);
+
+	// ── LLM provider for compile-on-ingest ──────────────────────
+
+	let compileProvider: import("@kibhq/core").LLMProvider | null = null;
+	try {
+		const compileModel = config.compile.model ?? config.provider.model;
+		compileProvider = await createProvider(config.provider.default, compileModel);
+	} catch {
+		emit("warn", "No LLM provider available — compile-on-ingest disabled, ingest-only mode.");
+	}
+
+	// ── Enrichment scheduler (batched, runs after N compilations or idle) ─
 
 	const scheduler = new CompileScheduler({
 		threshold: config.watch.auto_compile_threshold,
 		delayMs: config.watch.auto_compile_delay_ms,
 		onCompile: async () => {
-			const lockStatus = await isLocked(root);
-			if (lockStatus.locked) {
-				emit("warn", "Skipping auto-compile: vault is locked.");
-				return;
-			}
-			emit("info", "Auto-compiling...");
+			// In the new paradigm, this runs batch enrichment (not full compilation)
+			if (!compileProvider) return;
+			emit("info", "Running batch enrichment...");
 			try {
-				const compileModel = config.compile.model ?? config.provider.model;
-				const provider = await createProvider(config.provider.default, compileModel);
-				const result = await compileVault(root, provider, config);
-				emit(
-					"info",
-					`Compiled ${result.sourcesCompiled} sources → ${result.articlesCreated} created, ${result.articlesUpdated} updated.`,
-				);
+				const enriched = await batchEnrich(root, compileProvider, pipelineDB, {
+					onProgress: (msg) => emit("info", msg),
+				});
+				if (enriched > 0) {
+					emit("info", `Enriched ${enriched} articles with cross-references.`);
+				}
 			} catch (err) {
-				emit("error", `Auto-compile failed: ${(err as Error).message}`);
+				emit("error", `Batch enrichment failed: ${(err as Error).message}`);
 			}
 		},
 		onLog: (msg) => emit("info", msg),
@@ -229,14 +240,42 @@ async function startWatch(
 			const items = await listPending(root, 20);
 			for (const item of items) {
 				try {
-					const result = await ingestSource(root, item.uri, item.options);
-					await dequeue(root, item.id);
-					if (result.skipped) {
-						emit("info", `Skipped: ${result.skipReason}`);
-					} else {
-						emit("info", `Ingested: ${result.title} → ${result.path}`);
-						if (config.watch.auto_compile) {
+					// Compile-on-ingest: each source goes through the full pipeline inline
+					if (compileProvider && config.watch.auto_compile) {
+						const result = await ingestAndCompile(root, item.uri, compileProvider, pipelineDB, {
+							config,
+							callbacks: {
+								onStatus: (id, status, detail) => {
+									emit("info", `[${status}] ${detail ?? id}`);
+								},
+								onProgress: (msg) => emit("info", msg),
+							},
+							...(item.options ?? {}),
+						});
+						await dequeue(root, item.id);
+
+						if (result.error) {
+							emit("warn", `Pipeline failed for ${item.uri}: ${result.error}`);
+						} else {
+							const elapsed = Math.round(result.elapsed);
+							const articles = result.compile
+								? `→ ${result.compile.articlesCreated + result.compile.articlesUpdated} articles`
+								: "";
+							emit(
+								"info",
+								`Pipeline complete: ${result.ingest?.title ?? item.uri} ${articles} (${elapsed}ms)`,
+							);
+							// Schedule batch enrichment
 							scheduler.recordIngest();
+						}
+					} else {
+						// Fallback: ingest-only (no LLM provider available)
+						const result = await ingestSource(root, item.uri, item.options);
+						await dequeue(root, item.id);
+						if (result.skipped) {
+							emit("info", `Skipped: ${result.skipReason}`);
+						} else {
+							emit("info", `Ingested (no compile): ${result.title} → ${result.path}`);
 						}
 					}
 				} catch (err) {
@@ -400,6 +439,7 @@ async function startWatch(
 		screenshotCleanup?.stop();
 		scheduler.stop();
 		clearInterval(queuePollInterval);
+		pipelineDB.close();
 		emit("info", "Daemon stopped.");
 	};
 }

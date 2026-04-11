@@ -5,6 +5,10 @@ interface ContentBlock {
 	text?: string;
 }
 
+interface CacheControl {
+	type: "ephemeral";
+}
+
 // Lazy-loaded SDK
 let AnthropicClass: (new () => AnthropicClient) | null = null;
 
@@ -12,7 +16,12 @@ interface AnthropicClient {
 	messages: {
 		create(params: Record<string, unknown>): Promise<{
 			content: ContentBlock[];
-			usage: { input_tokens: number; output_tokens: number };
+			usage: {
+				input_tokens: number;
+				output_tokens: number;
+				cache_creation_input_tokens?: number;
+				cache_read_input_tokens?: number;
+			};
 			stop_reason: string;
 		}>;
 		stream(params: Record<string, unknown>): AsyncIterable<{
@@ -37,11 +46,24 @@ export function createAnthropicProvider(model: string): LLMProvider {
 
 		async complete(params: CompletionParams): Promise<CompletionResult> {
 			const client = await getClient();
+
+			// Use prompt caching for system prompts — the compile system prompt
+			// is identical across all source compilations within a session. Marking
+			// it with cache_control: ephemeral lets the API cache and reuse it,
+			// saving significant input token costs on repeated calls.
+			const systemBlocks: Array<{ type: "text"; text: string; cache_control?: CacheControl }> = [
+				{
+					type: "text",
+					text: params.system,
+					cache_control: { type: "ephemeral" },
+				},
+			];
+
 			const response = await client.messages.create({
 				model,
 				max_tokens: params.maxTokens ?? 4096,
 				temperature: params.temperature ?? 0,
-				system: params.system,
+				system: systemBlocks,
 				messages: params.messages.map((m) => ({
 					role: m.role,
 					content: m.content,

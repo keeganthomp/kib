@@ -4,6 +4,12 @@ export { buildLinkGraph, generateGraphMd } from "./compile/backlinks.js";
 export { CompileCache } from "./compile/cache.js";
 export type { ArticleEvent, CompileOptions } from "./compile/compiler.js";
 export { compileVault } from "./compile/compiler.js";
+export {
+	extractSourceTopics,
+	generateTopicMap,
+	selectRelevantArticles,
+	shouldUseFastModel,
+} from "./compile/context.js";
 export { extractWikilinks, parseCompileOutput, parseFrontmatter } from "./compile/diff.js";
 export { enrichCrossReferences } from "./compile/enrichment.js";
 export { computeStats, generateIndexMd } from "./compile/index-manager.js";
@@ -19,6 +25,21 @@ export { validateManifestIntegrity } from "./integrity.js";
 export { fixLintIssues, lintVault } from "./lint/lint.js";
 export { ALL_RULES } from "./lint/rules.js";
 export { acquireLock, isLocked, releaseLock, VaultLockError, withLock } from "./lockfile.js";
+export type {
+	PipelineCallbacks,
+	PipelineEvent,
+	PipelineResult,
+	PipelineSource,
+	PipelineStats,
+	SourceStatus,
+} from "./pipeline/index.js";
+export {
+	batchEnrich,
+	ingestAndCompile,
+	openPipelineDB,
+	PipelineDB,
+	syncManifestToPipeline,
+} from "./pipeline/index.js";
 export { createProvider, detectProvider } from "./providers/router.js";
 export { queryVault } from "./query/query.js";
 export type { RecoveryIssue } from "./recovery.js";

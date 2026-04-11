@@ -5,6 +5,18 @@ import { DEFAULT_CATEGORIES, DEFAULTS, MANIFEST_VERSION } from "./constants.js";
 
 export const SourceTypeSchema = z.enum(["web", "pdf", "youtube", "github", "image", "file"]);
 
+// ─── Source Pipeline Status ─────────────────────────────────────
+
+export const SourceStatusSchema = z.enum([
+	"queued",
+	"extracting",
+	"ingested",
+	"compiling",
+	"compiled",
+	"enriched",
+	"failed",
+]);
+
 // ─── Article Categories ──────────────────────────────────────────
 
 export const ArticleCategorySchema = z.enum(["concept", "topic", "reference", "output"]);
@@ -18,6 +30,8 @@ export const SourceEntrySchema = z.object({
 	sourceType: SourceTypeSchema,
 	originalUrl: z.string().optional(),
 	producedArticles: z.array(z.string()),
+	/** Pipeline status — tracked in pipeline.db, mirrored here for portability */
+	status: SourceStatusSchema.default("ingested"),
 	metadata: z.object({
 		title: z.string().optional(),
 		author: z.string().optional(),
