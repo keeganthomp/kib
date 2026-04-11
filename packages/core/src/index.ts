@@ -2,6 +2,12 @@ export type { BackupEntry } from "./backup.js";
 export { createBackup, listBackups, pruneBackups, restoreBackup } from "./backup.js";
 export { buildLinkGraph, generateGraphMd } from "./compile/backlinks.js";
 export { CompileCache } from "./compile/cache.js";
+export {
+	cavemanCompress,
+	compressContext,
+	compressSource,
+	estimateSavings,
+} from "./compile/caveman.js";
 export type { ArticleEvent, CompileOptions } from "./compile/compiler.js";
 export { compileVault } from "./compile/compiler.js";
 export {

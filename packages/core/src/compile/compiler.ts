@@ -25,6 +25,7 @@ import {
 } from "../vault.js";
 import { buildLinkGraph, generateGraphMd } from "./backlinks.js";
 import { CompileCache } from "./cache.js";
+import { compressContext, compressSource, estimateSavings } from "./caveman.js";
 import {
 	extractSourceTopics,
 	generateTopicMap,
@@ -311,16 +312,34 @@ async function compileSingleSource(
 	const contextBudget = Math.floor(contextWindow * 0.3); // 30% of context for existing articles
 	const existingArticles = selectContext(rawExistingArticles, manifest, contextBudget);
 
+	// ── Caveman compression ──────────────────────────────────────
+	// Compress source content and article context before sending to LLM.
+	// Strips articles, filler, hedging, weak verbs while preserving
+	// all technical content, code, URLs, paths, frontmatter, wikilinks.
+	// Saves ~25-40% input tokens on prose-heavy sources.
+	const { text: compressedSource, ratio: sourceRatio } = compressSource(sourceContent);
+	if (sourceRatio > 0.05) {
+		const savings = estimateSavings(sourceContent, compressedSource);
+		options.onProgress?.(
+			`Caveman: compressed source ${savings.percent}% (${savings.saved} tokens saved)`,
+		);
+	}
+
+	const compressedArticles = existingArticles.map((a) => ({
+		path: a.path,
+		content: compressContext(a.content),
+	}));
+
 	// Use compact topic map instead of full INDEX.md (saves ~40-70% tokens)
 	const compactIndex = generateTopicMap(manifest);
 
-	// Build the compile prompt
+	// Build the compile prompt with compressed content
 	const today = new Date().toISOString().split("T")[0]!;
 	const userPrompt = compileUserPrompt({
 		indexContent: compactIndex,
-		sourceContent,
+		sourceContent: compressedSource,
 		sourcePath: `raw/${sourcePath}`,
-		existingArticles,
+		existingArticles: compressedArticles,
 		today,
 	});
 

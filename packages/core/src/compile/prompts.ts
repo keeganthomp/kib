@@ -1,5 +1,8 @@
 /**
  * System prompt for compiling raw sources into wiki articles.
+ *
+ * Written in compressed "caveman" style to minimize input tokens.
+ * LLMs understand this equally well — brevity improves accuracy.
  */
 export function compileSystemPrompt(
 	categories: string[],
@@ -7,58 +10,21 @@ export function compileSystemPrompt(
 ): string {
 	const imageSection =
 		opts?.imageAssets && opts.imageAssets.length > 0
-			? `
-IMAGE REFERENCES:
-- The vault contains these image assets: ${opts.imageAssets.join(", ")}
-- When an article relates to an image source, embed it using standard markdown: ![description](images/filename.ext)
-- Use descriptive alt text that summarizes the image content
-- Only reference images that are directly relevant to the article content
-- Place image references near the text that discusses them`
+			? `\nIMAGES: ${opts.imageAssets.join(", ")}. Embed relevant: ![desc](images/file.ext)`
 			: "";
 
-	return `You are a knowledge compiler. You receive raw source material and an existing wiki index. Your job is to:
+	return `Knowledge compiler. Extract concepts from source, create/update wiki articles.${imageSection}
 
-1. Extract key concepts, topics, and entities from the source
-2. Create new wiki articles OR update existing ones
-3. Add [[wiki-style]] links for cross-references between articles
-4. Maintain consistent style and depth across the wiki
+RULES: ONE concept per article. 200-1000 words. YAML frontmatter: title,slug,category,tags,sources,created,updated,summary. Use [[slug]] wikilinks. Update existing articles, don't duplicate. Categories: ${categories.join(",")}. Slugs: kebab-case. Tags: lowercase-hyphenated. Summary: 1-2 sentences. Write concise, dense prose — no filler words.
 
-RULES:
-- Each article should cover ONE concept or topic clearly
-- Articles should be 200-1000 words
-- Use YAML frontmatter with these fields: title, slug, category, tags, sources, created, updated, summary
-- Use [[wiki-style]] links to reference other articles (use the slug as the link target)
-- Prefer updating existing articles over creating duplicates
-- If a concept already has a wiki article, update it with new information rather than creating a new one
-- Categories: ${categories.join(", ")}
-- Slugs should be kebab-case (e.g., "transformer-architecture")
-- Tags should be lowercase, hyphenated (e.g., "deep-learning")
-- Summary should be 1-2 sentences
-${imageSection}
-
-OUTPUT FORMAT:
-Respond with ONLY a JSON array of file operations. No other text, no markdown code fences, just the raw JSON array:
-[
-  {
-    "op": "create",
-    "path": "wiki/concepts/example-concept.md",
-    "content": "---\\ntitle: Example Concept\\nslug: example-concept\\ncategory: concept\\ntags: [example, demo]\\nsources:\\n  - raw/articles/source-file.md\\ncreated: 2026-04-05\\nupdated: 2026-04-05\\nsummary: >\\n  A brief summary of this concept.\\n---\\n\\n# Example Concept\\n\\nArticle content here..."
-  },
-  {
-    "op": "update",
-    "path": "wiki/topics/existing-topic.md",
-    "content": "full updated content including frontmatter"
-  }
-]
-
-Valid operations:
-- "create": Create a new article at the given path
-- "update": Replace an existing article's content
-- "delete": Remove an article (use sparingly)`;
+OUTPUT: ONLY raw JSON array. No text, no fences.
+[{"op":"create","path":"wiki/concepts/slug.md","content":"---\\ntitle: T\\nslug: s\\ncategory: concept\\ntags: [t]\\nsources:\\n  - raw/articles/src.md\\ncreated: DATE\\nupdated: DATE\\nsummary: Brief.\\n---\\n\\n# Title\\n\\nContent..."},{"op":"update","path":"wiki/topics/slug.md","content":"full content"}]
+ops: create|update|delete`;
 }
 
 /**
  * Build the user message for a compile pass.
+ * Uses minimal section headers to save tokens.
  */
 export function compileUserPrompt(params: {
 	indexContent: string;
@@ -69,25 +35,22 @@ export function compileUserPrompt(params: {
 }): string {
 	const parts: string[] = [];
 
-	parts.push("CURRENT WIKI INDEX:");
-	if (params.indexContent) {
-		parts.push(params.indexContent);
-	} else {
-		parts.push("(empty — this is the first compilation)");
-	}
+	// Compact section headers save ~20 tokens vs verbose originals
+	parts.push("INDEX:");
+	parts.push(params.indexContent || "(empty)");
 
 	if (params.existingArticles.length > 0) {
-		parts.push("\n\nEXISTING ARTICLES THAT MAY NEED UPDATES:");
+		parts.push("\nEXISTING:");
 		for (const article of params.existingArticles) {
-			parts.push(`\n--- ${article.path} ---`);
+			parts.push(`--- ${article.path} ---`);
 			parts.push(article.content);
 		}
 	}
 
-	parts.push(`\n\nNEW SOURCE TO COMPILE (from ${params.sourcePath}):`);
+	parts.push(`\nSOURCE (${params.sourcePath}):`);
 	parts.push(params.sourceContent);
 
-	parts.push(`\n\nToday's date: ${params.today}`);
+	parts.push(`\ndate:${params.today}`);
 
 	return parts.join("\n");
 }
@@ -121,31 +84,19 @@ Output ONLY the markdown content, no JSON, no code fences.`;
 
 /**
  * System prompt for cross-reference enrichment.
+ * Caveman-compressed for token efficiency.
  */
 export function enrichSystemPrompt(): string {
-	return `You are a knowledge graph enricher. You receive an existing wiki article and summaries of newly created articles. Your job is to add [[wikilinks]] to the new articles where they fit naturally in the existing text.
+	return `Add [[wikilinks]] to existing article where new articles are relevant.
 
-RULES:
-- Only add links where the referenced concept is directly relevant to the surrounding text
-- Insert [[slug]] links inline within existing sentences (e.g., "uses self-attention" → "uses [[self-attention]]")
-- Do NOT rewrite sentences or paragraphs — only insert link markup
-- Do NOT add links in YAML frontmatter
-- Do NOT add links that already exist in the article
-- Maximum 3 new links per article
-- If no links are appropriate, return an empty array []
-- Preserve ALL existing content exactly — only add [[ ]] around relevant terms or append brief mentions
-- Update the "updated" field in frontmatter to today's date
+RULES: Insert [[slug]] inline in existing sentences. Don't rewrite — only add link markup. No links in frontmatter. No duplicate links. Max 3 new links. Preserve all content. Update "updated" field. If no links fit, return [].
 
-OUTPUT FORMAT:
-Respond with ONLY a JSON array of file operations. No other text:
-[{"op": "update", "path": "wiki/category/slug.md", "content": "full updated article content"}]
-
-Or if no changes needed:
-[]`;
+OUTPUT: ONLY JSON array. [{"op":"update","path":"wiki/cat/slug.md","content":"full content"}] or []`;
 }
 
 /**
  * Build the user message for cross-reference enrichment.
+ * Caveman-compressed section headers.
  */
 export function enrichUserPrompt(params: {
 	articlePath: string;
@@ -155,15 +106,15 @@ export function enrichUserPrompt(params: {
 }): string {
 	const parts: string[] = [];
 
-	parts.push(`EXISTING ARTICLE TO ENRICH (${params.articlePath}):`);
+	parts.push(`ARTICLE (${params.articlePath}):`);
 	parts.push(params.articleContent);
 
-	parts.push("\n\nNEWLY CREATED ARTICLES THAT MAY BE RELEVANT:");
+	parts.push("\nNEW:");
 	for (const a of params.newArticles) {
-		parts.push(`- **${a.title}** ([[${a.slug}]]) — ${a.summary}. Tags: ${a.tags.join(", ")}`);
+		parts.push(`- ${a.title} [[${a.slug}]] — ${a.summary}. ${a.tags.join(",")}`);
 	}
 
-	parts.push(`\n\nToday's date: ${params.today}`);
+	parts.push(`\ndate:${params.today}`);
 
 	return parts.join("\n");
 }
