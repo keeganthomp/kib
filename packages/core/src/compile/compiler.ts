@@ -25,6 +25,13 @@ import {
 } from "../vault.js";
 import { buildLinkGraph, generateGraphMd } from "./backlinks.js";
 import { CompileCache } from "./cache.js";
+import { compressContext, compressSource, estimateSavings } from "./caveman.js";
+import {
+	extractSourceTopics,
+	generateTopicMap,
+	selectRelevantArticles,
+	shouldUseFastModel,
+} from "./context.js";
 import { extractWikilinks, parseCompileOutput, parseFrontmatter } from "./diff.js";
 import { enrichCrossReferences } from "./enrichment.js";
 import { computeStats, generateIndexMd } from "./index-manager.js";
@@ -246,10 +253,12 @@ async function compileSingleSource(
 	sourceId: string,
 	sourcePath: string,
 	config: VaultConfig,
-	indexContent: string,
+	_indexContent: string,
 	cache: CompileCache | null,
 	options: CompileOptions & { onArticle?: (event: ArticleEvent) => void },
 	imageAssets?: string[],
+	/** Optional fast-model provider for short/simple sources */
+	fastProvider?: LLMProvider | null,
 ): Promise<SourceCompileResult> {
 	const categories = config.compile.categories;
 	const contextWindow = config.compile.context_window;
@@ -280,29 +289,74 @@ async function compileSingleSource(
 		}
 	}
 
-	// Read existing articles this source produced (for context)
-	const rawExistingArticles = await loadExistingArticles(root, manifest, sourceId);
+	// Extract topics from the source to guide context selection
+	const sourceTopics = extractSourceTopics(sourceContent);
+
+	// Select relevant articles (not all produced articles)
+	const producedSlugs = (manifest.sources[sourceId]?.producedArticles ?? [])
+		.map(
+			(p) =>
+				p
+					.replace(/^wiki\//, "")
+					.replace(/\.md$/, "")
+					.split("/")
+					.pop() ?? "",
+		)
+		.filter(Boolean);
+	const relevantSlugs = selectRelevantArticles(manifest, sourceTopics, producedSlugs);
+
+	// Load only the relevant articles (much less context than loading all)
+	const rawExistingArticles = await loadArticlesBySlugs(root, manifest, relevantSlugs);
 
 	// Smart context selection: use summaries if articles are too large
 	const contextBudget = Math.floor(contextWindow * 0.3); // 30% of context for existing articles
 	const existingArticles = selectContext(rawExistingArticles, manifest, contextBudget);
 
-	// Build the compile prompt
+	// ── Caveman compression ──────────────────────────────────────
+	// Compress source content and article context before sending to LLM.
+	// Strips articles, filler, hedging, weak verbs while preserving
+	// all technical content, code, URLs, paths, frontmatter, wikilinks.
+	// Saves ~25-40% input tokens on prose-heavy sources.
+	const { text: compressedSource, ratio: sourceRatio } = compressSource(sourceContent);
+	if (sourceRatio > 0.05) {
+		const savings = estimateSavings(sourceContent, compressedSource);
+		options.onProgress?.(
+			`Caveman: compressed source ${savings.percent}% (${savings.saved} tokens saved)`,
+		);
+	}
+
+	const compressedArticles = existingArticles.map((a) => ({
+		path: a.path,
+		content: compressContext(a.content),
+	}));
+
+	// Use compact topic map instead of full INDEX.md (saves ~40-70% tokens)
+	const compactIndex = generateTopicMap(manifest);
+
+	// Build the compile prompt with compressed content
 	const today = new Date().toISOString().split("T")[0]!;
 	const userPrompt = compileUserPrompt({
-		indexContent,
-		sourceContent,
+		indexContent: compactIndex,
+		sourceContent: compressedSource,
 		sourcePath: `raw/${sourcePath}`,
-		existingArticles,
+		existingArticles: compressedArticles,
 		today,
 	});
+
+	// Route to fast model for short/simple sources (saves cost + latency)
+	const wordCount = sourceContent.split(/\s+/).length;
+	const useFast = fastProvider && shouldUseFastModel(sourceContent, wordCount);
+	const activeProvider = useFast ? fastProvider : provider;
+	if (useFast) {
+		options.onProgress?.(`Using fast model for ${sourcePath} (${wordCount} words)`);
+	}
 
 	// Call the LLM with retry and cache
 	const system = compileSystemPrompt(categories, {
 		imageAssets: imageAssets && imageAssets.length > 0 ? imageAssets : undefined,
 	});
 	const result = await compileWithRetry(
-		provider,
+		activeProvider,
 		system,
 		userPrompt,
 		8192,
@@ -487,6 +541,17 @@ async function compileVaultInner(
 		ttlHours: config.cache.ttl_hours,
 	});
 
+	// Create fast-model provider for short/simple sources
+	let fastProvider: LLMProvider | null = null;
+	try {
+		if (config.provider.fast_model && config.provider.fast_model !== config.provider.model) {
+			const { createProvider } = await import("../providers/router.js");
+			fastProvider = await createProvider(config.provider.default, config.provider.fast_model);
+		}
+	} catch {
+		// Fast model not available — fall through to default
+	}
+
 	let totalCreated = 0;
 	let totalUpdated = 0;
 	let totalDeleted = 0;
@@ -533,6 +598,7 @@ async function compileVaultInner(
 						cache,
 						options,
 						imageAssets,
+						fastProvider,
 					),
 				),
 			);
@@ -602,6 +668,7 @@ async function compileVaultInner(
 					cache,
 					options,
 					imageAssets,
+					fastProvider,
 				);
 
 				totalCreated += result.created;
@@ -840,22 +907,32 @@ function normalizeCategory(raw: string): ArticleCategory {
 }
 
 /**
- * Load existing wiki articles that a source previously produced.
+ * Load wiki articles by slug, resolving their category paths from manifest.
  */
-async function loadExistingArticles(
+async function loadArticlesBySlugs(
 	root: string,
 	manifest: Manifest,
-	sourceId: string,
+	slugs: string[],
 ): Promise<{ path: string; content: string }[]> {
-	const source = manifest.sources[sourceId];
-	if (!source?.producedArticles.length) return [];
+	if (slugs.length === 0) return [];
+
+	const categoryDirs: Record<string, string> = {
+		concept: "concepts",
+		topic: "topics",
+		reference: "references",
+		output: "outputs",
+	};
 
 	const articles: { path: string; content: string }[] = [];
-	for (const articlePath of source.producedArticles) {
+	for (const slug of slugs) {
+		const article = manifest.articles[slug];
+		if (!article) continue;
+
+		const dir = categoryDirs[article.category] ?? "topics";
+		const relPath = `${dir}/${slug}.md`;
 		try {
-			const relPath = articlePath.replace(/^wiki\//, "");
 			const content = await readWiki(root, relPath);
-			articles.push({ path: articlePath, content });
+			articles.push({ path: `wiki/${relPath}`, content });
 		} catch {
 			// Article might have been deleted
 		}

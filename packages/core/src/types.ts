@@ -16,6 +16,7 @@ import type {
 	MessageSchema,
 	SearchResultSchema,
 	SourceEntrySchema,
+	SourceStatusSchema,
 	SourceTokenUsageSchema,
 	SourceTypeSchema,
 	VaultConfigSchema,
@@ -24,6 +25,7 @@ import type {
 // ─── Core Data Types ─────────────────────────────────────────────
 
 export type SourceType = z.infer<typeof SourceTypeSchema>;
+export type SourceStatus = z.infer<typeof SourceStatusSchema>;
 export type ArticleCategory = z.infer<typeof ArticleCategorySchema>;
 export type SourceEntry = z.infer<typeof SourceEntrySchema>;
 export type ArticleEntry = z.infer<typeof ArticleEntrySchema>;

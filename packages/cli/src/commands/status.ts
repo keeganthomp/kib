@@ -85,6 +85,32 @@ export async function status(opts: StatusOpts) {
 		log.warn(`${pendingCount} sources pending — run kib compile`);
 	}
 
+	// Show pipeline stats if available
+	try {
+		const { openPipelineDB, syncManifestToPipeline } = await import("@kibhq/core");
+		const pipelineDB = openPipelineDB(root);
+		await syncManifestToPipeline(root, pipelineDB);
+		const pStats = pipelineDB.stats();
+		if (pStats.total > 0) {
+			log.blank();
+			log.keyValue("PIPELINE", "compile-on-ingest enabled");
+			const parts: string[] = [];
+			if (pStats.compiling > 0) parts.push(`${pStats.compiling} compiling`);
+			if (pStats.ingested > 0) parts.push(`${pStats.ingested} awaiting compile`);
+			if (pStats.failed > 0) parts.push(`${pStats.failed} failed`);
+			if (parts.length > 0) {
+				log.keyValue("ACTIVE", parts.join(", "));
+			}
+			if (pStats.total_input_tokens > 0) {
+				const total = pStats.total_input_tokens + pStats.total_output_tokens;
+				log.keyValue("TOKENS", `${total.toLocaleString()} lifetime`);
+			}
+		}
+		pipelineDB.close();
+	} catch {
+		// Pipeline DB not available — that's fine
+	}
+
 	log.blank();
 }
 
