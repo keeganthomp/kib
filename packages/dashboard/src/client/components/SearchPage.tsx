@@ -50,10 +50,7 @@ export function SearchPage({
 			<h2 className="text-lg font-semibold tracking-tight mb-6">Search</h2>
 
 			<div className="relative mb-8">
-				<Search
-					size={14}
-					className="absolute left-3 top-1/2 -translate-y-1/2 text-[#bbb]"
-				/>
+				<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#bbb]" />
 				<input
 					ref={inputRef}
 					type="text"
@@ -101,12 +98,8 @@ export function SearchPage({
 						>
 							<div className="flex items-center gap-2 mb-0.5">
 								<FileText size={12} className="text-[#bbb] flex-shrink-0" />
-								<span className="text-xs font-medium truncate">
-									{result.title ?? result.path}
-								</span>
-								<span className="text-[9px] text-[#ccc] ml-auto flex-shrink-0">
-									{result.scope}
-								</span>
+								<span className="text-xs font-medium truncate">{result.title ?? result.path}</span>
+								<span className="text-[9px] text-[#ccc] ml-auto flex-shrink-0">{result.scope}</span>
 							</div>
 							{result.snippet && (
 								<p

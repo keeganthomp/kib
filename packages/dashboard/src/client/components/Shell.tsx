@@ -123,16 +123,11 @@ export function Shell({ currentPage, onNavigate, vaultPath, lastEvent, children 
 			<nav className="w-52 flex-shrink-0 bg-[#111] text-white/70 flex flex-col">
 				<div className="px-5 pt-5 pb-4">
 					<div className="flex items-center gap-2">
-						<span className="text-[13px] font-semibold text-white tracking-tight">
-							kib
-						</span>
+						<span className="text-[13px] font-semibold text-white tracking-tight">kib</span>
 						{vaultName && (
 							<>
 								<span className="text-white/20">/</span>
-								<span
-									className="text-[11px] text-white/40 truncate"
-									title={vaultPath}
-								>
+								<span className="text-[11px] text-white/40 truncate" title={vaultPath}>
 									{vaultName}
 								</span>
 							</>
@@ -156,11 +151,7 @@ export function Shell({ currentPage, onNavigate, vaultPath, lastEvent, children 
 							>
 								<Icon size={14} strokeWidth={active ? 2 : 1.5} />
 								<span className="flex-1 text-left">{label}</span>
-								{shortcut && (
-									<span className="text-[9px] text-white/20 font-mono">
-										{shortcut}
-									</span>
-								)}
+								{shortcut && <span className="text-[9px] text-white/20 font-mono">{shortcut}</span>}
 							</button>
 						);
 					})}
@@ -173,9 +164,7 @@ export function Shell({ currentPage, onNavigate, vaultPath, lastEvent, children 
 
 			{/* Main content */}
 			<main className="flex-1 overflow-y-auto relative bg-[#fafafa]">
-				<div className={animating ? "animate-page-in" : ""}>
-					{children}
-				</div>
+				<div className={animating ? "animate-page-in" : ""}>{children}</div>
 
 				{/* Toast stack */}
 				{toasts.length > 0 && (

@@ -30,9 +30,7 @@ export function IngestPage() {
 	return (
 		<div className="p-10 max-w-xl animate-page-in">
 			<h2 className="text-lg font-semibold tracking-tight mb-2">Ingest</h2>
-			<p className="text-xs text-[#999] mb-8">
-				Add a URL to your knowledge base.
-			</p>
+			<p className="text-xs text-[#999] mb-8">Add a URL to your knowledge base.</p>
 
 			<form onSubmit={handleSubmit} className="flex gap-2 mb-8">
 				<input
@@ -48,11 +46,7 @@ export function IngestPage() {
 					disabled={!url.trim() || loading}
 					className="px-3 py-2.5 bg-[#111] text-white rounded-md text-xs hover:bg-[#222] disabled:opacity-20 flex items-center gap-1.5"
 				>
-					{loading ? (
-						<Loader2 size={12} className="animate-spin" />
-					) : (
-						<ArrowRight size={12} />
-					)}
+					{loading ? <Loader2 size={12} className="animate-spin" /> : <ArrowRight size={12} />}
 				</button>
 			</form>
 

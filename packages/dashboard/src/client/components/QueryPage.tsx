@@ -105,9 +105,7 @@ export function QueryPage() {
 
 			{sources.length > 0 && (
 				<div className="border-t pt-5">
-					<h3 className="text-[10px] text-[#999] uppercase tracking-widest mb-3">
-						Sources
-					</h3>
+					<h3 className="text-[10px] text-[#999] uppercase tracking-widest mb-3">Sources</h3>
 					<div className="flex flex-wrap gap-1.5">
 						{sources.map((src) => (
 							<span

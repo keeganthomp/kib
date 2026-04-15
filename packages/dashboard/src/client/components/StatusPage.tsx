@@ -1,7 +1,14 @@
 import { BookOpen, Database, FileText, Play, Square, Zap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type VaultStatus } from "../api.js";
 import type { VaultEvent } from "../useEvents.js";
+
+interface LogEntry {
+	key: string;
+	text: string;
+}
+
+let logCounter = 0;
 
 function SkeletonCard() {
 	return (
@@ -22,9 +29,14 @@ export function StatusPage({
 	const [status, setStatus] = useState<VaultStatus | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [compiling, setCompiling] = useState(false);
-	const [compileLog, setCompileLog] = useState<string[]>([]);
+	const [compileLog, setCompileLog] = useState<LogEntry[]>([]);
 	const [compileError, setCompileError] = useState<string | null>(null);
 	const logRef = useRef<HTMLDivElement>(null);
+
+	const pushLog = useCallback((text: string) => {
+		const key = `log-${++logCounter}`;
+		setCompileLog((prev) => [...prev.slice(-29), { key, text }]);
+	}, []);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: revision triggers re-fetch on vault changes
 	useEffect(() => {
@@ -34,7 +46,7 @@ export function StatusPage({
 			.catch((e) => setError((e as Error).message));
 	}, [revision]);
 
-	// Auto-scroll compile log
+	// biome-ignore lint/correctness/useExhaustiveDependencies: compileLog triggers scroll on new entries
 	useEffect(() => {
 		if (logRef.current) {
 			logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -49,23 +61,19 @@ export function StatusPage({
 			setCompileLog([]);
 			setCompileError(null);
 		} else if (lastEvent.type === "compile_progress" && lastEvent.message) {
-			setCompileLog((prev) => [...prev.slice(-29), lastEvent.message!]);
+			pushLog(lastEvent.message);
 		} else if (lastEvent.type === "compile_article" && lastEvent.title) {
-			setCompileLog((prev) => [
-				...prev.slice(-29),
-				`${lastEvent.op === "create" ? "+" : "\u2713"} ${lastEvent.title}`,
-			]);
+			pushLog(`${lastEvent.op === "create" ? "+" : "\u2713"} ${lastEvent.title}`);
 		} else if (lastEvent.type === "compile_done") {
 			setCompiling(false);
-			setCompileLog((prev) => [
-				...prev,
+			pushLog(
 				`\u2192 ${lastEvent.sourcesCompiled} sources \u2192 ${lastEvent.articlesCreated} created, ${lastEvent.articlesUpdated} updated`,
-			]);
+			);
 		} else if (lastEvent.type === "compile_error") {
 			setCompiling(false);
 			setCompileError(lastEvent.message ?? "Compile failed");
 		}
-	}, [lastEvent]);
+	}, [lastEvent, pushLog]);
 
 	const handleCompile = async () => {
 		setCompileError(null);
@@ -138,9 +146,7 @@ export function StatusPage({
 			{/* Header */}
 			<div className="flex items-start justify-between mb-10">
 				<div>
-					<h2 className="text-lg font-semibold tracking-tight mb-1">
-						{status.vault.name}
-					</h2>
+					<h2 className="text-lg font-semibold tracking-tight mb-1">{status.vault.name}</h2>
 					<p className="text-xs text-[#999]">
 						{status.vault.lastCompiled
 							? `Last compiled ${new Date(status.vault.lastCompiled).toLocaleDateString()}`
@@ -184,25 +190,23 @@ export function StatusPage({
 			{/* Compile log */}
 			{compileLog.length > 0 && (
 				<div ref={logRef} className="compile-log mb-6 font-mono">
-					{compileLog.map((line, i) => (
+					{compileLog.map((entry) => (
 						<div
-							key={`${i}-${line}`}
+							key={entry.key}
 							className={
-								line.startsWith("+")
+								entry.text.startsWith("+")
 									? "text-green-400/70"
-									: line.startsWith("\u2713")
+									: entry.text.startsWith("\u2713")
 										? "text-blue-400/70"
-										: line.startsWith("\u2192")
+										: entry.text.startsWith("\u2192")
 											? "text-amber-400/80"
 											: ""
 							}
 						>
-							{line}
+							{entry.text}
 						</div>
 					))}
-					{compiling && (
-						<div className="text-white/20 animate-pulse">waiting for LLM...</div>
-					)}
+					{compiling && <div className="text-white/20 animate-pulse">waiting for LLM...</div>}
 				</div>
 			)}
 
@@ -232,9 +236,7 @@ export function StatusPage({
 
 			{/* Config */}
 			<div className="border-t pt-6">
-				<h3 className="text-[10px] text-[#999] uppercase tracking-widest mb-4">
-					Configuration
-				</h3>
+				<h3 className="text-[10px] text-[#999] uppercase tracking-widest mb-4">Configuration</h3>
 				<div className="space-y-2.5 text-xs">
 					{[
 						["Provider", status.provider.name],
@@ -246,11 +248,7 @@ export function StatusPage({
 							<span className="text-[#999]">{label}</span>
 							<span
 								className={`font-mono text-[11px] ${
-									label === "Status"
-										? value === "Ready"
-											? "text-green-600"
-											: "text-red-400"
-										: ""
+									label === "Status" ? (value === "Ready" ? "text-green-600" : "text-red-400") : ""
 								}`}
 							>
 								{value}

@@ -190,13 +190,9 @@ export function BrowsePage({ revision = 0 }: { revision?: number }) {
 							>
 								<div className="flex items-center justify-between gap-3">
 									<div className="flex-1 min-w-0">
-										<h3 className="text-xs font-medium truncate">
-											{article.slug}
-										</h3>
+										<h3 className="text-xs font-medium truncate">{article.slug}</h3>
 										{article.summary && (
-											<p className="text-[11px] text-[#999] mt-0.5 truncate">
-												{article.summary}
-											</p>
+											<p className="text-[11px] text-[#999] mt-0.5 truncate">{article.summary}</p>
 										)}
 									</div>
 									<span
@@ -235,9 +231,7 @@ export function BrowsePage({ revision = 0 }: { revision?: number }) {
 											{source.sourceType}
 										</span>
 									)}
-									{source.wordCount && (
-										<span>{source.wordCount.toLocaleString()}w</span>
-									)}
+									{source.wordCount && <span>{source.wordCount.toLocaleString()}w</span>}
 								</div>
 							</div>
 						</button>

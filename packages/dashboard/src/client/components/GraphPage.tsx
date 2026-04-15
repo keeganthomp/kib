@@ -39,6 +39,7 @@ export function GraphPage({
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [data, setData] = useState<GraphData | null>(null);
 	const [hovered, setHovered] = useState<GraphNode | null>(null);
+	const hoveredRef = useRef<GraphNode | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: revision triggers re-fetch on vault changes
@@ -98,8 +99,7 @@ export function GraphPage({
 			for (const link of links) {
 				const source = link.source as GraphNode;
 				const target = link.target as GraphNode;
-				if (source.x == null || source.y == null || target.x == null || target.y == null)
-					continue;
+				if (source.x == null || source.y == null || target.x == null || target.y == null) continue;
 				ctx.beginPath();
 				ctx.moveTo(source.x, source.y);
 				ctx.lineTo(target.x, target.y);
@@ -111,16 +111,16 @@ export function GraphPage({
 				if (node.x == null || node.y == null) continue;
 				const radius = 4 + Math.min(node.id.length * 0.25, 4);
 				const color = CATEGORY_COLORS[node.category] ?? "#999";
-				const isHovered = hovered?.id === node.id;
+				const nodeHovered = hoveredRef.current?.id === node.id;
 
 				ctx.beginPath();
-				ctx.arc(node.x, node.y, isHovered ? radius + 2 : radius, 0, Math.PI * 2);
-				ctx.fillStyle = isHovered ? color : `${color}cc`;
+				ctx.arc(node.x, node.y, nodeHovered ? radius + 2 : radius, 0, Math.PI * 2);
+				ctx.fillStyle = nodeHovered ? color : `${color}cc`;
 				ctx.fill();
 
 				// Label
 				ctx.fillStyle = "#666";
-				ctx.font = `${isHovered ? "11" : "9"}px JetBrains Mono, monospace`;
+				ctx.font = `${nodeHovered ? "11" : "9"}px JetBrains Mono, monospace`;
 				ctx.textAlign = "center";
 				ctx.fillText(node.id, node.x, node.y + radius + 12);
 			}
@@ -156,6 +156,7 @@ export function GraphPage({
 					break;
 				}
 			}
+			hoveredRef.current = found;
 			setHovered(found);
 			canvas.style.cursor = found ? "pointer" : "default";
 		};
@@ -198,7 +199,17 @@ export function GraphPage({
 		return (
 			<div className="flex flex-col items-center justify-center h-full animate-page-in">
 				<div className="w-16 h-16 rounded-full bg-[#f5f5f5] flex items-center justify-center mb-4">
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5">
+					<svg
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="#ccc"
+						strokeWidth="1.5"
+						role="img"
+						aria-label="Graph placeholder"
+					>
+						<title>Graph placeholder</title>
 						<circle cx="6" cy="6" r="2" />
 						<circle cx="18" cy="6" r="2" />
 						<circle cx="12" cy="18" r="2" />
@@ -220,10 +231,7 @@ export function GraphPage({
 				<div className="flex items-center gap-4 text-[10px] text-[#999]">
 					{Object.entries(CATEGORY_COLORS).map(([cat, color]) => (
 						<div key={cat} className="flex items-center gap-1.5">
-							<span
-								className="w-2 h-2 rounded-full"
-								style={{ backgroundColor: color }}
-							/>
+							<span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
 							{cat}
 						</div>
 					))}
@@ -236,9 +244,7 @@ export function GraphPage({
 						<p className="text-xs font-medium">{hovered.id}</p>
 						<p className="text-[10px] text-[#999]">{hovered.category}</p>
 						{hovered.summary && (
-							<p className="text-[10px] text-[#999] mt-1 line-clamp-2">
-								{hovered.summary}
-							</p>
+							<p className="text-[10px] text-[#999] mt-1 line-clamp-2">{hovered.summary}</p>
 						)}
 					</div>
 				)}
