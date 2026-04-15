@@ -54,6 +54,24 @@ export * from "./schemas.js";
 export { highlightSnippet, parseQuery, SearchIndex } from "./search/engine.js";
 export { HybridSearch } from "./search/hybrid.js";
 export { VectorIndex } from "./search/vector.js";
+export type {
+	Contributor,
+	PullResult,
+	PushResult,
+	ShareResult,
+	ShareStatus,
+} from "./share.js";
+export {
+	cloneVault,
+	getContributor,
+	isGitRepo,
+	isShared,
+	mergeManifests,
+	pullVault,
+	pushVault,
+	shareStatus,
+	shareVault,
+} from "./share.js";
 export { getBuiltinSkills } from "./skills/builtins.js";
 export { getHookedSkills, runSkillHooks } from "./skills/hooks.js";
 export { findSkill, loadSkills } from "./skills/loader.js";

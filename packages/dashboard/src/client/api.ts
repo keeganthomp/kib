@@ -107,6 +107,31 @@ export interface CompileResult {
 	articlesDeleted: number;
 }
 
+export interface ShareStatus {
+	shared: boolean;
+	remote?: string;
+	branch?: string;
+	ahead: number;
+	behind: number;
+	dirty: boolean;
+	lastSync?: string;
+	contributors: { name: string; email: string; commits: number; lastActive: string }[];
+}
+
+export interface PullResult {
+	updated: boolean;
+	summary: string;
+	newSources: number;
+	newArticles: number;
+	conflicts: string[];
+}
+
+export interface PushResult {
+	pushed: boolean;
+	commit: string;
+	filesChanged: number;
+}
+
 // --- API Functions ---
 
 export const api = {
@@ -202,4 +227,9 @@ export const api = {
 	},
 
 	getGraph: () => get<GraphData>("/graph"),
+
+	// Sharing
+	getShareStatus: () => get<ShareStatus>("/share/status"),
+	sharePull: () => post<PullResult>("/share/pull", {}),
+	sharePush: (message?: string) => post<PushResult>("/share/push", { message }),
 };

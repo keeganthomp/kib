@@ -7,6 +7,7 @@ import { QueryPage } from "./components/QueryPage.js";
 import { SearchPage } from "./components/SearchPage.js";
 import { type Page, Shell } from "./components/Shell.js";
 import { StatusPage } from "./components/StatusPage.js";
+import { TeamPage } from "./components/TeamPage.js";
 import { useEvents } from "./useEvents.js";
 
 export function App() {
@@ -36,6 +37,7 @@ export function App() {
 				<GraphPage onNavigateToArticle={handleNavigateToArticle} revision={revision} />
 			)}
 			{page === "ingest" && <IngestPage />}
+			{page === "team" && <TeamPage revision={revision} />}
 		</Shell>
 	);
 }

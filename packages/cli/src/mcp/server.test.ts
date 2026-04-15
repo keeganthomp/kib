@@ -568,9 +568,12 @@ describe("MCP server", () => {
 				"kib_ingest",
 				"kib_lint",
 				"kib_list",
+				"kib_pull",
+				"kib_push",
 				"kib_query",
 				"kib_read",
 				"kib_search",
+				"kib_share_status",
 				"kib_skill",
 				"kib_status",
 			]);

@@ -6,10 +6,14 @@ import {
 	compileVault,
 	computeStats,
 	ingestSource,
+	isShared,
 	listRaw,
 	listWiki,
+	pullVault,
+	pushVault,
 	readRaw,
 	readWiki,
+	shareStatus,
 } from "@kibhq/core";
 import type { DashboardContext } from "./context.js";
 import { emit, handleEventsStream } from "./events.js";
@@ -282,6 +286,34 @@ export async function handleApi(url: URL, req: Request, ctx: DashboardContext): 
 			}
 
 			return json({ nodes, edges });
+		}
+
+		// GET /api/share/status
+		if (req.method === "GET" && path === "/share/status") {
+			if (!isShared(ctx.root)) {
+				return json({ shared: false, ahead: 0, behind: 0, dirty: false, contributors: [] });
+			}
+			const status = await shareStatus(ctx.root);
+			return json(status);
+		}
+
+		// POST /api/share/pull
+		if (req.method === "POST" && path === "/share/pull") {
+			if (!isShared(ctx.root)) return error("Vault is not shared", 400);
+			const result = await pullVault(ctx.root);
+			if (result.updated) {
+				ctx.invalidateSearch();
+				emit({ type: "search_invalidated" });
+			}
+			return json(result);
+		}
+
+		// POST /api/share/push
+		if (req.method === "POST" && path === "/share/push") {
+			if (!isShared(ctx.root)) return error("Vault is not shared", 400);
+			const body = (await req.json().catch(() => ({}))) as { message?: string };
+			const result = await pushVault(ctx.root, body.message);
+			return json(result);
 		}
 
 		return error("Not found", 404);
