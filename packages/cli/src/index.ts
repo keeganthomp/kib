@@ -172,6 +172,16 @@ program
 	});
 
 program
+	.command("ui")
+	.description("Launch the local web dashboard")
+	.option("--port <port>", "server port", "4848")
+	.option("--no-open", "don't auto-open browser")
+	.action(async (opts) => {
+		const { ui } = await import("./commands/ui.js");
+		await ui(opts);
+	});
+
+program
 	.command("mcp [subcommand]")
 	.description("Configure MCP in AI clients (default: setup)")
 	.action(async (subcommand) => {
