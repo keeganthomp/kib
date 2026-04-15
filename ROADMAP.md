@@ -204,7 +204,7 @@ Most of kib's value is locked behind `kib compile`. That's wrong — value shoul
 CLI-only means developer-only. The knowledge is valuable to everyone.
 - [ ] VS Code extension: sidebar with search, query, ingest from editor
 - [ ] Obsidian plugin: sync kib vault ↔ Obsidian vault, use kib's compile + search
-- [ ] Web UI: local dashboard with graph visualization, search, query (not just export)
+- [x] Web UI: local dashboard with graph visualization, search, query, ingest, compile (`kib ui`)
 - [ ] Raycast/Alfred integration: global hotkey → search your knowledge base
 - [ ] Mobile: read-only PWA for querying on the go
 
@@ -238,10 +238,11 @@ Personal wikis are useful. Team wikis are essential.
 - [ ] Shared vault hosting (GitHub repo as vault backend)
 
 ### Web UI
-- [ ] `kib serve` — local web server with read-only wiki viewer
-- [ ] Search interface in the browser
-- [ ] Article graph visualization (force-directed graph)
-- [ ] Reading mode with backlink sidebar
+- [x] `kib ui` — local web dashboard (Bun server on port 4848, React + D3)
+- [x] Search interface in the browser
+- [x] Article graph visualization (D3 force-directed graph)
+- [x] Reading mode for wiki and raw articles
+- [ ] Backlink sidebar in reading mode
 
 ### Additional Export Formats
 - [ ] PDF export (via Puppeteer or wkhtmltopdf)

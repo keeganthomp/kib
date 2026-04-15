@@ -8,6 +8,7 @@ kib — The Headless Knowledge Compiler. Bun + TypeScript monorepo.
 
 - `packages/core` → `@kibhq/core` on npm
 - `packages/cli` → `@kibhq/cli` on npm
+- `packages/dashboard` → `@kibhq/dashboard` on npm (web UI, launched via `kib ui`)
 - npm org: `kibhq`
 - GitHub: `keeganthomp/kib`
 
