@@ -1,7 +1,16 @@
-import { BookOpen, Database, FileText, Loader2, Play, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
+import { BookOpen, Database, FileText, Play, Square, Zap } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { api, type VaultStatus } from "../api.js";
 import type { VaultEvent } from "../useEvents.js";
+
+function SkeletonCard() {
+	return (
+		<div className="p-5">
+			<div className="skeleton h-3 w-16 mb-3" />
+			<div className="skeleton h-7 w-20" />
+		</div>
+	);
+}
 
 export function StatusPage({
 	revision = 0,
@@ -15,6 +24,7 @@ export function StatusPage({
 	const [compiling, setCompiling] = useState(false);
 	const [compileLog, setCompileLog] = useState<string[]>([]);
 	const [compileError, setCompileError] = useState<string | null>(null);
+	const logRef = useRef<HTMLDivElement>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: revision triggers re-fetch on vault changes
 	useEffect(() => {
@@ -24,6 +34,13 @@ export function StatusPage({
 			.catch((e) => setError((e as Error).message));
 	}, [revision]);
 
+	// Auto-scroll compile log
+	useEffect(() => {
+		if (logRef.current) {
+			logRef.current.scrollTop = logRef.current.scrollHeight;
+		}
+	}, [compileLog]);
+
 	// Handle compile events
 	useEffect(() => {
 		if (!lastEvent) return;
@@ -32,17 +49,17 @@ export function StatusPage({
 			setCompileLog([]);
 			setCompileError(null);
 		} else if (lastEvent.type === "compile_progress" && lastEvent.message) {
-			setCompileLog((prev) => [...prev.slice(-19), lastEvent.message!]);
+			setCompileLog((prev) => [...prev.slice(-29), lastEvent.message!]);
 		} else if (lastEvent.type === "compile_article" && lastEvent.title) {
 			setCompileLog((prev) => [
-				...prev.slice(-19),
+				...prev.slice(-29),
 				`${lastEvent.op === "create" ? "+" : "\u2713"} ${lastEvent.title}`,
 			]);
 		} else if (lastEvent.type === "compile_done") {
 			setCompiling(false);
 			setCompileLog((prev) => [
 				...prev,
-				`Done: ${lastEvent.sourcesCompiled} sources \u2192 ${lastEvent.articlesCreated} created, ${lastEvent.articlesUpdated} updated`,
+				`\u2192 ${lastEvent.sourcesCompiled} sources \u2192 ${lastEvent.articlesCreated} created, ${lastEvent.articlesUpdated} updated`,
 			]);
 		} else if (lastEvent.type === "compile_error") {
 			setCompiling(false);
@@ -69,16 +86,24 @@ export function StatusPage({
 
 	if (error) {
 		return (
-			<div className="p-8">
-				<p className="text-red-500 font-mono text-sm">Error: {error}</p>
+			<div className="p-10">
+				<p className="text-red-500 text-xs font-mono">Error: {error}</p>
 			</div>
 		);
 	}
 
 	if (!status) {
 		return (
-			<div className="p-8">
-				<p className="text-[var(--color-muted)] text-sm">Loading...</p>
+			<div className="p-10 max-w-3xl animate-page-in">
+				<div className="skeleton h-6 w-48 mb-2" />
+				<div className="skeleton h-3 w-64 mb-10" />
+				<div className="grid grid-cols-2 gap-3">
+					{[1, 2, 3, 4].map((i) => (
+						<div key={i} className="border rounded-lg">
+							<SkeletonCard />
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}
@@ -90,125 +115,148 @@ export function StatusPage({
 			label: "Articles",
 			value: status.stats.totalArticles,
 			icon: BookOpen,
-			color: "text-blue-500",
 		},
 		{
 			label: "Sources",
 			value: status.stats.totalSources,
 			icon: FileText,
-			color: "text-green-500",
 		},
 		{
 			label: "Words",
 			value: status.stats.totalWords.toLocaleString(),
 			icon: Database,
-			color: "text-orange-500",
 		},
 		{
 			label: "Provider",
-			value: status.provider.ready ? status.provider.name : "Not configured",
+			value: status.provider.ready ? status.provider.name : "None",
 			icon: Zap,
-			color: status.provider.ready ? "text-purple-500" : "text-red-400",
 		},
 	];
 
 	return (
-		<div className="p-8 max-w-4xl">
-			<div className="flex items-start justify-between mb-6">
+		<div className="p-10 max-w-3xl animate-page-in">
+			{/* Header */}
+			<div className="flex items-start justify-between mb-10">
 				<div>
-					<h2 className="text-xl font-semibold mb-1">{status.vault.name}</h2>
-					<p className="text-sm text-[var(--color-muted)]">
-						Created {new Date(status.vault.created).toLocaleDateString()}
-						{status.vault.lastCompiled &&
-							` \u00b7 Last compiled ${new Date(status.vault.lastCompiled).toLocaleDateString()}`}
+					<h2 className="text-lg font-semibold tracking-tight mb-1">
+						{status.vault.name}
+					</h2>
+					<p className="text-xs text-[#999]">
+						{status.vault.lastCompiled
+							? `Last compiled ${new Date(status.vault.lastCompiled).toLocaleDateString()}`
+							: "Never compiled"}
+						{" \u00b7 "}
+						{status.provider.model}
 					</p>
 				</div>
-				{status.provider.ready && !compiling && (
+				{status.provider.ready && (
 					<button
 						type="button"
-						onClick={handleCompile}
-						className="flex items-center gap-2 px-4 py-2.5 bg-[var(--color-sidebar)] text-white rounded-md text-sm hover:opacity-90 transition-opacity"
+						onClick={compiling ? handleStop : handleCompile}
+						className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+							compiling
+								? "bg-[#111] text-white/60 hover:text-white"
+								: "bg-[#111] text-white hover:bg-[#222]"
+						}`}
 					>
-						<Play size={16} />
-						Compile
-					</button>
-				)}
-				{compiling && (
-					<button
-						type="button"
-						onClick={handleStop}
-						className="flex items-center gap-2 px-4 py-2.5 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition-colors"
-					>
-						Stop
+						{compiling ? (
+							<>
+								<Square size={12} />
+								Stop
+							</>
+						) : (
+							<>
+								<Play size={12} />
+								Compile
+							</>
+						)}
 					</button>
 				)}
 			</div>
 
+			{/* Compile error */}
 			{compileError && (
-				<div className="border border-red-200 bg-red-50 rounded-lg p-4 mb-4">
-					<p className="text-sm text-red-600">{compileError}</p>
+				<div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 mb-6">
+					<p className="text-xs text-red-600">{compileError}</p>
 				</div>
 			)}
 
+			{/* Compile log */}
 			{compileLog.length > 0 && (
-				<div className="border rounded-lg bg-[#1e1e1e] p-4 mb-4 font-mono text-xs text-[#d4d4d4] max-h-48 overflow-y-auto">
-					{compileLog.map((line) => (
-						<div key={line} className="py-0.5">
+				<div ref={logRef} className="compile-log mb-6 font-mono">
+					{compileLog.map((line, i) => (
+						<div
+							key={`${i}-${line}`}
+							className={
+								line.startsWith("+")
+									? "text-green-400/70"
+									: line.startsWith("\u2713")
+										? "text-blue-400/70"
+										: line.startsWith("\u2192")
+											? "text-amber-400/80"
+											: ""
+							}
+						>
 							{line}
 						</div>
 					))}
 					{compiling && (
-						<div className="py-0.5 text-white/40 animate-pulse">waiting for LLM...</div>
+						<div className="text-white/20 animate-pulse">waiting for LLM...</div>
 					)}
 				</div>
 			)}
 
+			{/* Uncompiled notice */}
 			{uncompiled > 0 && !compiling && compileLog.length === 0 && (
-				<div className="border border-amber-200 bg-amber-50 rounded-lg p-3 mb-4">
-					<p className="text-sm text-amber-700">
-						{uncompiled} uncompiled source{uncompiled > 1 ? "s" : ""} pending.
-						{status.provider.ready
-							? " Hit Compile to generate wiki articles."
-							: " Configure a provider to compile."}
+				<div className="rounded-lg bg-amber-50/80 border border-amber-100 px-4 py-3 mb-6">
+					<p className="text-xs text-amber-700/80">
+						{uncompiled} source{uncompiled > 1 ? "s" : ""} pending compilation
 					</p>
 				</div>
 			)}
 
-			<div className="grid grid-cols-2 gap-4 mb-8">
+			{/* Stats grid */}
+			<div className="grid grid-cols-2 gap-3 mb-10">
 				{cards.map((card) => (
-					<div key={card.label} className="border rounded-lg p-4 bg-white">
-						<div className="flex items-center gap-2 mb-2">
-							<card.icon size={16} className={card.color} />
-							<span className="text-xs text-[var(--color-muted)] uppercase tracking-wider">
+					<div key={card.label} className="border rounded-lg p-5 bg-white">
+						<div className="flex items-center gap-1.5 mb-2">
+							<card.icon size={12} className="text-[#999]" />
+							<span className="text-[10px] text-[#999] uppercase tracking-widest">
 								{card.label}
 							</span>
 						</div>
-						<p className="text-2xl font-semibold">{card.value}</p>
+						<p className="text-xl font-semibold tracking-tight">{card.value}</p>
 					</div>
 				))}
 			</div>
 
-			<div className="border rounded-lg p-4 bg-white">
-				<h3 className="text-sm font-medium mb-3">Configuration</h3>
-				<div className="space-y-2 text-sm">
-					<div className="flex justify-between">
-						<span className="text-[var(--color-muted)]">Provider</span>
-						<span className="font-mono">{status.provider.name}</span>
-					</div>
-					<div className="flex justify-between">
-						<span className="text-[var(--color-muted)]">Model</span>
-						<span className="font-mono">{status.provider.model}</span>
-					</div>
-					<div className="flex justify-between">
-						<span className="text-[var(--color-muted)]">API Key</span>
-						<span className="font-mono text-xs">{status.provider.apiKeyHint ?? "Not set"}</span>
-					</div>
-					<div className="flex justify-between">
-						<span className="text-[var(--color-muted)]">Status</span>
-						<span className={status.provider.ready ? "text-green-600" : "text-red-500"}>
-							{status.provider.ready ? "Ready" : "Not configured"}
-						</span>
-					</div>
+			{/* Config */}
+			<div className="border-t pt-6">
+				<h3 className="text-[10px] text-[#999] uppercase tracking-widest mb-4">
+					Configuration
+				</h3>
+				<div className="space-y-2.5 text-xs">
+					{[
+						["Provider", status.provider.name],
+						["Model", status.provider.model],
+						["API Key", status.provider.apiKeyHint ?? "Not set"],
+						["Status", status.provider.ready ? "Ready" : "Not configured"],
+					].map(([label, value]) => (
+						<div key={label} className="flex justify-between">
+							<span className="text-[#999]">{label}</span>
+							<span
+								className={`font-mono text-[11px] ${
+									label === "Status"
+										? value === "Ready"
+											? "text-green-600"
+											: "text-red-400"
+										: ""
+								}`}
+							>
+								{value}
+							</span>
+						</div>
+					))}
 				</div>
 			</div>
 		</div>
