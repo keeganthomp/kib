@@ -129,6 +129,13 @@ INTEGRATION
   serve               Start MCP server for AI tool integration
   mcp                 Configure MCP in AI clients (auto-runs on init)
   watch               Passive learning daemon (inbox, folders, clipboard, screenshots)
+  ui                  Launch local web dashboard
+
+COLLABORATION
+  share <url>         Share vault with a team via git remote
+  clone <url> [dir]   Clone a shared vault from a git remote
+  pull                Pull latest changes from shared vault
+  push                Push local changes to shared vault
 
 MANAGEMENT
   config [key] [val]  Get or set configuration
@@ -277,6 +284,29 @@ glob = "*.{png,jpg,jpeg,webp,gif,bmp,tiff}"
 
 Failed ingestions retry up to 3 times before moving to the failed queue. Logs are written to `.kb/logs/watch.log` with automatic rotation at 10 MB.
 
+### Shared Workspaces
+
+Share a vault with your team using git. No custom server, no accounts — just git.
+
+```bash
+# Share your vault (one-time setup)
+kib share https://github.com/team/research.git
+
+# Team members join
+kib clone https://github.com/team/research.git
+
+# Day-to-day sync
+kib pull    # get latest from team
+kib push    # share your changes
+
+# Check sync status
+kib share --status
+```
+
+Each team member ingests and compiles locally, then pushes to the shared remote. Manifest conflicts are auto-resolved via 3-way merge (union sources/articles by key, prefer newer). Machine-local state (cache, search index, lockfile) is gitignored.
+
+The web dashboard (`kib ui`) includes a Team page with sync status, pull/push buttons, and a contributor list. MCP tools (`kib_pull`, `kib_push`, `kib_share_status`) let AI assistants sync too.
+
 ### Export
 
 ```bash
@@ -351,7 +381,7 @@ That's it. Restart your AI client and it can search, query, ingest, and compile 
 
 Already have a vault? Run `kib mcp` to configure MCP clients without re-initializing.
 
-**11 tools:** `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`, `kib_config`, `kib_skill`, `kib_export`
+**14 tools:** `kib_status`, `kib_list`, `kib_read`, `kib_search`, `kib_query`, `kib_ingest`, `kib_compile`, `kib_lint`, `kib_config`, `kib_skill`, `kib_export`, `kib_share_status`, `kib_pull`, `kib_push`
 
 **3 resources:** `wiki://index`, `wiki://graph`, `wiki://log`
 

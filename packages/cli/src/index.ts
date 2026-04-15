@@ -190,6 +190,44 @@ program
 	});
 
 program
+	.command("share [remote-url]")
+	.description("Share vault with a team via git remote")
+	.option("--status", "show sharing status")
+	.option("--json", "JSON output")
+	.action(async (remoteUrl, opts) => {
+		const { share } = await import("./commands/share.js");
+		await share(remoteUrl, opts);
+	});
+
+program
+	.command("pull")
+	.description("Pull latest changes from shared vault")
+	.option("--json", "JSON output")
+	.action(async (opts) => {
+		const { pull } = await import("./commands/pull.js");
+		await pull(opts);
+	});
+
+program
+	.command("push")
+	.description("Push local changes to shared vault")
+	.option("-m, --message <msg>", "custom commit message")
+	.option("--json", "JSON output")
+	.action(async (opts) => {
+		const { push } = await import("./commands/push.js");
+		await push(opts);
+	});
+
+program
+	.command("clone <remote-url> [directory]")
+	.description("Clone a shared vault from a git remote")
+	.option("--json", "JSON output")
+	.action(async (remoteUrl, dir, opts) => {
+		const { clone } = await import("./commands/clone.js");
+		await clone(remoteUrl, dir, opts);
+	});
+
+program
 	.command("export")
 	.description("Export wiki to other formats")
 	.option("--format <type>", "output format: markdown, html", "markdown")

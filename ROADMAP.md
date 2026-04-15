@@ -204,16 +204,19 @@ Most of kib's value is locked behind `kib compile`. That's wrong — value shoul
 CLI-only means developer-only. The knowledge is valuable to everyone.
 - [ ] VS Code extension: sidebar with search, query, ingest from editor
 - [ ] Obsidian plugin: sync kib vault ↔ Obsidian vault, use kib's compile + search
-- [ ] Web UI: local dashboard with graph visualization, search, query (not just export)
+- [x] Web UI: local dashboard with graph visualization, search, query, ingest, compile (`kib ui`)
 - [ ] Raycast/Alfred integration: global hotkey → search your knowledge base
 - [ ] Mobile: read-only PWA for querying on the go
 
 ### Shared Knowledge Bases
 Personal wikis are useful. Team wikis are essential.
-- [ ] `kib share` — push vault to a git remote, team members clone + contribute
-- [ ] Multi-user ingest: team members ingest from their own browsers, shared compile
+- [x] `kib share <url>` — connect vault to git remote, push, team members clone + contribute
+- [x] `kib clone <url>` — join a shared vault from a git remote
+- [x] `kib pull` / `kib push` — sync changes with team (auto-commit, manifest auto-merge)
+- [x] Multi-user ingest: team members ingest from their own machines, push to shared remote
+- [x] Team dashboard: contributors, sync status, pull/push from web UI
+- [x] MCP tools: `kib_share_status`, `kib_pull`, `kib_push`
 - [ ] Access control: public wiki articles vs private notes
-- [ ] Team dashboard: who ingested what, what's new this week, knowledge gaps
 - [ ] Org-wide knowledge graph: connect team vaults into a federated search
 
 ---
@@ -238,10 +241,11 @@ Personal wikis are useful. Team wikis are essential.
 - [ ] Shared vault hosting (GitHub repo as vault backend)
 
 ### Web UI
-- [ ] `kib serve` — local web server with read-only wiki viewer
-- [ ] Search interface in the browser
-- [ ] Article graph visualization (force-directed graph)
-- [ ] Reading mode with backlink sidebar
+- [x] `kib ui` — local web dashboard (Bun server on port 4848, React + D3)
+- [x] Search interface in the browser
+- [x] Article graph visualization (D3 force-directed graph)
+- [x] Reading mode for wiki and raw articles
+- [ ] Backlink sidebar in reading mode
 
 ### Additional Export Formats
 - [ ] PDF export (via Puppeteer or wkhtmltopdf)

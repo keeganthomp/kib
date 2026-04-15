@@ -6,12 +6,13 @@ import {
 	MessageSquare,
 	Plus,
 	Search,
+	Users,
 	X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { VaultEvent } from "../useEvents.js";
 
-export type Page = "status" | "browse" | "search" | "query" | "graph" | "ingest";
+export type Page = "status" | "browse" | "search" | "query" | "graph" | "ingest" | "team";
 
 interface NavItem {
 	page: Page;
@@ -27,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
 	{ page: "query", label: "Query", icon: MessageSquare, shortcut: "4" },
 	{ page: "graph", label: "Graph", icon: Compass, shortcut: "5" },
 	{ page: "ingest", label: "Ingest", icon: Plus, shortcut: "6" },
+	{ page: "team", label: "Team", icon: Users, shortcut: "7" },
 ];
 
 interface ShellProps {

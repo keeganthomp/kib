@@ -581,6 +581,64 @@ export function createMcpServer(root: string) {
 		},
 	);
 
+	// ── Sharing ───────────────────────────────────────────────
+
+	server.tool(
+		"kib_share_status",
+		"Check if the vault is shared and show sync status (ahead/behind, contributors, remote URL)",
+		{},
+		async () => {
+			try {
+				const { isShared, shareStatus } = await import("@kibhq/core");
+				if (!isShared(root)) {
+					return json({
+						shared: false,
+						hint: "Run 'kib share <remote-url>' to enable team collaboration",
+					});
+				}
+				const status = await shareStatus(root);
+				return json(status);
+			} catch (e) {
+				return err((e as Error).message);
+			}
+		},
+	);
+
+	server.tool(
+		"kib_pull",
+		"Pull latest changes from the shared vault remote. Auto-merges manifest conflicts.",
+		{},
+		async () => {
+			try {
+				const { isShared, pullVault } = await import("@kibhq/core");
+				if (!isShared(root)) return err("Vault is not shared. Run 'kib share <remote-url>' first.");
+				const result = await pullVault(root);
+				ctx.invalidateSearch();
+				return json(result);
+			} catch (e) {
+				return err((e as Error).message);
+			}
+		},
+	);
+
+	server.tool(
+		"kib_push",
+		"Commit and push local vault changes to the shared remote.",
+		{
+			message: z.string().optional().describe("Custom commit message. Auto-generated if omitted."),
+		},
+		async ({ message }) => {
+			try {
+				const { isShared, pushVault } = await import("@kibhq/core");
+				if (!isShared(root)) return err("Vault is not shared. Run 'kib share <remote-url>' first.");
+				const result = await pushVault(root, message);
+				return json(result);
+			} catch (e) {
+				return err((e as Error).message);
+			}
+		},
+	);
+
 	// ── Resources ─────────────────────────────────────────────
 
 	server.resource("wiki-index", "wiki://index", { mimeType: "text/markdown" }, async () => {

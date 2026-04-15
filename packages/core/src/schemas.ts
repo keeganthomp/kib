@@ -163,6 +163,14 @@ export const VaultConfigSchema = z.object({
 			config: z.record(z.string(), z.record(z.string(), z.unknown())).default({}),
 		})
 		.default({}),
+	sharing: z
+		.object({
+			enabled: z.boolean().default(false),
+			remote: z.string().default(""),
+			auto_push: z.boolean().default(false),
+			auto_pull: z.boolean().default(false),
+		})
+		.default({}),
 });
 
 // ─── Article Frontmatter ─────────────────────────────────────────

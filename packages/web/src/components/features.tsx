@@ -13,6 +13,11 @@ const features = [
 		title: "Chrome extension",
 		detail: "Save any webpage with one click, auto-capture on dwell, history sync",
 	},
+	{
+		title: "Shared workspaces",
+		detail:
+			"Share vaults with your team via git. Pull, push, auto-merge — from CLI, web UI, or MCP",
+	},
 	{ title: "No lock-in", detail: "Plain markdown files. Version with git. No database" },
 ];
 

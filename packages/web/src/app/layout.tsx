@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 	metadataBase: new URL("https://kib.dev"),
 	title: "kib — The Headless Knowledge Compiler",
 	description:
-		"CLI-first, LLM-powered tool that turns raw sources into a structured, queryable markdown wiki. Ingest URLs, PDFs, YouTube, GitHub repos, images. Compile with AI. Search and query instantly. MCP server included.",
+		"CLI-first, LLM-powered tool that turns raw sources into a structured, queryable markdown wiki. Ingest URLs, PDFs, YouTube, GitHub repos, images. Compile with AI. Search and query instantly. Share vaults with your team. MCP server included.",
 	keywords: [
 		"knowledge base",
 		"knowledge compiler",
@@ -78,8 +78,9 @@ const jsonLd = {
 		"AI-compiled structured markdown wiki",
 		"BM25 full-text search with English stemming",
 		"RAG query with cited answers",
-		"MCP server with 8 tools for Claude Code, Cursor, Claude Desktop",
+		"MCP server with 14 tools for Claude Code, Cursor, Claude Desktop",
 		"Chrome extension for one-click webpage saving",
+		"Shared workspaces with git-based team collaboration",
 		"Homebrew installation support",
 		"Plain markdown files, no database, no lock-in",
 	],

@@ -36,6 +36,8 @@ kib chat
 - Skills: Built-in and custom .ts skills with full vault/LLM/search access
 - Export: Markdown or HTML static site output
 - Chrome Extension: One-click webpage saving (coming soon to Chrome Web Store)
+- Shared Workspaces: Team collaboration via git — kib share, kib pull, kib push, kib clone
+- Web Dashboard: Local UI with search, graph visualization, query, ingest, compile, and team sync
 
 ## MCP Server Integration
 
