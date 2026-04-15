@@ -2,7 +2,18 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { getContributor, isGitRepo, isShared, mergeManifests } from "./share.js";
+import { ShareError } from "./errors.js";
+import {
+	checkShareSetup,
+	diagnoseGitError,
+	ensureGit,
+	getContributor,
+	hasGitIdentity,
+	isGitRepo,
+	isShared,
+	mergeManifests,
+	parseRemoteName,
+} from "./share.js";
 import type { Manifest } from "./types.js";
 import { initVault } from "./vault.js";
 
@@ -21,7 +32,7 @@ async function makeTempDir() {
 	return dir;
 }
 
-async function _makeTempVault(name = "test-vault") {
+async function makeTempVault(name = "test-vault") {
 	const dir = await makeTempDir();
 	await initVault(dir, { name });
 	return dir;
@@ -344,5 +355,134 @@ describe("getContributor", () => {
 		const c = getContributor();
 		expect(c.name).toBeTruthy();
 		expect(typeof c.email).toBe("string");
+	});
+});
+
+// ─── parseRemoteName ────────────────────────────────────────────
+
+describe("parseRemoteName", () => {
+	test("parses SSH URL with .git suffix", () => {
+		expect(parseRemoteName("git@github.com:user/my-vault.git")).toBe("user/my-vault");
+	});
+
+	test("parses SSH URL without .git suffix", () => {
+		expect(parseRemoteName("git@github.com:user/my-vault")).toBe("user/my-vault");
+	});
+
+	test("parses HTTPS URL with .git suffix", () => {
+		expect(parseRemoteName("https://github.com/user/my-vault.git")).toBe("user/my-vault");
+	});
+
+	test("parses HTTPS URL without .git suffix", () => {
+		expect(parseRemoteName("https://github.com/user/my-vault")).toBe("user/my-vault");
+	});
+
+	test("parses GitLab HTTPS URL", () => {
+		expect(parseRemoteName("https://gitlab.com/org/project.git")).toBe("org/project");
+	});
+
+	test("returns null for unrecognized format", () => {
+		expect(parseRemoteName("not-a-url")).toBeNull();
+	});
+});
+
+// ─── ensureGit ──────────────────────────────────────────────────
+
+describe("ensureGit", () => {
+	test("does not throw when git is installed", () => {
+		// Git is available in the test environment
+		expect(() => ensureGit()).not.toThrow();
+	});
+});
+
+// ─── hasGitIdentity ─────────────────────────────────────────────
+
+describe("hasGitIdentity", () => {
+	test("returns identity object or null", () => {
+		const identity = hasGitIdentity();
+		// In CI or local, git identity may or may not be configured
+		if (identity) {
+			expect(identity.name).toBeTruthy();
+			expect(typeof identity.email).toBe("string");
+		} else {
+			expect(identity).toBeNull();
+		}
+	});
+});
+
+// ─── diagnoseGitError ───────────────────────────────────────────
+
+describe("diagnoseGitError", () => {
+	test("detects SSH auth failure", () => {
+		const err = new Error("Permission denied (publickey).\r\nfatal: Could not read from remote");
+		const result = diagnoseGitError(err, "push");
+		expect(result).toBeInstanceOf(ShareError);
+		expect(result.code).toBe("AUTH_FAILED");
+		expect(result.hint).toContain("SSH key");
+	});
+
+	test("detects HTTPS auth failure", () => {
+		const err = new Error("fatal: Authentication failed for 'https://github.com/user/repo.git/'");
+		const result = diagnoseGitError(err, "clone");
+		expect(result).toBeInstanceOf(ShareError);
+		expect(result.code).toBe("AUTH_FAILED");
+		expect(result.hint).toContain("personal access token");
+	});
+
+	test("detects repository not found", () => {
+		const err = new Error("fatal: repository 'https://github.com/user/repo.git/' not found");
+		const result = diagnoseGitError(err, "clone");
+		expect(result).toBeInstanceOf(ShareError);
+		expect(result.code).toBe("REMOTE_NOT_FOUND");
+	});
+
+	test("detects network error", () => {
+		const err = new Error(
+			"fatal: unable to access 'https://github.com/': Could not resolve host: github.com",
+		);
+		const result = diagnoseGitError(err, "push");
+		expect(result).toBeInstanceOf(ShareError);
+		expect(result.code).toBe("NETWORK_ERROR");
+		expect(result.hint).toContain("internet connection");
+	});
+
+	test("detects push rejection", () => {
+		const err = new Error("error: failed to push some refs to 'origin'");
+		const result = diagnoseGitError(err, "push");
+		expect(result).toBeInstanceOf(ShareError);
+		expect(result.code).toBe("PUSH_REJECTED");
+		expect(result.hint).toContain("kib pull");
+	});
+
+	test("falls back to generic error for unknown messages", () => {
+		const err = new Error("something unexpected");
+		const result = diagnoseGitError(err, "push");
+		expect(result).toBeInstanceOf(ShareError);
+		expect(result.code).toBe("SHARE_ERROR");
+	});
+});
+
+// ─── checkShareSetup ───────────────────────────────────────────
+
+describe("checkShareSetup", () => {
+	test("reports git installed without a root", () => {
+		const result = checkShareSetup();
+		expect(result.gitInstalled).toBe(true); // git is available in test env
+		expect(result.vaultFound).toBe(false);
+		expect(result.remoteConfigured).toBe(false);
+		expect(result.remoteName).toBeNull();
+	});
+
+	test("reports vault found for a valid vault", async () => {
+		const dir = await makeTempVault("setup-test");
+		const result = checkShareSetup(dir);
+		expect(result.vaultFound).toBe(true);
+		expect(result.remoteConfigured).toBe(false);
+	});
+
+	test("reports vault not found for a temp dir", async () => {
+		const dir = await makeTempDir();
+		const result = checkShareSetup(dir);
+		expect(result.vaultFound).toBe(false);
 	});
 });

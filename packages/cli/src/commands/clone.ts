@@ -1,4 +1,5 @@
 import { basename, resolve } from "node:path";
+import { ShareError } from "@kibhq/core";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
 
@@ -9,6 +10,11 @@ interface CloneOpts {
 export async function clone(remoteUrl: string, dir: string | undefined, opts: CloneOpts) {
 	if (!remoteUrl) {
 		log.error("Usage: kib clone <remote-url> [directory]");
+		log.blank();
+		log.dim("Example:");
+		log.dim("  kib clone git@github.com:your-org/knowledge-base.git");
+		log.dim("  kib clone https://github.com/your-org/knowledge-base.git my-kb");
+		log.blank();
 		process.exit(1);
 	}
 
@@ -20,7 +26,7 @@ export async function clone(remoteUrl: string, dir: string | undefined, opts: Cl
 	spinner?.start();
 
 	try {
-		const { cloneVault, loadManifest, loadConfig } = await import("@kibhq/core");
+		const { cloneVault, loadManifest, loadConfig, parseRemoteName } = await import("@kibhq/core");
 		const root = await cloneVault(remoteUrl, targetDir);
 		const manifest = await loadManifest(root);
 		const config = await loadConfig(root);
@@ -45,8 +51,12 @@ export async function clone(remoteUrl: string, dir: string | undefined, opts: Cl
 
 		const sourceCount = Object.keys(manifest.sources).length;
 		const articleCount = Object.keys(manifest.articles).length;
+		const projectName = parseRemoteName(remoteUrl);
 
 		log.header("vault cloned");
+		if (projectName) {
+			log.success(`Project: ${projectName}`);
+		}
 		log.success(`Path: ${root}`);
 		log.success(`Vault: ${manifest.vault.name}`);
 		log.success(`Provider: ${config.provider.default} (${config.provider.model})`);
@@ -61,7 +71,14 @@ export async function clone(remoteUrl: string, dir: string | undefined, opts: Cl
 		log.blank();
 	} catch (err) {
 		spinner?.stop();
-		log.error((err as Error).message);
+		if (err instanceof ShareError) {
+			log.error(err.message);
+			log.blank();
+			log.dim(err.hint);
+			log.blank();
+		} else {
+			log.error((err as Error).message);
+		}
 		process.exit(1);
 	}
 }

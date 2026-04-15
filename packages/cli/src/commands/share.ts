@@ -1,4 +1,4 @@
-import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
+import { resolveVaultRoot, ShareError, VaultNotFoundError } from "@kibhq/core";
 import { debug } from "../ui/debug.js";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
@@ -33,7 +33,7 @@ export async function share(remoteUrl: string | undefined, opts: ShareOpts) {
 	spinner?.start();
 
 	try {
-		const { shareVault } = await import("@kibhq/core");
+		const { shareVault, parseRemoteName } = await import("@kibhq/core");
 		const result = await shareVault(root, remoteUrl);
 
 		spinner?.stop();
@@ -43,7 +43,12 @@ export async function share(remoteUrl: string | undefined, opts: ShareOpts) {
 			return;
 		}
 
+		const projectName = parseRemoteName(remoteUrl);
+
 		log.header("vault shared");
+		if (projectName) {
+			log.success(`Project: ${projectName}`);
+		}
 		log.success(`Remote: ${result.remote}`);
 		log.success(`Branch: ${result.branch}`);
 		log.blank();
@@ -56,7 +61,14 @@ export async function share(remoteUrl: string | undefined, opts: ShareOpts) {
 		log.blank();
 	} catch (err) {
 		spinner?.stop();
-		log.error((err as Error).message);
+		if (err instanceof ShareError) {
+			log.error(err.message);
+			log.blank();
+			log.dim(err.hint);
+			log.blank();
+		} else {
+			log.error((err as Error).message);
+		}
 		process.exit(1);
 	}
 }
@@ -73,7 +85,7 @@ async function showStatus(opts: ShareOpts) {
 		throw err;
 	}
 
-	const { shareStatus } = await import("@kibhq/core");
+	const { shareStatus, checkShareSetup } = await import("@kibhq/core");
 	const status = await shareStatus(root);
 
 	if (opts.json) {
@@ -84,12 +96,43 @@ async function showStatus(opts: ShareOpts) {
 	log.header("share status");
 
 	if (!status.shared) {
-		log.dim("Vault is not shared.");
-		log.dim("Run kib share <remote-url> to set up sharing.");
+		// Show a friendly setup checklist
+		const setup = checkShareSetup(root);
+
+		log.dim("This vault is not shared yet. Here's what you need:");
+		log.blank();
+		log.info(`${setup.gitInstalled ? "\u2713" : "\u2717"} Git installed`);
+		log.info(
+			`${setup.gitIdentity ? "\u2713" : "\u2717"} Git identity configured${setup.gitIdentity ? ` (${setup.gitIdentity.name})` : ""}`,
+		);
+		log.info(`${setup.vaultFound ? "\u2713" : "\u2717"} Vault found`);
+		log.info(`${setup.remoteConfigured ? "\u2713" : "\u2717"} Remote configured`);
+
+		if (!setup.gitInstalled) {
+			log.blank();
+			log.dim("Install Git: https://git-scm.com");
+		} else if (!setup.gitIdentity) {
+			log.blank();
+			log.dim("Set up your identity:");
+			log.dim('  git config --global user.name "Your Name"');
+			log.dim('  git config --global user.email "you@example.com"');
+		} else {
+			log.blank();
+			log.dim("Get started:");
+			log.dim("  1. Create a repo on GitHub, GitLab, or any Git host");
+			log.dim("  2. Run: kib share <remote-url>");
+			log.blank();
+			log.dim("Example:");
+			log.dim("  kib share git@github.com:your-org/knowledge-base.git");
+		}
+
 		log.blank();
 		return;
 	}
 
+	if (status.remoteName) {
+		log.keyValue("project", status.remoteName);
+	}
 	log.keyValue("remote", status.remote ?? "unknown");
 	log.keyValue("branch", status.branch ?? "unknown");
 	log.keyValue("status", formatSyncStatus(status.ahead, status.behind));

@@ -72,3 +72,24 @@ export class ManifestError extends KibError {
 		this.name = "ManifestError";
 	}
 }
+
+export type ShareErrorCode =
+	| "GIT_NOT_INSTALLED"
+	| "GIT_NO_IDENTITY"
+	| "AUTH_FAILED"
+	| "REMOTE_NOT_FOUND"
+	| "NETWORK_ERROR"
+	| "PUSH_REJECTED"
+	| "NOT_SHARED"
+	| "NOT_A_VAULT"
+	| "SHARE_ERROR";
+
+export class ShareError extends KibError {
+	public readonly hint: string;
+
+	constructor(message: string, code: ShareErrorCode, hint: string) {
+		super(message, code);
+		this.name = "ShareError";
+		this.hint = hint;
+	}
+}

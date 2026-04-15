@@ -110,12 +110,22 @@ export interface CompileResult {
 export interface ShareStatus {
 	shared: boolean;
 	remote?: string;
+	remoteName?: string;
 	branch?: string;
 	ahead: number;
 	behind: number;
 	dirty: boolean;
 	lastSync?: string;
 	contributors: { name: string; email: string; commits: number; lastActive: string }[];
+}
+
+export interface ShareSetupCheck {
+	gitInstalled: boolean;
+	gitIdentity: { name: string; email: string } | null;
+	vaultFound: boolean;
+	remoteConfigured: boolean;
+	remoteName: string | null;
+	remoteUrl: string | null;
 }
 
 export interface PullResult {
@@ -229,6 +239,7 @@ export const api = {
 	getGraph: () => get<GraphData>("/graph"),
 
 	// Sharing
+	getShareSetup: () => get<ShareSetupCheck>("/share/setup"),
 	getShareStatus: () => get<ShareStatus>("/share/status"),
 	sharePull: () => post<PullResult>("/share/pull", {}),
 	sharePush: (message?: string) => post<PushResult>("/share/push", { message }),

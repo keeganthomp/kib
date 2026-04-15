@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { VAULT_DIR } from "./constants.js";
+import { ShareError } from "./errors.js";
 import type { Manifest } from "./types.js";
 import { loadConfig, loadManifest, saveConfig, saveManifest } from "./vault.js";
 
@@ -30,6 +31,7 @@ export interface PushResult {
 export interface ShareStatus {
 	shared: boolean;
 	remote?: string;
+	remoteName?: string;
 	branch?: string;
 	ahead: number;
 	behind: number;
@@ -43,6 +45,178 @@ export interface Contributor {
 	email: string;
 	commits: number;
 	lastActive: string;
+}
+
+export interface ShareSetupCheck {
+	gitInstalled: boolean;
+	gitIdentity: { name: string; email: string } | null;
+	vaultFound: boolean;
+	remoteConfigured: boolean;
+	remoteName: string | null;
+	remoteUrl: string | null;
+}
+
+// ─── Prerequisite Checks ────────────────────────────────────────
+
+export function ensureGit(): void {
+	try {
+		execSync("git --version", { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
+	} catch {
+		throw new ShareError(
+			"Git is not installed.",
+			"GIT_NOT_INSTALLED",
+			"Install Git from https://git-scm.com and try again.",
+		);
+	}
+}
+
+export function hasGitIdentity(): { name: string; email: string } | null {
+	try {
+		const name = execSync("git config user.name", {
+			encoding: "utf-8",
+			stdio: ["pipe", "pipe", "pipe"],
+		}).trim();
+		const email = execSync("git config user.email", {
+			encoding: "utf-8",
+			stdio: ["pipe", "pipe", "pipe"],
+		}).trim();
+		if (name) return { name, email };
+		return null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Extract a human-readable project name from a git remote URL.
+ *   git@github.com:user/my-vault.git → user/my-vault
+ *   https://github.com/user/my-vault.git → user/my-vault
+ *   https://github.com/user/my-vault → user/my-vault
+ */
+export function parseRemoteName(url: string): string | null {
+	// SSH: git@host:owner/repo.git
+	const sshMatch = url.match(/:([^/]+\/[^/]+?)(?:\.git)?$/);
+	if (sshMatch?.[1]) return sshMatch[1];
+
+	// HTTPS: https://host/owner/repo.git
+	try {
+		const parsed = new URL(url);
+		const parts = parsed.pathname.replace(/^\//, "").replace(/\.git$/, "");
+		if (parts.includes("/")) return parts;
+	} catch {
+		// not a URL
+	}
+
+	return null;
+}
+
+/**
+ * Examine a git error message and return a user-friendly ShareError.
+ */
+export function diagnoseGitError(err: unknown, operation: string): ShareError {
+	const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+
+	if (
+		msg.includes("permission denied (publickey)") ||
+		msg.includes("could not read from remote repository")
+	) {
+		return new ShareError(
+			`Authentication failed during ${operation}.`,
+			"AUTH_FAILED",
+			"Make sure your SSH key is added to the remote host (e.g. GitHub → Settings → SSH keys).\nOr use an HTTPS URL with a personal access token instead.",
+		);
+	}
+
+	if (
+		msg.includes("authentication failed") ||
+		msg.includes("invalid credentials") ||
+		msg.includes("logon failed")
+	) {
+		return new ShareError(
+			`Authentication failed during ${operation}.`,
+			"AUTH_FAILED",
+			"Check your credentials. For HTTPS remotes, use a personal access token instead of a password.\nFor GitHub: https://github.com/settings/tokens",
+		);
+	}
+
+	if (
+		msg.includes("repository not found") ||
+		msg.includes("does not exist") ||
+		msg.includes("not found")
+	) {
+		return new ShareError(
+			`Remote repository not found during ${operation}.`,
+			"REMOTE_NOT_FOUND",
+			"Check that the URL is correct and that you have access to the repository.",
+		);
+	}
+
+	if (
+		msg.includes("could not resolve host") ||
+		msg.includes("unable to access") ||
+		msg.includes("connection timed out") ||
+		msg.includes("network is unreachable")
+	) {
+		return new ShareError(
+			`Network error during ${operation}.`,
+			"NETWORK_ERROR",
+			"Check your internet connection and try again.",
+		);
+	}
+
+	if (
+		msg.includes("failed to push") ||
+		msg.includes("rejected") ||
+		msg.includes("non-fast-forward")
+	) {
+		return new ShareError(
+			`Push rejected — the remote has newer changes.`,
+			"PUSH_REJECTED",
+			"Run 'kib pull' first to sync, then try pushing again.",
+		);
+	}
+
+	// Fallback: return the original message but wrapped in ShareError
+	return new ShareError(
+		`Git error during ${operation}: ${(err instanceof Error ? err.message : String(err)).split("\n")[0]}`,
+		"SHARE_ERROR",
+		"Check the error above and try again. Run 'kib share --status' to check your setup.",
+	);
+}
+
+/**
+ * Check all prerequisites for sharing. Used by CLI and dashboard
+ * to show a friendly setup checklist.
+ */
+export function checkShareSetup(root?: string): ShareSetupCheck {
+	let gitInstalled = false;
+	try {
+		ensureGit();
+		gitInstalled = true;
+	} catch {
+		// not installed
+	}
+
+	const gitIdentity = gitInstalled ? hasGitIdentity() : null;
+
+	let vaultFound = false;
+	let remoteConfigured = false;
+	let remoteName: string | null = null;
+	let remoteUrl: string | null = null;
+
+	if (root) {
+		vaultFound = existsSync(join(root, VAULT_DIR));
+		if (vaultFound && isGitRepo(root)) {
+			const url = getRemoteUrl(root);
+			if (url) {
+				remoteConfigured = true;
+				remoteUrl = url;
+				remoteName = parseRemoteName(url);
+			}
+		}
+	}
+
+	return { gitInstalled, gitIdentity, vaultFound, remoteConfigured, remoteName, remoteUrl };
 }
 
 // ─── Git Helpers ────────────────────────────────────────────────
@@ -123,6 +297,18 @@ async function ensureGitignore(root: string): Promise<void> {
 // ─── Share (one-time setup) ─────────────────────────────────────
 
 export async function shareVault(root: string, remoteUrl: string): Promise<ShareResult> {
+	// 0. Prerequisites
+	ensureGit();
+
+	const identity = hasGitIdentity();
+	if (!identity) {
+		throw new ShareError(
+			"Git doesn't know who you are yet.",
+			"GIT_NO_IDENTITY",
+			'Run these commands first:\n  git config --global user.name "Your Name"\n  git config --global user.email "you@example.com"',
+		);
+	}
+
 	// 1. Init git if needed
 	if (!isGitRepo(root)) {
 		git(root, "init -b main");
@@ -160,11 +346,22 @@ export async function shareVault(root: string, remoteUrl: string): Promise<Share
 	const branch = getCurrentBranch(root);
 	try {
 		git(root, `push -u origin ${branch}`);
-	} catch {
+	} catch (err) {
 		// Remote might have content (e.g., GitHub created with README)
 		// Pull first, then push
-		gitOk(root, `pull origin ${branch} --rebase --allow-unrelated-histories`);
-		git(root, `push -u origin ${branch}`);
+		const { ok: pullOk } = gitOk(
+			root,
+			`pull origin ${branch} --rebase --allow-unrelated-histories`,
+		);
+		if (pullOk) {
+			try {
+				git(root, `push -u origin ${branch}`);
+			} catch (retryErr) {
+				throw diagnoseGitError(retryErr, "push");
+			}
+		} else {
+			throw diagnoseGitError(err, "push");
+		}
 	}
 
 	return { remote: remoteUrl, branch };
@@ -173,16 +370,27 @@ export async function shareVault(root: string, remoteUrl: string): Promise<Share
 // ─── Clone (join a shared vault) ────────────────────────────────
 
 export async function cloneVault(remoteUrl: string, targetDir: string): Promise<string> {
+	// Prerequisites
+	ensureGit();
+
 	// Clone
-	execSync(`git -c commit.gpgsign=false clone ${remoteUrl} "${targetDir}"`, {
-		encoding: "utf-8",
-		stdio: ["pipe", "pipe", "pipe"],
-	});
+	try {
+		execSync(`git -c commit.gpgsign=false clone ${remoteUrl} "${targetDir}"`, {
+			encoding: "utf-8",
+			stdio: ["pipe", "pipe", "pipe"],
+		});
+	} catch (err) {
+		throw diagnoseGitError(err, "clone");
+	}
 
 	// Validate it's a kib vault
 	const kbDir = join(targetDir, VAULT_DIR);
 	if (!existsSync(kbDir)) {
-		throw new Error("Remote repository is not a kib vault (missing .kb/ directory)");
+		throw new ShareError(
+			"That repository is not a kib vault (no .kb/ directory found).",
+			"NOT_A_VAULT",
+			"Make sure you're cloning a repository that was set up with 'kib share'.",
+		);
 	}
 
 	// Ensure machine-local directories exist
@@ -195,8 +403,14 @@ export async function cloneVault(remoteUrl: string, targetDir: string): Promise<
 // ─── Pull ───────────────────────────────────────────────────────
 
 export async function pullVault(root: string): Promise<PullResult> {
+	ensureGit();
+
 	if (!isGitRepo(root) || !isShared(root)) {
-		throw new Error("Vault is not shared. Run kib share <remote-url> first.");
+		throw new ShareError(
+			"This vault is not shared yet.",
+			"NOT_SHARED",
+			"Set up sharing first with: kib share <remote-url>",
+		);
 	}
 
 	// Snapshot current state for diff
@@ -207,7 +421,11 @@ export async function pullVault(root: string): Promise<PullResult> {
 	const branch = getCurrentBranch(root);
 
 	// Fetch
-	git(root, `fetch origin ${branch}`);
+	try {
+		git(root, `fetch origin ${branch}`);
+	} catch (err) {
+		throw diagnoseGitError(err, "pull");
+	}
 
 	// Check if there are changes
 	const { ok: upToDate, output: diffOutput } = gitOk(root, `diff HEAD origin/${branch} --stat`);
@@ -312,8 +530,14 @@ export async function pullVault(root: string): Promise<PullResult> {
 // ─── Push ───────────────────────────────────────────────────────
 
 export async function pushVault(root: string, message?: string): Promise<PushResult> {
+	ensureGit();
+
 	if (!isGitRepo(root) || !isShared(root)) {
-		throw new Error("Vault is not shared. Run kib share <remote-url> first.");
+		throw new ShareError(
+			"This vault is not shared yet.",
+			"NOT_SHARED",
+			"Set up sharing first with: kib share <remote-url>",
+		);
 	}
 
 	// Stage all shareable files
@@ -339,9 +563,8 @@ export async function pushVault(root: string, message?: string): Promise<PushRes
 	const branch = getCurrentBranch(root);
 	try {
 		git(root, `push origin ${branch}`);
-	} catch {
-		// Push failed — likely need to pull first
-		throw new Error("Push failed. Run kib pull first to sync with the remote.");
+	} catch (err) {
+		throw diagnoseGitError(err, "push");
 	}
 
 	return { pushed: true, commit, filesChanged };
@@ -440,6 +663,7 @@ export async function shareStatus(root: string): Promise<ShareStatus> {
 	return {
 		shared,
 		remote,
+		remoteName: remote ? (parseRemoteName(remote) ?? undefined) : undefined,
 		branch,
 		ahead,
 		behind,

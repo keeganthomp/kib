@@ -1,6 +1,21 @@
-import { ArrowDown, ArrowUp, GitBranch, RefreshCw, Users } from "lucide-react";
+import {
+	AlertCircle,
+	ArrowDown,
+	ArrowUp,
+	Check,
+	GitBranch,
+	RefreshCw,
+	Users,
+	X,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { api, type PullResult, type PushResult, type ShareStatus } from "../api.js";
+import {
+	api,
+	type PullResult,
+	type PushResult,
+	type ShareSetupCheck,
+	type ShareStatus,
+} from "../api.js";
 
 interface TeamPageProps {
 	revision: number;
@@ -8,6 +23,7 @@ interface TeamPageProps {
 
 export function TeamPage({ revision }: TeamPageProps) {
 	const [status, setStatus] = useState<ShareStatus | null>(null);
+	const [setup, setSetup] = useState<ShareSetupCheck | null>(null);
 	const [syncing, setSyncing] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -19,10 +35,18 @@ export function TeamPage({ revision }: TeamPageProps) {
 			.catch(() => {});
 	}, []);
 
+	const fetchSetup = useCallback(() => {
+		api
+			.getShareSetup()
+			.then(setSetup)
+			.catch(() => {});
+	}, []);
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: revision triggers re-fetch
 	useEffect(() => {
 		fetchStatus();
-	}, [fetchStatus, revision]);
+		fetchSetup();
+	}, [fetchStatus, fetchSetup, revision]);
 
 	const handlePull = async () => {
 		setSyncing(true);
@@ -33,7 +57,7 @@ export function TeamPage({ revision }: TeamPageProps) {
 			setMessage(result.updated ? result.summary : "Already up to date.");
 			fetchStatus();
 		} catch (err) {
-			setError((err as Error).message);
+			setError(friendlyError((err as Error).message));
 		} finally {
 			setSyncing(false);
 		}
@@ -52,7 +76,7 @@ export function TeamPage({ revision }: TeamPageProps) {
 			);
 			fetchStatus();
 		} catch (err) {
-			setError((err as Error).message);
+			setError(friendlyError((err as Error).message));
 		} finally {
 			setSyncing(false);
 		}
@@ -74,7 +98,7 @@ export function TeamPage({ revision }: TeamPageProps) {
 			setMessage(parts.length > 0 ? parts.join(" · ") : "Already in sync.");
 			fetchStatus();
 		} catch (err) {
-			setError((err as Error).message);
+			setError(friendlyError((err as Error).message));
 		} finally {
 			setSyncing(false);
 		}
@@ -89,22 +113,20 @@ export function TeamPage({ revision }: TeamPageProps) {
 	}
 
 	if (!status.shared) {
-		return (
-			<div className="p-8 max-w-lg">
-				<h1 className="text-lg font-semibold text-gray-800 mb-3">Team</h1>
-				<div className="bg-white border border-gray-200 rounded-lg p-6 text-sm text-gray-500">
-					<p className="mb-3">This vault is not shared yet.</p>
-					<p className="text-xs text-gray-400 font-mono bg-gray-50 px-3 py-2 rounded">
-						kib share &lt;remote-url&gt;
-					</p>
-				</div>
-			</div>
-		);
+		return <SetupGuide setup={setup} />;
 	}
 
 	return (
 		<div className="p-8 max-w-2xl">
-			<h1 className="text-lg font-semibold text-gray-800 mb-5">Team</h1>
+			{/* Header with project name */}
+			<div className="mb-5">
+				<h1 className="text-lg font-semibold text-gray-800">
+					Team{status.remoteName ? ` — ${status.remoteName}` : ""}
+				</h1>
+				{status.remoteName && (
+					<p className="text-xs text-gray-400 mt-0.5 font-mono truncate">{status.remote}</p>
+				)}
+			</div>
 
 			{/* Sync status card */}
 			<div className="bg-white border border-gray-200 rounded-lg p-5 mb-5">
@@ -112,8 +134,6 @@ export function TeamPage({ revision }: TeamPageProps) {
 					<div className="flex items-center gap-2 text-sm text-gray-600">
 						<GitBranch size={14} />
 						<span className="font-mono text-xs text-gray-400">{status.branch}</span>
-						<span className="text-gray-300">·</span>
-						<span className="text-xs text-gray-400 truncate max-w-[300px]">{status.remote}</span>
 					</div>
 					<SyncBadge ahead={status.ahead} behind={status.behind} dirty={status.dirty} />
 				</div>
@@ -152,7 +172,10 @@ export function TeamPage({ revision }: TeamPageProps) {
 					<div className="mt-3 text-xs text-green-600 bg-green-50 px-3 py-2 rounded">{message}</div>
 				)}
 				{error && (
-					<div className="mt-3 text-xs text-red-600 bg-red-50 px-3 py-2 rounded">{error}</div>
+					<div className="mt-3 text-xs text-red-600 bg-red-50 px-3 py-2 rounded flex items-start gap-2">
+						<AlertCircle size={12} className="mt-0.5 shrink-0" />
+						<span className="whitespace-pre-wrap">{error}</span>
+					</div>
 				)}
 			</div>
 
@@ -182,6 +205,93 @@ export function TeamPage({ revision }: TeamPageProps) {
 	);
 }
 
+// ─── Setup Guide (shown when vault is not shared) ──────────────
+
+function SetupGuide({ setup }: { setup: ShareSetupCheck | null }) {
+	return (
+		<div className="p-8 max-w-lg">
+			<h1 className="text-lg font-semibold text-gray-800 mb-1">Team Sharing</h1>
+			<p className="text-sm text-gray-500 mb-5">Share your vault with teammates using Git.</p>
+
+			{/* Prerequisites checklist */}
+			<div className="bg-white border border-gray-200 rounded-lg p-5 mb-5">
+				<div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+					Prerequisites
+				</div>
+				<div className="space-y-2.5">
+					<SetupRow
+						ready={setup?.gitInstalled ?? false}
+						label="Git installed"
+						hint="Install from https://git-scm.com"
+					/>
+					<SetupRow
+						ready={!!setup?.gitIdentity}
+						label={
+							setup?.gitIdentity
+								? `Git identity (${setup.gitIdentity.name})`
+								: "Git identity configured"
+						}
+						hint={'Run: git config --global user.name "Your Name"'}
+					/>
+					<SetupRow ready={setup?.vaultFound ?? false} label="Vault found" hint="Run: kib init" />
+					<SetupRow
+						ready={setup?.remoteConfigured ?? false}
+						label="Remote configured"
+						hint="Run: kib share <remote-url>"
+					/>
+				</div>
+			</div>
+
+			{/* Getting started steps */}
+			<div className="bg-white border border-gray-200 rounded-lg p-5">
+				<div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+					Get Started
+				</div>
+				<ol className="space-y-3 text-sm text-gray-600">
+					<li className="flex gap-2">
+						<span className="text-gray-400 font-medium">1.</span>
+						<span>
+							Create a repository on <span className="text-gray-800">GitHub</span>,{" "}
+							<span className="text-gray-800">GitLab</span>, or any Git host
+						</span>
+					</li>
+					<li className="flex gap-2">
+						<span className="text-gray-400 font-medium">2.</span>
+						<span>Connect your vault with the share command:</span>
+					</li>
+				</ol>
+				<div className="mt-3 bg-gray-50 rounded px-3 py-2">
+					<code className="text-xs text-gray-600">kib share git@github.com:your-org/vault.git</code>
+				</div>
+				<p className="text-xs text-gray-400 mt-3">
+					Once shared, teammates can join with{" "}
+					<code className="bg-gray-50 px-1 rounded">kib clone &lt;url&gt;</code> and sync with{" "}
+					<code className="bg-gray-50 px-1 rounded">kib pull</code> /{" "}
+					<code className="bg-gray-50 px-1 rounded">kib push</code>.
+				</p>
+			</div>
+		</div>
+	);
+}
+
+function SetupRow({ ready, label, hint }: { ready: boolean; label: string; hint: string }) {
+	return (
+		<div className="flex items-start gap-2">
+			{ready ? (
+				<Check size={14} className="text-green-500 mt-0.5 shrink-0" />
+			) : (
+				<X size={14} className="text-gray-300 mt-0.5 shrink-0" />
+			)}
+			<div>
+				<div className={`text-sm ${ready ? "text-gray-700" : "text-gray-400"}`}>{label}</div>
+				{!ready && <div className="text-[11px] text-gray-400 mt-0.5 font-mono">{hint}</div>}
+			</div>
+		</div>
+	);
+}
+
+// ─── Helpers ───────────────────────────────────────────────────
+
 function SyncBadge({ ahead, behind, dirty }: { ahead: number; behind: number; dirty: boolean }) {
 	if (ahead === 0 && behind === 0 && !dirty) {
 		return (
@@ -201,4 +311,37 @@ function SyncBadge({ ahead, behind, dirty }: { ahead: number; behind: number; di
 			{parts.join(" · ")}
 		</span>
 	);
+}
+
+/**
+ * Make error messages more human-friendly for the dashboard.
+ */
+function friendlyError(msg: string): string {
+	const lower = msg.toLowerCase();
+
+	if (lower.includes("permission denied") || lower.includes("could not read from remote")) {
+		return "Authentication failed. Check that your SSH key is configured for this remote.";
+	}
+	if (lower.includes("authentication failed") || lower.includes("logon failed")) {
+		return "Authentication failed. Check your credentials or use an SSH URL.";
+	}
+	if (lower.includes("repository not found") || lower.includes("does not exist")) {
+		return "Repository not found. Check the URL and your access permissions.";
+	}
+	if (
+		lower.includes("could not resolve host") ||
+		lower.includes("unable to access") ||
+		lower.includes("network")
+	) {
+		return "Network error. Check your internet connection and try again.";
+	}
+	if (
+		lower.includes("failed to push") ||
+		lower.includes("rejected") ||
+		lower.includes("non-fast-forward")
+	) {
+		return "Push rejected — the remote has newer changes. Pull first, then try again.";
+	}
+
+	return msg;
 }

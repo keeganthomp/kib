@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { join, relative } from "node:path";
 import {
 	buildLinkGraph,
+	checkShareSetup,
 	compileVault,
 	computeStats,
 	ingestSource,
@@ -286,6 +287,12 @@ export async function handleApi(url: URL, req: Request, ctx: DashboardContext): 
 			}
 
 			return json({ nodes, edges });
+		}
+
+		// GET /api/share/setup — prerequisite checklist for sharing
+		if (req.method === "GET" && path === "/share/setup") {
+			const setup = checkShareSetup(ctx.root);
+			return json(setup);
 		}
 
 		// GET /api/share/status

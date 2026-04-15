@@ -1,4 +1,4 @@
-import { resolveVaultRoot, VaultNotFoundError } from "@kibhq/core";
+import { resolveVaultRoot, ShareError, VaultNotFoundError } from "@kibhq/core";
 import { debug } from "../ui/debug.js";
 import * as log from "../ui/logger.js";
 import { createSpinner } from "../ui/spinner.js";
@@ -50,7 +50,14 @@ export async function push(opts: PushOpts) {
 		log.blank();
 	} catch (err) {
 		spinner?.stop();
-		log.error((err as Error).message);
+		if (err instanceof ShareError) {
+			log.error(err.message);
+			log.blank();
+			log.dim(err.hint);
+			log.blank();
+		} else {
+			log.error((err as Error).message);
+		}
 		process.exit(1);
 	}
 }
