@@ -51,6 +51,24 @@ bun run packages/cli/bin/kib.ts       # run CLI locally
 - LLM providers: Anthropic, OpenAI, Ollama (auto-detected from env vars)
 - Credentials stored at `~/.config/kib/credentials`, loaded on CLI startup
 
+## Shared Workspaces
+
+Git-based team collaboration. No custom server, no accounts.
+
+```bash
+kib share <url>               # connect vault to git remote
+kib clone <url>               # join a shared vault
+kib pull                      # get latest from team
+kib push                      # commit + push local changes
+kib share --status            # check sync state
+```
+
+- Manifest conflicts auto-resolve via 3-way merge (union by key, prefer newer)
+- Machine-local state (.kb/cache, .kb/vault.lock, pipeline.db) is gitignored
+- Dashboard Team page: sync status, pull/push buttons, contributor list
+- MCP tools: `kib_share_status`, `kib_pull`, `kib_push`
+- Config: `[sharing]` section in config.toml
+
 ## Skill Ecosystem (v0.8.0)
 
 ### Built-in Skills (10)

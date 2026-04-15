@@ -210,10 +210,13 @@ CLI-only means developer-only. The knowledge is valuable to everyone.
 
 ### Shared Knowledge Bases
 Personal wikis are useful. Team wikis are essential.
-- [ ] `kib share` — push vault to a git remote, team members clone + contribute
-- [ ] Multi-user ingest: team members ingest from their own browsers, shared compile
+- [x] `kib share <url>` — connect vault to git remote, push, team members clone + contribute
+- [x] `kib clone <url>` — join a shared vault from a git remote
+- [x] `kib pull` / `kib push` — sync changes with team (auto-commit, manifest auto-merge)
+- [x] Multi-user ingest: team members ingest from their own machines, push to shared remote
+- [x] Team dashboard: contributors, sync status, pull/push from web UI
+- [x] MCP tools: `kib_share_status`, `kib_pull`, `kib_push`
 - [ ] Access control: public wiki articles vs private notes
-- [ ] Team dashboard: who ingested what, what's new this week, knowledge gaps
 - [ ] Org-wide knowledge graph: connect team vaults into a federated search
 
 ---
