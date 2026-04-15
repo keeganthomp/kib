@@ -28,28 +28,93 @@ export function parseCompileOutput(raw: string): FileOperation[] {
 
 /**
  * Extract JSON array from LLM output that may contain surrounding text.
+ * Handles: code fences, leading/trailing prose, truncated output, nested brackets in strings.
  */
 function extractJson(raw: string): string {
 	let text = raw.trim();
 
-	// Strip markdown code fences
-	text = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
+	// Strip all markdown code fences (including nested ones wrapping the whole output)
+	text = text.replace(/^```(?:json)?\s*\n?/gi, "").replace(/\n?```\s*$/gi, "");
 	text = text.trim();
 
-	// If it already starts with [, try it directly
-	if (text.startsWith("[")) {
-		return text;
+	// Find the first top-level [ and walk to its matching ]
+	const arrayStart = text.indexOf("[");
+	if (arrayStart === -1) return text;
+
+	let depth = 0;
+	let inString = false;
+	let escaped = false;
+	let arrayEnd = -1;
+
+	for (let i = arrayStart; i < text.length; i++) {
+		const ch = text[i];
+
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+
+		if (ch === "\\") {
+			escaped = true;
+			continue;
+		}
+
+		if (ch === '"') {
+			inString = !inString;
+			continue;
+		}
+
+		if (inString) continue;
+
+		if (ch === "[" || ch === "{") depth++;
+		else if (ch === "]" || ch === "}") {
+			depth--;
+			if (depth === 0) {
+				arrayEnd = i;
+				break;
+			}
+		}
 	}
 
-	// Try to find a JSON array in the text
-	const arrayStart = text.indexOf("[");
-	const arrayEnd = text.lastIndexOf("]");
-
-	if (arrayStart !== -1 && arrayEnd !== -1 && arrayEnd > arrayStart) {
+	if (arrayEnd !== -1) {
 		return text.slice(arrayStart, arrayEnd + 1);
 	}
 
-	// Nothing worked, return as-is and let JSON.parse fail with a clear error
+	// Truncated output — try to repair by closing open structures
+	if (depth > 0) {
+		let repaired = text.slice(arrayStart);
+		// If we're inside a string, close it
+		if (inString) repaired += '"';
+		// Strip any trailing incomplete key-value pair
+		repaired = repaired.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, "");
+		// Close remaining open structures
+		// Find what's still open by re-scanning
+		let s = false;
+		let esc = false;
+		const stack: string[] = [];
+		for (const c of repaired) {
+			if (esc) {
+				esc = false;
+				continue;
+			}
+			if (c === "\\") {
+				esc = true;
+				continue;
+			}
+			if (c === '"') {
+				s = !s;
+				continue;
+			}
+			if (s) continue;
+			if (c === "[") stack.push("]");
+			else if (c === "{") stack.push("}");
+			else if (c === "]" || c === "}") stack.pop();
+		}
+		// Close in reverse order
+		repaired += stack.reverse().join("");
+		return repaired;
+	}
+
 	return text;
 }
 

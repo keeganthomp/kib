@@ -51,6 +51,8 @@ export interface CompileOptions {
 	onProgress?: (msg: string) => void;
 	/** Callback fired for each article as it is processed */
 	onArticle?: (event: ArticleEvent) => void;
+	/** Signal to abort compilation between sources */
+	signal?: AbortSignal;
 }
 
 // ─── Token estimation ──────────────────────────────────────────
@@ -511,6 +513,10 @@ async function compileVaultInner(
 
 		// Process in batches
 		for (let i = 0; i < sourcesToCompile.length; i += maxParallel) {
+			if (options.signal?.aborted) {
+				options.onProgress?.("Compile aborted.");
+				break;
+			}
 			// Check token budget before starting a new batch
 			if (maxTokensPerPass && totalInputTokens >= maxTokensPerPass) {
 				allWarnings.push(
@@ -580,6 +586,10 @@ async function compileVaultInner(
 	} else {
 		// Sequential compilation (original behavior)
 		for (const [sourceId, sourcePath] of sourcesToCompile) {
+			if (options.signal?.aborted) {
+				options.onProgress?.("Compile aborted.");
+				break;
+			}
 			// Check token budget
 			if (maxTokensPerPass && totalInputTokens >= maxTokensPerPass) {
 				allWarnings.push(
